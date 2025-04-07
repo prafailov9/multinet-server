@@ -2,9 +2,9 @@ package com.ntros.command.impl;
 
 import com.ntros.message.ProtocolContext;
 import com.ntros.model.entity.Direction;
-import com.ntros.model.world.WorldRegistry;
 import com.ntros.model.world.Message;
-import com.ntros.model.world.WorldContext;
+import com.ntros.model.world.WorldDispatcher;
+import com.ntros.model.world.context.WorldContext;
 import com.ntros.model.world.protocol.MoveRequest;
 import com.ntros.model.world.protocol.Result;
 
@@ -21,11 +21,12 @@ public class MoveCommand extends AbstractCommand {
     public Optional<String> execute(Message message, ProtocolContext protocolContext) {
         validateContext(protocolContext);
 
-        WorldContext world = WorldRegistry.getGridWorld(protocolContext.getWorldId());
-        LOGGER.log(Level.INFO, "retrieved world {0}", world.name());
+        WorldContext world = WorldDispatcher.getWorld(protocolContext.getWorldId());
+
+        LOGGER.log(Level.INFO, "retrieved world {0}", world.state().name());
         Direction direction = resolveMoveIntent(message);
-        LOGGER.log(Level.INFO, "resolved world and direction: {0}, {1}", new Object[]{world.name(), direction.name()});
-        Result result = world.storeMoveIntent(new MoveRequest(protocolContext.getSessionId(), direction));
+        LOGGER.log(Level.INFO, "resolved world and direction: {0}, {1}", new Object[]{world.state().name(), direction.name()});
+        Result result = world.engine().storeMoveIntent(new MoveRequest(protocolContext.getSessionId(), direction), world.state());
 
         return handleResult(result, direction.name());
     }
@@ -40,31 +41,9 @@ public class MoveCommand extends AbstractCommand {
         LOGGER.log(Level.INFO, "resolving move intent for message: {0}", message);
         String move = message.getArgs().getFirst();
         if (move == null || move.isEmpty()) {
-            String err = "Move cannot be empty.";
-            LOGGER.log(Level.SEVERE, err);
-            throw new RuntimeException(err);
+            logAndThrow("Move cannot be empty.");
         }
-        LOGGER.log(Level.INFO,"resolved move: {0}", move);
+        LOGGER.log(Level.INFO, "resolved move: {0}", move);
         return Direction.valueOf(move); // throws illegalArgument
     }
-
-    private void validateContext(ProtocolContext context) {
-        LOGGER.log(Level.INFO, "validating context...");
-        if (!context.isAuthenticated()) {
-            logAndThrow("User not authenticated.");
-        }
-        if (context.getSessionId() == null || context.getSessionId().isEmpty()) {
-            logAndThrow("No session exists for caller.");
-        }
-
-        if (context.getWorldId() == null || context.getWorldId().isEmpty()) {
-            logAndThrow("No world assigned.");
-        }
-    }
-
-    private void logAndThrow(String err) {
-        LOGGER.log(Level.SEVERE, err);
-        throw new RuntimeException(err);
-    }
-
 }

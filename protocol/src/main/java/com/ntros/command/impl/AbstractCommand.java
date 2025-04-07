@@ -1,42 +1,32 @@
 package com.ntros.command.impl;
 
-import com.ntros.model.world.WorldRegistry;
-import com.ntros.model.world.Message;
-import com.ntros.model.world.WorldContext;
+import com.ntros.message.ProtocolContext;
 
-import static com.ntros.model.world.WorldRegistry.getGridWorld;
-import static com.ntros.model.world.WorldRegistry.getRandomGridWorld;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public abstract class AbstractCommand implements Command {
 
-    protected String resolvePlayer(Message message) {
-        String playerName = message.getArgs().getFirst();
-        if (playerName == null || playerName.isEmpty()) {
-            String err = "[Abstract Command]: no player name given.";
-            System.err.println(err);
-            throw new RuntimeException(err);
+    private static final Logger LOGGER = Logger.getLogger(AbstractCommand.class.getName());
+
+
+    protected void validateContext(ProtocolContext context) {
+        LOGGER.log(Level.INFO, "validating context...");
+        if (!context.isAuthenticated()) {
+            logAndThrow("User not authenticated.");
+        }
+        if (context.getSessionId() == null || context.getSessionId().isEmpty()) {
+            logAndThrow("No session exists for caller.");
         }
 
-        return playerName;
+        if (context.getWorldId() == null || context.getWorldId().isEmpty()) {
+            logAndThrow("No world assigned.");
+        }
     }
 
-    protected WorldContext resolveWorld(Message message) {
-        return message.getArgs().getLast().startsWith("world")
-                ? getGridWorld(message.getArgs().getLast())
-                : getRandomGridWorld();
-//        String worldName = message.getArgs().get(2);
-//        WorldContext world = null;
-//        if (worldName == null || worldName.isEmpty()) {
-//            world = WorldRegistry.getRandomGridWorld();
-//        }
-//        if (world == null) {
-//            world = WorldRegistry.getGridWorld(worldName);
-//        }
-//
-//        if (!world.isFree()) {
-//            throw new RuntimeException("No open positions on selected world: " + world);
-//        }
-//        return world;
+    void logAndThrow(String err) {
+        LOGGER.log(Level.SEVERE, err);
+        throw new RuntimeException(err);
     }
 
 }

@@ -1,8 +1,8 @@
 package com.ntros;
 
 
-import com.ntros.model.world.WorldContext;
-import com.ntros.model.world.WorldRegistry;
+import com.ntros.model.world.WorldDispatcher;
+import com.ntros.model.world.context.WorldContext;
 import com.ntros.server.TcpServer;
 import com.ntros.session.SessionManager;
 import com.ntros.session.event.*;
@@ -19,7 +19,7 @@ import java.util.concurrent.*;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-public class ServerAppTest {
+public class AppBootstrapTest {
 
     private static final int PORT = 5555;
     private TcpServer server;
@@ -68,8 +68,8 @@ public class ServerAppTest {
         System.out.println("Res2=" + taskResult2);
         System.out.println("Res3=" + taskResult3);
 
-        WorldContext worldContext = WorldRegistry.getGridWorld("world-1");
-        System.out.println(worldContext.serialize());
+        WorldContext worldContext = WorldDispatcher.getWorld("world-1");
+        System.out.println(worldContext.engine().serialize(worldContext.state()));
     }
 
     private Callable<String> task(int id) {
@@ -153,7 +153,7 @@ public class ServerAppTest {
 
     @Test
     public void startServerTest() {
-        ServerApp.startServer();
+        AppBootstrap.startServer();
     }
 
 }

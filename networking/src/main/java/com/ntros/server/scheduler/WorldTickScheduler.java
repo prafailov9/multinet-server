@@ -25,7 +25,7 @@ public class WorldTickScheduler {
 
     public void start() {
         System.out.println("[WorldTickScheduler] Scheduler thread starting...");
-        long interval = 100 / tickRate;
+        long interval = 3000 / tickRate;
 
         scheduler.scheduleAtFixedRate(() -> {
             try {

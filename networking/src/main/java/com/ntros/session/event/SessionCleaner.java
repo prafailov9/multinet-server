@@ -1,7 +1,8 @@
 package com.ntros.session.event;
 
 import com.ntros.message.ProtocolContext;
-import com.ntros.model.world.WorldRegistry;
+import com.ntros.model.world.WorldDispatcher;
+import com.ntros.model.world.context.WorldContext;
 
 public class SessionCleaner implements SessionEventListener {
 
@@ -17,7 +18,8 @@ public class SessionCleaner implements SessionEventListener {
         }
 
         if (context.getSessionId() != null && !context.getSessionId().isEmpty() && context.getWorldId() != null && !context.getWorldId().isEmpty()) {
-            WorldRegistry.getGridWorld(context.getWorldId()).remove(context.getSessionId());
+            WorldContext worldContext = WorldDispatcher.getWorld(context.getWorldId());
+            worldContext.engine().remove(context.getSessionId(), worldContext.state());
         }
 
     }

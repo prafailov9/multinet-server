@@ -1,7 +1,6 @@
 package com.ntros.model.entity;
 
 import com.ntros.model.entity.sequence.IdSequenceGenerator;
-import com.ntros.model.world.WorldContext;
 
 public class Npc extends AbstractMovableEntity {
 
@@ -16,16 +15,6 @@ public class Npc extends AbstractMovableEntity {
     @Override
     public void setPosition(Position position) {
         this.currentPosition = position;
-    }
-
-    @Override
-    public void tick(WorldContext worldContext) {
-        Position nextPosition = movementStrategy.decideNextPosition(currentPosition);
-        if (worldContext.isLegalMove(nextPosition)) {
-            movementStrategy.confirmChosenDirection();
-        } else {
-            movementStrategy.clearMovementIntent();
-        }
     }
 
 }

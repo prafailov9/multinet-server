@@ -1,7 +1,7 @@
 package com.ntros;
 
-import com.ntros.model.world.WorldContext;
-import com.ntros.model.world.WorldRegistry;
+import com.ntros.model.world.WorldDispatcher;
+import com.ntros.model.world.context.WorldContext;
 import com.ntros.runtime.Runtime;
 import com.ntros.runtime.WorldRuntime;
 import com.ntros.server.Server;
@@ -17,9 +17,9 @@ import java.io.IOException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-public class ServerApp {
+public class AppBootstrap {
 
-    private static final Logger LOGGER = Logger.getLogger(ServerApp.class.getName());
+    private static final Logger LOGGER = Logger.getLogger(AppBootstrap.class.getName());
     private static final int PORT = 5555;
     private static final int TICK_RATE = 10; // 10 ticks per second
 
@@ -40,8 +40,9 @@ public class ServerApp {
             }
         });
 
-        WorldContext worldContext = WorldRegistry.getRandomGridWorld();
-        Runtime runtime = new WorldRuntime(worldContext, sessionManager);
+        // creating default world
+        WorldContext world = WorldDispatcher.getDefaultWorld();
+        Runtime runtime = new WorldRuntime(world, sessionManager);
 
         // start heartbeat
         WorldTickScheduler tickScheduler = new WorldTickScheduler(TICK_RATE);

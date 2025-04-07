@@ -20,11 +20,6 @@ public abstract class AbstractMovableEntity implements Entity {
         this.hp = hp;
     }
 
-    public AbstractMovableEntity(Position position, MovementStrategy movementStrategy) {
-        this(position);
-        this.movementStrategy = movementStrategy;
-    }
-
     @Override
     public MovementStrategy getMovementStrategy() {
         return movementStrategy;
@@ -33,11 +28,6 @@ public abstract class AbstractMovableEntity implements Entity {
     @Override
     public Position getPosition() {
         return currentPosition;
-    }
-
-    @Override
-    public long getId() {
-        return id;
     }
 
     @Override
