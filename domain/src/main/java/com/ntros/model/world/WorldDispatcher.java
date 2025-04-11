@@ -2,9 +2,8 @@ package com.ntros.model.world;
 
 import com.ntros.model.world.context.GridWorldContext;
 import com.ntros.model.world.context.WorldContext;
-import com.ntros.model.world.engine.GridWorldEngine;
-import com.ntros.model.world.state.GridWorldState;
-import com.ntros.model.world.state.WorldState;
+import com.ntros.model.world.engine.solid.GridWorldEngine;
+import com.ntros.model.world.state.solid.GridWorldState;
 
 import java.util.Collection;
 import java.util.HashMap;

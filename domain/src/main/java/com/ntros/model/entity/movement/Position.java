@@ -1,4 +1,4 @@
-package com.ntros.model.entity;
+package com.ntros.model.entity.movement;
 
 import java.util.Objects;
 

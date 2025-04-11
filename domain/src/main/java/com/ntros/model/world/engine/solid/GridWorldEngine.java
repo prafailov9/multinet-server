@@ -1,10 +1,11 @@
-package com.ntros.model.world.engine;
+package com.ntros.model.world.engine.solid;
 
 import com.ntros.model.entity.Direction;
 import com.ntros.model.entity.Entity;
 import com.ntros.model.entity.Player;
-import com.ntros.model.entity.Position;
+import com.ntros.model.entity.movement.Position;
 import com.ntros.model.entity.sequence.IdSequenceGenerator;
+import com.ntros.model.entity.solid.StaticEntity;
 import com.ntros.model.world.TileType;
 import com.ntros.model.world.protocol.JoinRequest;
 import com.ntros.model.world.protocol.MoveRequest;
@@ -40,7 +41,7 @@ public class GridWorldEngine implements WorldEngine {
         LOGGER.log(Level.INFO, "Current state of move intents: {0}", state.moveIntents());
 
         for (Map.Entry<String, Direction> intent : state.moveIntents().entrySet()) {
-            Entity entity = state.entities().get(intent.getKey());
+            StaticEntity entity = state.entities().get(intent.getKey());
 
             if (entity == null) {
                 LOGGER.warning("No entity found for id: " + intent.getKey());
@@ -59,16 +60,16 @@ public class GridWorldEngine implements WorldEngine {
 
     @Override
     public Result storeMoveIntent(MoveRequest moveRequest, WorldState state) {
-        Entity entity = state.entities().get(moveRequest.playerId());
+        StaticEntity entity = state.entities().get(moveRequest.playerId());
         Position position = createPosition(entity.getPosition(), moveRequest.direction());
         if (state.isWithinBounds(position)) { // allow all moves if within bounds
             runSafe(() -> state.moveIntents().put(moveRequest.playerId(), moveRequest.direction()), moveIntentsLock);
             LOGGER.log(Level.INFO, "Added move intent: {0}", moveRequest);
-            return new Result(true, entity.getName(), state.name(), null);
+            return new Result(true, entity.getName(), state.worldName(), null);
         }
-        String msg = String.format("[%s]: invalid move: %s. Out of bounds.", state.name(), position);
+        String msg = String.format("[%s]: invalid move: %s. Out of bounds.", state.worldName(), position);
         LOGGER.log(Level.INFO, msg);
-        return new Result(false, entity.getName(), state.name(), msg);
+        return new Result(false, entity.getName(), state.worldName(), msg);
     }
 
     @Override
@@ -76,21 +77,21 @@ public class GridWorldEngine implements WorldEngine {
         long id = IdSequenceGenerator.getInstance().getNextPlayerId();
         Position freePosition = findRandomFreePosition(worldState);
         if (freePosition == null) {
-            return new Result(false, joinRequest.getPlayerName(), worldState.name(), "could not find free position in world.");
+            return new Result(false, joinRequest.getPlayerName(), worldState.worldName(), "could not find free position in world.");
         }
         // register player in world
         Player player = new Player(freePosition, joinRequest.getPlayerName(), id, 100);
         addEntity(player, worldState);
 
         // create result
-        Result result = new Result(true, player.getName(), worldState.name(), null);
+        Result result = new Result(true, player.getName(), worldState.worldName(), null);
         System.out.printf("[GridWorld]: player: %s joined on position %s%n", player.getName(), player.getPosition());
         return result;
     }
 
     @Override
     public Entity remove(String entityId, WorldState worldState) {
-        Entity entity = runSafe(() -> worldState.entities().remove(entityId), entityMapLock);
+        StaticEntity entity = runSafe(() -> worldState.entities().remove(entityId), entityMapLock);
         runSafe(() -> worldState.takenPositions().remove(entity.getPosition()), positionMapLock);
 
         return entity;
@@ -115,7 +116,7 @@ public class GridWorldEngine implements WorldEngine {
         // Entities
         sb.append("\"entities\": {\n");
         int e = 0;
-        for (Entity entity : worldState.entities().values()) {
+        for (StaticEntity entity : worldState.entities().values()) {
             Position pos = entity.getPosition();
             sb.append(String.format("\t\"%s\": {\n\t\t\"x\": %d,\n\t\t\"y\": %d\n\t}", entity.getName(), pos.getX(), pos.getY()));
             if (++e < worldState.entities().size()) sb.append(",\n");
@@ -125,13 +126,13 @@ public class GridWorldEngine implements WorldEngine {
         return sb.toString();
     }
 
-    private void addEntity(Entity entity, WorldState worldState) {
+    private void addEntity(StaticEntity entity, WorldState worldState) {
         runSafe(() -> worldState.entities().put(entity.getName(), entity), entityMapLock);
         runSafe(() -> worldState.takenPositions().put(entity.getPosition(), entity.getName()), positionMapLock);
         LOGGER.log(Level.INFO, "Added entity: {0}", entity);
     }
 
-    private void moveEntity(Entity entity, Position origin, Position target, WorldState worldState) {
+    private void moveEntity(StaticEntity entity, Position origin, Position target, WorldState worldState) {
         LOGGER.info("Current PositionMap Keys: " + worldState.takenPositions().keySet());
         if (worldState.isLegalMove(target)) {
             runSafe(() -> {

@@ -1,8 +1,8 @@
 package com.ntros.model.world.context;
 
-import com.ntros.model.world.engine.GridWorldEngine;
-import com.ntros.model.world.engine.WorldEngine;
-import com.ntros.model.world.state.GridWorldState;
+import com.ntros.model.world.engine.solid.GridWorldEngine;
+import com.ntros.model.world.engine.solid.WorldEngine;
+import com.ntros.model.world.state.solid.GridWorldState;
 import com.ntros.model.world.state.WorldState;
 
 public class GridWorldContext implements WorldContext {

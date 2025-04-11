@@ -1,6 +1,7 @@
 package com.ntros.model.entity;
 
 import com.ntros.model.entity.sequence.IdSequenceGenerator;
+import com.ntros.model.entity.movement.Position;
 
 public class Npc extends AbstractMovableEntity {
 
@@ -8,7 +9,6 @@ public class Npc extends AbstractMovableEntity {
         super(position);
         id = IdSequenceGenerator.getInstance().getNextNpcId();
         name = "npc-" + id;
-        movementStrategy = new RandomMovementStrategy();
     }
 
 

@@ -1,6 +1,8 @@
 package com.ntros.model.entity;
 
 
+import com.ntros.model.entity.movement.Position;
+
 public class Player extends AbstractMovableEntity {
 
     public Player(Position position, String name, long id, int hp) {

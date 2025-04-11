@@ -1,5 +1,7 @@
 package com.ntros.model.entity;
 
+import com.ntros.model.entity.movement.Position;
+
 public class DirectionUtil {
 
     public static Position createPosition(Position currentPosition, Direction direction) {

@@ -1,19 +1,26 @@
-package com.ntros.session;
+package com.ntros.session.event;
 
-import com.ntros.session.event.SessionEvent;
-import com.ntros.session.event.SessionEventListener;
+import com.ntros.session.Session;
 
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-public class SessionManager implements SessionEventListener {
+public class ClientSessionManager implements SessionManager, SessionEventListener {
 
-    private static final Logger LOGGER = Logger.getLogger(SessionManager.class.getName());
+    private static final Logger LOGGER = Logger.getLogger(ClientSessionManager.class.getName());
 
 
     private final Set<Session> sessions = ConcurrentHashMap.newKeySet();
+
+    @Override
+    public void onSessionEvent(SessionEvent sessionEvent) {
+        switch (sessionEvent.getEventType()) {
+            case SESSION_STARTED -> register(sessionEvent.getSession());
+            case SESSION_CLOSED -> remove(sessionEvent.getSession());
+        }
+    }
 
     public void register(Session session) {
         sessions.add(session);
@@ -42,14 +49,5 @@ public class SessionManager implements SessionEventListener {
         for (Session session : sessions) {
             session.send(serverMessage);
         }
-    }
-
-    @Override
-    public void onSessionEvent(SessionEvent sessionEvent) {
-        switch (sessionEvent.getEventType()) {
-            case SESSION_STARTED -> register(sessionEvent.getSession());
-            case SESSION_CLOSED -> remove(sessionEvent.getSession());
-        }
-//        sessions.stream().forEach(session -> session.);
     }
 }

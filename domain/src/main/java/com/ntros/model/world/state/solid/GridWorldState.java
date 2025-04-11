@@ -1,9 +1,10 @@
-package com.ntros.model.world.state;
+package com.ntros.model.world.state.solid;
 
 import com.ntros.model.entity.Direction;
-import com.ntros.model.entity.Entity;
-import com.ntros.model.entity.Position;
+import com.ntros.model.entity.movement.Position;
+import com.ntros.model.entity.solid.StaticEntity;
 import com.ntros.model.world.TileType;
+import com.ntros.model.world.state.WorldState;
 import com.ntros.model.world.state.dimension.Dimension;
 import com.ntros.model.world.state.dimension.Dimension2D;
 
@@ -25,7 +26,7 @@ public class GridWorldState implements WorldState {
     private final int width;
     private final int height;
 
-    private final Map<String, Entity> entityMap;
+    private final Map<String, StaticEntity> entityMap;
     private final Map<Position, String> positionMap;
     private final Map<String, Direction> moveIntentMap;
     private final Map<Position, TileType> terrainMap;
@@ -52,7 +53,7 @@ public class GridWorldState implements WorldState {
 
 
     @Override
-    public String name() {
+    public String worldName() {
         return worldName;
     }
 
@@ -62,7 +63,7 @@ public class GridWorldState implements WorldState {
     }
 
     @Override
-    public Map<String, Entity> entities() {
+    public Map<String, StaticEntity> entities() {
         return entityMap;
     }
 

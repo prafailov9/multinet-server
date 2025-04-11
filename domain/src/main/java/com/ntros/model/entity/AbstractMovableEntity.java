@@ -1,13 +1,15 @@
 package com.ntros.model.entity;
 
-public abstract class AbstractMovableEntity implements Entity {
+import com.ntros.model.entity.movement.Position;
+import com.ntros.model.entity.solid.StaticEntity;
+
+public abstract class AbstractMovableEntity implements StaticEntity {
 
     protected long id;
     protected int hp;
     protected String name;
     protected Position currentPosition;
     protected Direction movementIntent;
-    protected MovementStrategy movementStrategy;
 
     public AbstractMovableEntity(Position position) {
         this.currentPosition = position;
@@ -18,11 +20,6 @@ public abstract class AbstractMovableEntity implements Entity {
         this.name = name;
         this.id = id;
         this.hp = hp;
-    }
-
-    @Override
-    public MovementStrategy getMovementStrategy() {
-        return movementStrategy;
     }
 
     @Override

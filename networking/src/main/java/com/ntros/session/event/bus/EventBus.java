@@ -1,5 +1,7 @@
 package com.ntros.session.event;
 
+import com.ntros.session.event.bus.SessionEventListener;
+
 public interface EventBus {
 
     void register(SessionEventListener sessionEventListener);

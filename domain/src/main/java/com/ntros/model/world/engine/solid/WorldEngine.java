@@ -1,4 +1,4 @@
-package com.ntros.model.world.engine;
+package com.ntros.model.world.engine.solid;
 
 import com.ntros.model.entity.Entity;
 import com.ntros.model.world.protocol.JoinRequest;
