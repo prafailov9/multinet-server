@@ -1,7 +1,7 @@
 package com.ntros.runtime;
 
 import com.ntros.model.world.context.WorldContext;
-import com.ntros.session.event.SessionManager;
+import com.ntros.event.listener.SessionManager;
 
 import java.util.logging.Level;
 import java.util.logging.Logger;

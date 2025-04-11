@@ -1,7 +1,8 @@
-package com.ntros.session.event;
+package com.ntros.event.listener;
 
 import com.ntros.session.Session;
-import com.ntros.session.event.bus.SessionEventListener;
+import com.ntros.event.bus.SessionEventListener;
+import com.ntros.event.SessionEvent;
 
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;

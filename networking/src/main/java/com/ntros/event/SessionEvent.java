@@ -1,23 +1,23 @@
-package com.ntros.session.event;
+package com.ntros.event;
 
 import com.ntros.session.Session;
 
 public class SessionEvent {
 
-    private EventType eventType;
+    private SessionEventType sessionEventType;
 
     private Session session;
 
     private String reason;
 
-    public SessionEvent(EventType eventType, Session session, String reason) {
-        this.eventType = eventType;
+    public SessionEvent(SessionEventType sessionEventType, Session session, String reason) {
+        this.sessionEventType = sessionEventType;
         this.session = session;
         this.reason = reason;
     }
 
-    public EventType getEventType() {
-        return eventType;
+    public SessionEventType getEventType() {
+        return sessionEventType;
     }
 
     public Session getSession() {
@@ -28,8 +28,8 @@ public class SessionEvent {
         return reason;
     }
 
-    public void setEventType(EventType eventType) {
-        this.eventType = eventType;
+    public void setEventType(SessionEventType sessionEventType) {
+        this.sessionEventType = sessionEventType;
     }
 
     public void setSession(Session session) {
@@ -43,7 +43,7 @@ public class SessionEvent {
     @Override
     public String toString() {
         return "SessionEvent{" +
-                "eventType=" + eventType +
+                "eventType=" + sessionEventType +
                 ", session=" + session +
                 ", reason='" + reason + '\'' +
                 '}';

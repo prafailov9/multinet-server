@@ -1,16 +1,18 @@
-package com.ntros.session.event;
+package com.ntros.event.listener;
 
 import com.ntros.message.ProtocolContext;
 import com.ntros.model.world.WorldDispatcher;
 import com.ntros.model.world.context.WorldContext;
-import com.ntros.session.event.bus.SessionEventListener;
+import com.ntros.event.bus.SessionEventListener;
+import com.ntros.event.SessionEvent;
+import com.ntros.event.SessionEventType;
 
 public class SessionCleaner implements SessionEventListener {
 
     @Override
     public void onSessionEvent(SessionEvent sessionEvent) {
         ProtocolContext context = null;
-        if (!sessionEvent.getEventType().equals(EventType.SESSION_STARTED)) {
+        if (!sessionEvent.getEventType().equals(SessionEventType.SESSION_STARTED)) {
             context = sessionEvent.getSession().getProtocolContext();
         }
 

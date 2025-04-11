@@ -1,7 +1,7 @@
 package com.ntros.server;
 
 
-import com.ntros.session.event.bus.EventBus;
+import com.ntros.event.bus.EventBus;
 
 import java.io.IOException;
 

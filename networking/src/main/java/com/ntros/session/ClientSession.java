@@ -8,9 +8,9 @@ import com.ntros.dispatcher.MessageDispatcher;
 import com.ntros.message.ProtocolContext;
 import com.ntros.model.world.Message;
 import com.ntros.parser.MessageParser;
-import com.ntros.session.event.EventType;
-import com.ntros.session.event.SessionEvent;
-import com.ntros.session.event.bus.EventBus;
+import com.ntros.event.SessionEventType;
+import com.ntros.event.SessionEvent;
+import com.ntros.event.bus.EventBus;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -43,7 +43,7 @@ public class ClientSession implements Session {
 
     @Override
     public void run() {
-        SessionEvent event = new SessionEvent(EventType.SESSION_STARTED, this, "starting client session...");
+        SessionEvent event = new SessionEvent(SessionEventType.SESSION_STARTED, this, "starting client session...");
         LOGGER.log(Level.INFO, "Session started. Sending event: " + event.toString());
         eventBus.publish(event);
         readExecutor.submit(this::readAndExecute);
@@ -68,7 +68,7 @@ public class ClientSession implements Session {
                     connection.send(serverResponse);
                 } catch (RuntimeException ex) {
                     LOGGER.log(Level.SEVERE, "Error: {0}, {1}", new Object[]{protocolContext.getSessionId(), ex});
-                    eventBus.publish(new SessionEvent(EventType.SESSION_FAILED, this, ex.getMessage()));
+                    eventBus.publish(new SessionEvent(SessionEventType.SESSION_FAILED, this, ex.getMessage()));
                 }
             }
         } finally {
@@ -89,7 +89,7 @@ public class ClientSession implements Session {
         running = false;
         readExecutor.shutdownNow();
         connection.close();
-        eventBus.publish(new SessionEvent(EventType.SESSION_CLOSED, this, String.format("Closing %s session...", protocolContext.getSessionId())));
+        eventBus.publish(new SessionEvent(SessionEventType.SESSION_CLOSED, this, String.format("Closing %s session...", protocolContext.getSessionId())));
     }
 
     /**

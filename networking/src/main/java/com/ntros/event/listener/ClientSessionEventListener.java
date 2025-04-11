@@ -1,4 +1,4 @@
-package com.ntros.session.event;
+package com.ntros.event.listener;
 
 public class ClientSessionEventListener {
 }
