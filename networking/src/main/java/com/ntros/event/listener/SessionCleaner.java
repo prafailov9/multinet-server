@@ -3,7 +3,6 @@ package com.ntros.event.listener;
 import com.ntros.message.ProtocolContext;
 import com.ntros.model.world.WorldDispatcher;
 import com.ntros.model.world.context.WorldContext;
-import com.ntros.event.bus.SessionEventListener;
 import com.ntros.event.SessionEvent;
 import com.ntros.event.SessionEventType;
 

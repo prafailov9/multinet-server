@@ -1,4 +1,4 @@
-package com.ntros.event.bus;
+package com.ntros.event.listener;
 
 import com.ntros.event.SessionEvent;
 

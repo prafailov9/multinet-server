@@ -11,7 +11,7 @@ import com.ntros.event.listener.SessionCleaner;
 import com.ntros.event.listener.SessionManager;
 import com.ntros.event.bus.EventBus;
 import com.ntros.event.bus.SessionEventBus;
-import com.ntros.event.bus.SessionEventListener;
+import com.ntros.event.listener.SessionEventListener;
 
 import java.io.IOException;
 import java.util.logging.Level;
