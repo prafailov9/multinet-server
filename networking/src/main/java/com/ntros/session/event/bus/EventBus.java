@@ -1,6 +1,6 @@
-package com.ntros.session.event;
+package com.ntros.session.event.bus;
 
-import com.ntros.session.event.bus.SessionEventListener;
+import com.ntros.session.event.SessionEvent;
 
 public interface EventBus {
 

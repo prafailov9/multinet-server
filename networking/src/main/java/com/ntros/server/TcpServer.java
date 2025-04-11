@@ -4,16 +4,13 @@ import com.ntros.connection.Connection;
 import com.ntros.connection.SocketConnection;
 import com.ntros.session.ClientSession;
 import com.ntros.session.Session;
-import com.ntros.session.SessionManager;
-import com.ntros.session.event.EventBus;
+import com.ntros.session.event.SessionManager;
+import com.ntros.session.event.bus.EventBus;
 
 import java.io.IOException;
-import java.net.DatagramSocket;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 

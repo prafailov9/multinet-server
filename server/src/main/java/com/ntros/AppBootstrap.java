@@ -7,11 +7,11 @@ import com.ntros.runtime.WorldRuntime;
 import com.ntros.server.Server;
 import com.ntros.server.TcpServer;
 import com.ntros.server.scheduler.WorldTickScheduler;
-import com.ntros.session.SessionManager;
-import com.ntros.session.event.EventBus;
 import com.ntros.session.event.SessionCleaner;
-import com.ntros.session.event.SessionEventBus;
-import com.ntros.session.event.SessionEventListener;
+import com.ntros.session.event.SessionManager;
+import com.ntros.session.event.bus.EventBus;
+import com.ntros.session.event.bus.SessionEventBus;
+import com.ntros.session.event.bus.SessionEventListener;
 
 import java.io.IOException;
 import java.util.logging.Level;

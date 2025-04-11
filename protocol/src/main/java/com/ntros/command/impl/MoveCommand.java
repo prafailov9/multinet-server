@@ -23,9 +23,9 @@ public class MoveCommand extends AbstractCommand {
 
         WorldContext world = WorldDispatcher.getWorld(protocolContext.getWorldId());
 
-        LOGGER.log(Level.INFO, "retrieved world {0}", world.state().name());
+        LOGGER.log(Level.INFO, "retrieved world {0}", world.state().worldName());
         Direction direction = resolveMoveIntent(message);
-        LOGGER.log(Level.INFO, "resolved world and direction: {0}, {1}", new Object[]{world.state().name(), direction.name()});
+        LOGGER.log(Level.INFO, "resolved world and direction: {0}, {1}", new Object[]{world.state().worldName(), direction.name()});
         Result result = world.engine().storeMoveIntent(new MoveRequest(protocolContext.getSessionId(), direction), world.state());
 
         return handleResult(result, direction.name());

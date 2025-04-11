@@ -22,7 +22,6 @@ public class Player extends AbstractMovableEntity {
                 ", name='" + name + '\'' +
                 ", currentPosition=" + currentPosition +
                 ", movementIntent=" + movementIntent +
-                ", movementStrategy=" + movementStrategy +
                 '}';
     }
 }

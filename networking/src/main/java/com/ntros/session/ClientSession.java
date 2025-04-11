@@ -8,9 +8,9 @@ import com.ntros.dispatcher.MessageDispatcher;
 import com.ntros.message.ProtocolContext;
 import com.ntros.model.world.Message;
 import com.ntros.parser.MessageParser;
-import com.ntros.session.event.EventBus;
 import com.ntros.session.event.EventType;
 import com.ntros.session.event.SessionEvent;
+import com.ntros.session.event.bus.EventBus;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;

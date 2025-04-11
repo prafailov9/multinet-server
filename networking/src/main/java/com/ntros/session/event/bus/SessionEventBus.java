@@ -1,4 +1,6 @@
-package com.ntros.session.event;
+package com.ntros.session.event.bus;
+
+import com.ntros.session.event.SessionEvent;
 
 import java.util.ArrayList;
 import java.util.List;
