@@ -15,8 +15,11 @@ public abstract class AbstractCommand implements Command {
         if (!context.isAuthenticated()) {
             logAndThrow("User not authenticated.");
         }
-        if (context.getSessionId() == null || context.getSessionId().isEmpty()) {
+        if (context.getSessionId() == null) {
             logAndThrow("No session exists for caller.");
+        }
+        if (context.getPlayerId() == null || context.getPlayerId().isEmpty()) {
+            logAndThrow("No playerId associated with caller.");
         }
 
         if (context.getWorldId() == null || context.getWorldId().isEmpty()) {

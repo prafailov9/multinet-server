@@ -74,7 +74,7 @@ public class GridWorldEngine implements WorldEngine {
 
     @Override
     public Result add(JoinRequest joinRequest, WorldState worldState) {
-        long id = IdSequenceGenerator.getInstance().getNextPlayerId();
+        long id = IdSequenceGenerator.getInstance().getNextSessionId();
         Position freePosition = findRandomFreePosition(worldState);
         if (freePosition == null) {
             return new Result(false, joinRequest.getPlayerName(), worldState.worldName(), "could not find free position in world.");

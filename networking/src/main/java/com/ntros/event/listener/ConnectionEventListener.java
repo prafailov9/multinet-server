@@ -1,0 +1,47 @@
+package com.ntros.event.listener;
+
+import com.ntros.event.SessionEvent;
+import com.ntros.server.scheduler.WorldTickScheduler;
+import com.ntros.session.Session;
+
+import java.util.concurrent.atomic.AtomicBoolean;
+
+public class ConnectionEventListener implements SessionEventListener {
+
+    private final SessionManager sessionManager;
+    private final WorldTickScheduler tickScheduler;
+    private final AtomicBoolean schedulerRunning = new AtomicBoolean(false);
+
+    public ConnectionEventListener(SessionManager sessionManager, WorldTickScheduler tickScheduler) {
+        this.sessionManager = sessionManager;
+        this.tickScheduler = tickScheduler;
+    }
+
+    @Override
+    public void onSessionEvent(SessionEvent sessionEvent) {
+        switch (sessionEvent.getEventType()) {
+            case SESSION_STARTED -> created(sessionEvent.getSession());
+            case SESSION_CLOSED -> destroyed(sessionEvent.getSession());
+        }
+    }
+
+    private void created(Session session) {
+        // indicates a successful JOIN command
+        sessionManager.register(session);
+        if (sessionManager.activeSessions() > 0 && !schedulerRunning.get()) {
+            tickScheduler.start();
+            schedulerRunning.set(true);
+
+        }
+    }
+
+    private void destroyed(Session session) {
+        sessionManager.remove(session);
+        // Check if there are any remaining active sessions.
+        if (sessionManager.activeSessions() == 0 && schedulerRunning.get()) {
+            tickScheduler.stop();
+            schedulerRunning.set(false);
+            System.out.println("TickScheduler stopped because the last session was destroyed.");
+        }
+    }
+}

@@ -19,9 +19,9 @@ public class SessionCleaner implements SessionEventListener {
             return;
         }
 
-        if (context.getSessionId() != null && !context.getSessionId().isEmpty() && context.getWorldId() != null && !context.getWorldId().isEmpty()) {
+        if (context.getSessionId() != null && context.getWorldId() != null && !context.getWorldId().isEmpty()) {
             WorldConnector worldConnector = WorldDispatcher.getWorld(context.getWorldId());
-            worldConnector.remove(context.getSessionId());
+            worldConnector.remove(context.getPlayerId());
         }
 
     }

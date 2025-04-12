@@ -3,16 +3,17 @@ package com.ntros.server.scheduler;
 import com.ntros.runtime.Instance;
 
 import java.util.List;
-import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
+import java.util.logging.Logger;
 
 public class WorldTickScheduler {
 
+    private static final Logger LOGGER = Logger.getLogger(WorldTickScheduler.class.getName());
+
     private final List<Instance> instances = new CopyOnWriteArrayList<>();
-    private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
+    private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(2);
     private final int tickRate;
+    private ScheduledFuture<?> tickTask; // reference to the tick task for management;
 
     public WorldTickScheduler(int tickRate) {
         this.tickRate = tickRate;
@@ -26,24 +27,42 @@ public class WorldTickScheduler {
         instances.add(instance);
     }
 
-    public void start() {
-        long interval = 3000 / tickRate;
+    public synchronized void start() {
+        // avoid scheduling multiple tasks if tickTask is already running
+        if (isTickTaskRunning()) {
+            return;
+        }
+        long interval = 1000 / tickRate;
 
-        scheduler.scheduleAtFixedRate(() -> {
+        // init the task
+        tickTask = scheduler.scheduleAtFixedRate(() -> {
             try {
                 for (Instance instance : instances) {
                     instance.run();
                 }
             } catch (Exception ex) {
-                ex.printStackTrace();
+                LOGGER.severe("Error during world tick: " + ex);
             }
         }, 0, interval, TimeUnit.MILLISECONDS);
 
     }
 
-    public void stop() {
+    public synchronized void stop() {
+        if (tickTask != null) {
+            tickTask.cancel(false); // cancel the scheduled task without interrupting if running
+            tickTask = null;
+        }
+    }
+
+    public void shutdown() {
         scheduler.shutdownNow();
     }
+
+    private boolean isTickTaskRunning() {
+        return tickTask != null && !tickTask.isCancelled() && !tickTask.isDone();
+    }
+
+
 }
 
 

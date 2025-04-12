@@ -1,5 +1,6 @@
 package com.ntros.command.impl;
 
+import com.ntros.model.entity.sequence.IdSequenceGenerator;
 import com.ntros.model.world.*;
 import com.ntros.message.ProtocolContext;
 import com.ntros.model.world.connector.WorldConnector;
@@ -38,7 +39,8 @@ public class JoinCommand extends AbstractCommand {
 
     private Optional<String> handleResult(Result result, ProtocolContext protocolContext) {
         if (result.success()) {
-            protocolContext.setSessionId(result.playerName());
+            protocolContext.setSessionId(IdSequenceGenerator.getInstance().getNextSessionId());
+            protocolContext.setPlayerId(result.playerName());
             protocolContext.setWorldId(result.worldName());
             protocolContext.setJoinedAt(OffsetDateTime.now());
             protocolContext.setAuthenticated(true);

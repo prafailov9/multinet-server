@@ -2,6 +2,7 @@ package com.ntros.server;
 
 import com.ntros.connection.Connection;
 import com.ntros.connection.SocketConnection;
+import com.ntros.event.listener.SessionEventListener;
 import com.ntros.session.ClientSession;
 import com.ntros.session.Session;
 import com.ntros.event.listener.SessionManager;
@@ -23,27 +24,31 @@ public class TcpServer implements Server {
 
     private ServerSocket serverSocket;
     private final SessionManager sessionManager;
+    private final SessionEventListener connectionEventListener;
     private volatile boolean running = true;
 
-    public TcpServer(SessionManager sessionManager) {
+    public TcpServer(SessionManager sessionManager, SessionEventListener connectionEventListener) {
         this.sessionManager = sessionManager;
+        this.connectionEventListener = connectionEventListener;
     }
 
     @Override
     public void start(int port, EventBus eventBus) throws IOException {
-        eventBus.register(sessionManager);
+        eventBus.register(connectionEventListener);
         serverSocket = new ServerSocket(port);
         LOGGER.log(Level.INFO, "Accepting connections...");
 
         while (running) {
             try {
-                // accepts client connections and creates sessions
+                // blocks I/O until connection is received
                 Socket socket = serverSocket.accept();
+
+                // once received, create session
                 Connection connection = new SocketConnection(socket);
                 Session session = new ClientSession(connection, eventBus);
-                // runs the client session in a managed thread pool
+
+                // process client input in separate thread, unblocks server loop
                 Thread.startVirtualThread(session::send);
-//                clientExecutor.submit(session::run);
 
             } catch (SocketException ex) {
                 if (!running) {

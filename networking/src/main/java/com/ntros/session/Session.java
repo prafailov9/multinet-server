@@ -8,7 +8,6 @@ import com.ntros.message.ProtocolContext;
 public interface Session {
 
     ProtocolContext getProtocolContext();
-
     // sends client request to server
     void send();
     // sends server response to client

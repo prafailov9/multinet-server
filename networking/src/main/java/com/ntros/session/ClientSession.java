@@ -5,15 +5,16 @@ import com.ntros.connection.Connection;
 import com.ntros.connection.ConnectionReceiveException;
 import com.ntros.dispatcher.Dispatcher;
 import com.ntros.dispatcher.MessageDispatcher;
+import com.ntros.event.SessionEvent;
+import com.ntros.event.SessionEventType;
+import com.ntros.event.bus.EventBus;
 import com.ntros.message.ProtocolContext;
 import com.ntros.model.world.Message;
 import com.ntros.parser.MessageParser;
-import com.ntros.event.SessionEventType;
-import com.ntros.event.SessionEvent;
-import com.ntros.event.bus.EventBus;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -31,6 +32,7 @@ public class ClientSession implements Session {
     private final Dispatcher dispatcher;
     private final EventBus eventBus;
     private volatile boolean running = true;
+    private final AtomicBoolean sessionStartedEventSent = new AtomicBoolean(false);
 
     public ClientSession(Connection connection, EventBus eventBus) {
         this.connection = connection;
@@ -42,9 +44,6 @@ public class ClientSession implements Session {
 
     @Override
     public void send() {
-        SessionEvent event = new SessionEvent(SessionEventType.SESSION_STARTED, this, "starting client session...");
-        LOGGER.log(Level.INFO, "Session started. Sending event: " + event);
-        eventBus.publish(event);
         readExecutor.submit(this::readAndExecute);
     }
 
@@ -60,7 +59,7 @@ public class ClientSession implements Session {
     }
 
     /**
-     * will read the socket stream and run based on sent commands.
+     * will read the socket stream and exec based on sent commands.
      */
     private void readAndExecute() {
         try {
@@ -74,6 +73,8 @@ public class ClientSession implements Session {
                     Message message = messageParser.parse(data);
                     String serverResponse = dispatcher.dispatch(message, protocolContext)
                             .orElseThrow(() -> new RuntimeException("[ClientSession]: no response from server."));
+
+                    sendSessionStartedEvent(new SessionEvent(SessionEventType.SESSION_STARTED, this, "starting client session..."), protocolContext);
 
                     connection.send(serverResponse);
                 } catch (RuntimeException ex) {
@@ -99,6 +100,20 @@ public class ClientSession implements Session {
         readExecutor.shutdownNow();
         connection.close();
         eventBus.publish(new SessionEvent(SessionEventType.SESSION_CLOSED, this, String.format("Closing %s session...", protocolContext.getSessionId())));
+        sessionStartedEventSent.set(false);
+    }
+
+    /**
+     * sends a one-time SESSION_STARTED event, when the client is first authenticated
+     */
+    private void sendSessionStartedEvent(SessionEvent sessionEvent, ProtocolContext protocolContext) {
+        if (protocolContext.isAuthenticated() && !sessionStartedEventSent.get()) {
+            // send event
+            LOGGER.log(Level.INFO, "Session started. Sending event: " + sessionEvent);
+            eventBus.publish(sessionEvent);
+            // mark control flag
+            sessionStartedEventSent.set(true);
+        }
     }
 
     private String readFromConnection() {

@@ -32,8 +32,10 @@ public class SocketConnection implements Connection {
     public void send(String data) {
         try {
             String message = data + "\n"; // always use newline to mark end-of-line
-            output.write(message.getBytes(StandardCharsets.UTF_8));
-            output.flush(); // does this add new line?
+            synchronized (output) {
+                output.write(message.getBytes(StandardCharsets.UTF_8));
+                output.flush(); // does this add new line?
+            }
         } catch (IOException e) {
             LOGGER.log(Level.SEVERE, "Error writing line: {}", e.getMessage());
             close();

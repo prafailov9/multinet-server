@@ -1,12 +1,12 @@
 package com.ntros;
 
 
-import com.ntros.event.listener.SessionCleaner;
-import com.ntros.event.listener.ServerSessionManager;
+import com.ntros.event.listener.*;
 import com.ntros.model.world.WorldDispatcher;
 import com.ntros.model.world.connector.WorldConnector;
 import com.ntros.server.TcpServer;
 import com.ntros.event.bus.SessionEventBus;
+import com.ntros.server.scheduler.WorldTickScheduler;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -28,8 +28,11 @@ public class ServerBootstrapTest {
 
     @BeforeEach
     void setUp() throws Exception {
-        // Instantiate your server abstraction.
-        server = new TcpServer(new ServerSessionManager());
+        SessionManager sessionManager = new ServerSessionManager();
+        WorldTickScheduler worldTickScheduler = new WorldTickScheduler();
+
+        SessionEventListener connectionEventListener = new ConnectionEventListener(sessionManager, worldTickScheduler);
+        server = new TcpServer(sessionManager, connectionEventListener);
         serverExecutor = Executors.newSingleThreadExecutor();
 
         // Start the server in a background thread.
@@ -138,7 +141,7 @@ public class ServerBootstrapTest {
             try {
                 SessionEventBus sessionEventBus = new SessionEventBus();
                 sessionEventBus.register(new SessionCleaner());
-                sessionEventBus.register(new ServerSessionManager());
+//                sessionEventBus.register(new ServerSessionManager());
                 server.start(PORT, new SessionEventBus());
             } catch (IOException e) {
                 e.printStackTrace();

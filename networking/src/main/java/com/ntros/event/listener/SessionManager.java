@@ -2,7 +2,7 @@ package com.ntros.event.listener;
 
 import com.ntros.session.Session;
 
-public interface SessionManager extends SessionEventListener {
+public interface SessionManager {
 
     void broadcast(String serverMessage);
 

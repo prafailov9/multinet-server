@@ -24,7 +24,7 @@ public class WorldBootstrap {
     }
 
     public static void shutdownWorld(SessionManager sessionManager) {
-        worldTickScheduler.stop();
+        worldTickScheduler.shutdown();
     }
 
 }

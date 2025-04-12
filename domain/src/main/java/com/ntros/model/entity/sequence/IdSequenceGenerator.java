@@ -9,7 +9,7 @@ public class IdSequenceGenerator {
     private static final int DEFAULT_INITIAL_ID = 0;
 
     private static final AtomicLong WORLD_COUNTER = new AtomicLong(DEFAULT_INITIAL_ID);
-    private static final AtomicLong PLAYER_ENTITY_COUNTER = new AtomicLong(DEFAULT_INITIAL_ID);
+    private static final AtomicLong SESSION_ID_COUNTER = new AtomicLong(DEFAULT_INITIAL_ID);
     private static final AtomicLong NPC_ENTITY_COUNTER = new AtomicLong(DEFAULT_INITIAL_ID);
 
     private IdSequenceGenerator() {
@@ -30,8 +30,8 @@ public class IdSequenceGenerator {
         return NPC_ENTITY_COUNTER.incrementAndGet();
     }
 
-    public long getNextPlayerId() {
-        return PLAYER_ENTITY_COUNTER.incrementAndGet();
+    public long getNextSessionId() {
+        return SESSION_ID_COUNTER.incrementAndGet();
     }
 
     public long getNextWorldId() {
