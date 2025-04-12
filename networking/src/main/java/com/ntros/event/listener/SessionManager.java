@@ -1,54 +1,17 @@
 package com.ntros.event.listener;
 
 import com.ntros.session.Session;
-import com.ntros.event.SessionEvent;
 
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+public interface SessionManager extends SessionEventListener {
 
-public class SessionManager implements SessionEventListener {
+    void broadcast(String serverMessage);
 
-    private static final Logger LOGGER = Logger.getLogger(SessionManager.class.getName());
+    void register(Session session);
 
+    void remove(Session session);
 
-    private final Set<Session> sessions = ConcurrentHashMap.newKeySet();
+    int activeSessions();
 
-    @Override
-    public void onSessionEvent(SessionEvent sessionEvent) {
-        switch (sessionEvent.getEventType()) {
-            case SESSION_STARTED -> register(sessionEvent.getSession());
-            case SESSION_CLOSED -> remove(sessionEvent.getSession());
-        }
-    }
+    void shutdownAll();
 
-    public void register(Session session) {
-        sessions.add(session);
-        LOGGER.log(Level.INFO, "Registered session: {0}", session.getProtocolContext().getSessionId());
-    }
-
-    public void remove(Session session) {
-        sessions.remove(session);
-        LOGGER.log(Level.INFO, "Removed session: {0}", session.getProtocolContext().getSessionId());
-    }
-
-
-    public void shutdownAll() {
-        for (Session session : sessions) {
-            try {
-                session.terminate();
-            } catch (Exception ex) {
-                LOGGER.log(Level.SEVERE, "Failed to close session: {0}", session.getProtocolContext().getSessionId());
-            }
-        }
-        sessions.clear();
-        LOGGER.info("All sessions shut down.");
-    }
-
-    public void broadcast(String serverMessage) {
-        for (Session session : sessions) {
-            session.send(serverMessage);
-        }
-    }
 }

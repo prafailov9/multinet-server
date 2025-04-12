@@ -2,7 +2,7 @@ package com.ntros;
 
 
 import com.ntros.event.listener.SessionCleaner;
-import com.ntros.event.listener.SessionManager;
+import com.ntros.event.listener.ServerSessionManager;
 import com.ntros.model.world.WorldDispatcher;
 import com.ntros.model.world.context.WorldContext;
 import com.ntros.server.TcpServer;
@@ -29,7 +29,7 @@ public class AppBootstrapTest {
     @BeforeEach
     void setUp() throws Exception {
         // Instantiate your server abstraction.
-        server = new TcpServer(new SessionManager());
+        server = new TcpServer(new ServerSessionManager());
         serverExecutor = Executors.newSingleThreadExecutor();
 
         // Start the server in a background thread.
@@ -138,7 +138,7 @@ public class AppBootstrapTest {
             try {
                 SessionEventBus sessionEventBus = new SessionEventBus();
                 sessionEventBus.register(new SessionCleaner());
-                sessionEventBus.register(new SessionManager());
+                sessionEventBus.register(new ServerSessionManager());
                 server.start(PORT, new SessionEventBus());
             } catch (IOException e) {
                 e.printStackTrace();

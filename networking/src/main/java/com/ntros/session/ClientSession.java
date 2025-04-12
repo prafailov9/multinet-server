@@ -24,7 +24,6 @@ public class ClientSession implements Session {
 
     private static final Logger LOGGER = Logger.getLogger(ClientSession.class.getName());
 
-    // session-owned, connection.receive() no longer blocks server's executor
     private final ExecutorService readExecutor = Executors.newSingleThreadExecutor();
     private final Connection connection;
     private final MessageParser messageParser;
@@ -44,7 +43,7 @@ public class ClientSession implements Session {
     @Override
     public void run() {
         SessionEvent event = new SessionEvent(SessionEventType.SESSION_STARTED, this, "starting client session...");
-        LOGGER.log(Level.INFO, "Session started. Sending event: " + event.toString());
+        LOGGER.log(Level.INFO, "Session started. Sending event: " + event);
         eventBus.publish(event);
         readExecutor.submit(this::readAndExecute);
     }

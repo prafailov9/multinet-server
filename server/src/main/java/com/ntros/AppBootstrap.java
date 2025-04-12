@@ -1,5 +1,11 @@
 package com.ntros;
 
+import com.ntros.event.bus.EventBus;
+import com.ntros.event.bus.SessionEventBus;
+import com.ntros.event.listener.ServerSessionManager;
+import com.ntros.event.listener.SessionCleaner;
+import com.ntros.event.listener.SessionEventListener;
+import com.ntros.event.listener.SessionManager;
 import com.ntros.model.world.WorldDispatcher;
 import com.ntros.model.world.context.WorldContext;
 import com.ntros.runtime.Runtime;
@@ -7,11 +13,6 @@ import com.ntros.runtime.WorldRuntime;
 import com.ntros.server.Server;
 import com.ntros.server.TcpServer;
 import com.ntros.server.scheduler.WorldTickScheduler;
-import com.ntros.event.listener.SessionCleaner;
-import com.ntros.event.listener.SessionManager;
-import com.ntros.event.bus.EventBus;
-import com.ntros.event.bus.SessionEventBus;
-import com.ntros.event.listener.SessionEventListener;
 
 import java.io.IOException;
 import java.util.logging.Level;
@@ -27,7 +28,7 @@ public class AppBootstrap {
         LOGGER.log(Level.INFO, "Starting server on port " + PORT);
 
         EventBus eventBus = new SessionEventBus();
-        SessionManager sessionManager = new SessionManager();
+        SessionManager sessionManager = new ServerSessionManager();
         Server server = create(eventBus, sessionManager);
 
         // start the server in its own thread.
@@ -47,14 +48,17 @@ public class AppBootstrap {
         // start heartbeat
         WorldTickScheduler tickScheduler = new WorldTickScheduler(TICK_RATE);
         tickScheduler.register(runtime);
+
+        // run only when there is a client registered
         tickScheduler.start();
+
     }
 
-    private static Server create(EventBus eventBus, SessionManager sessionManager) {
+    private static Server create(EventBus eventBus, SessionManager serverSessionManager) {
         SessionEventListener sessionCleaner = new SessionCleaner();
         eventBus.register(sessionCleaner);
 
-        return new TcpServer(sessionManager);
+        return new TcpServer(serverSessionManager);
     }
 
 }
