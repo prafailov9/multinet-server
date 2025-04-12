@@ -1,14 +1,14 @@
 package com.ntros.server.scheduler;
 
 import com.ntros.runtime.Instance;
+import lombok.extern.slf4j.Slf4j;
 
 import java.util.List;
 import java.util.concurrent.*;
 import java.util.logging.Logger;
 
+@Slf4j
 public class WorldTickScheduler {
-
-    private static final Logger LOGGER = Logger.getLogger(WorldTickScheduler.class.getName());
 
     private final List<Instance> instances = new CopyOnWriteArrayList<>();
     private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(2);
@@ -41,7 +41,7 @@ public class WorldTickScheduler {
                     instance.run();
                 }
             } catch (Exception ex) {
-                LOGGER.severe("Error during world tick: " + ex);
+                log.error("Error during world tick: ", ex);
             }
         }, 0, interval, TimeUnit.MILLISECONDS);
 

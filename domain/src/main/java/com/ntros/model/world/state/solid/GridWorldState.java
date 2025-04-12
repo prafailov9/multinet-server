@@ -7,6 +7,7 @@ import com.ntros.model.world.TileType;
 import com.ntros.model.world.state.WorldState;
 import com.ntros.model.world.state.dimension.Dimension;
 import com.ntros.model.world.state.dimension.Dimension2D;
+import lombok.extern.slf4j.Slf4j;
 
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -16,9 +17,8 @@ import java.util.logging.Logger;
 
 import static com.ntros.model.world.utils.LockingUtils.runSafe;
 
+@Slf4j
 public class GridWorldState implements WorldState {
-
-    private static final Logger LOGGER = Logger.getLogger(GridWorldState.class.getName());
 
     private final String worldName;
 
@@ -125,7 +125,7 @@ public class GridWorldState implements WorldState {
             }
         }, terrainMapLock);
 
-        LOGGER.info("Generated terrain for world: " + worldName);
+        log.info("Generated terrain for world: {}", worldName);
     }
 
 }

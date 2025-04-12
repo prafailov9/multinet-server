@@ -1,15 +1,14 @@
 package com.ntros.event.listener;
 
 import com.ntros.session.Session;
+import lombok.extern.slf4j.Slf4j;
 
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
+@Slf4j
 public class ServerSessionManager implements SessionManager {
-    private static final Logger LOGGER = Logger.getLogger(ServerSessionManager.class.getName());
     private final Set<Session> sessions = ConcurrentHashMap.newKeySet();
     private final Map<Long, Session> sessionMap = new ConcurrentHashMap<>();
 
@@ -17,13 +16,13 @@ public class ServerSessionManager implements SessionManager {
     public void register(Session session) {
         sessions.add(session);
         sessionMap.put(session.getProtocolContext().getSessionId(), session);
-        LOGGER.log(Level.INFO, "Registered session: {0}", session.getProtocolContext().getSessionId());
+        log.info("Registered session: {}", session.getProtocolContext().getSessionId());
     }
 
     @Override
     public void remove(Session session) {
         sessions.remove(session);
-        LOGGER.log(Level.INFO, "Removed session: {0}", session.getProtocolContext().getSessionId());
+        log.info("Removed session: {}", session.getProtocolContext().getSessionId());
     }
 
     @Override
@@ -38,11 +37,11 @@ public class ServerSessionManager implements SessionManager {
             try {
                 session.terminate();
             } catch (Exception ex) {
-                LOGGER.log(Level.SEVERE, "Failed to close session: {0}", session.getProtocolContext().getSessionId());
+                log.error("Failed to close session: {}", session.getProtocolContext().getSessionId());
             }
         }
         sessions.clear();
-        LOGGER.info("All sessions shut down.");
+        log.info("All sessions shut down.");
     }
 
     @Override

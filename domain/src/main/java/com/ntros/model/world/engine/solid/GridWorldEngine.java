@@ -11,17 +11,16 @@ import com.ntros.model.world.protocol.JoinRequest;
 import com.ntros.model.world.protocol.MoveRequest;
 import com.ntros.model.world.protocol.Result;
 import com.ntros.model.world.state.WorldState;
+import lombok.extern.slf4j.Slf4j;
 
 import java.util.Map;
 import java.util.concurrent.locks.ReentrantLock;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import static com.ntros.model.entity.DirectionUtil.createPosition;
 import static com.ntros.model.world.utils.LockingUtils.runSafe;
 
+@Slf4j
 public class GridWorldEngine implements WorldEngine {
-    private static final Logger LOGGER = Logger.getLogger(GridWorldEngine.class.getName());
 
     // locks
     private final ReentrantLock entityMapLock;
@@ -37,21 +36,17 @@ public class GridWorldEngine implements WorldEngine {
 
     @Override
     public void tick(WorldState state) {
-        LOGGER.log(Level.INFO, "Executing move intents...");
-        LOGGER.log(Level.INFO, "Current state of move intents: {0}", state.moveIntents());
-
         for (Map.Entry<String, Direction> intent : state.moveIntents().entrySet()) {
             StaticEntity entity = state.entities().get(intent.getKey());
 
             if (entity == null) {
-                LOGGER.warning("No entity found for id: " + intent.getKey());
+                log.warn("No entity found for id: {}", intent.getKey());
                 continue;
             }
 
             Position currentPosition = entity.getPosition();
             Position newPosition = createPosition(currentPosition, intent.getValue());
-
-            LOGGER.info("Processing move for " + entity.getName() + ": " + currentPosition + " → " + newPosition);
+            log.info("Processing move for {}: {} -> {}", entity.getName(), currentPosition, newPosition);
             moveEntity(entity, currentPosition, newPosition, state);
         }
 
@@ -64,11 +59,11 @@ public class GridWorldEngine implements WorldEngine {
         Position position = createPosition(entity.getPosition(), moveRequest.direction());
         if (state.isWithinBounds(position)) { // allow all moves if within bounds
             runSafe(() -> state.moveIntents().put(moveRequest.playerId(), moveRequest.direction()), moveIntentsLock);
-            LOGGER.log(Level.INFO, "Added move intent: {0}", moveRequest);
+            log.info("Added move intent: {}", moveRequest);
             return new Result(true, entity.getName(), state.worldName(), null);
         }
         String msg = String.format("[%s]: invalid move: %s. Out of bounds.", state.worldName(), position);
-        LOGGER.log(Level.INFO, msg);
+        log.info(msg);
         return new Result(false, entity.getName(), state.worldName(), msg);
     }
 
@@ -129,20 +124,19 @@ public class GridWorldEngine implements WorldEngine {
     private void addEntity(StaticEntity entity, WorldState worldState) {
         runSafe(() -> worldState.entities().put(entity.getName(), entity), entityMapLock);
         runSafe(() -> worldState.takenPositions().put(entity.getPosition(), entity.getName()), positionMapLock);
-        LOGGER.log(Level.INFO, "Added entity: {0}", entity);
+        log.info("Added entity: {0}", entity);
     }
 
     private void moveEntity(StaticEntity entity, Position origin, Position target, WorldState worldState) {
-        LOGGER.info("Current PositionMap Keys: " + worldState.takenPositions().keySet());
         if (worldState.isLegalMove(target)) {
             runSafe(() -> {
                 worldState.takenPositions().remove(origin);
                 worldState.takenPositions().put(target, entity.getName());
                 entity.setPosition(target);
             }, positionMapLock);
-            LOGGER.info("Moved " + entity.getName() + " from " + origin + " to " + target);
+            log.info("Moved {} from {} to {}.", entity.getName(), origin, target);
         } else {
-            LOGGER.warning("Failed to move " + entity.getName() + " to " + target + " (occupied or out of bounds)");
+            log.warn("Failed to move {} to {} position. Illegal move.", entity.getName(), target);
         }
     }
 

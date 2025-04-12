@@ -11,6 +11,7 @@ import com.ntros.event.bus.EventBus;
 import com.ntros.message.ProtocolContext;
 import com.ntros.model.world.Message;
 import com.ntros.parser.MessageParser;
+import lombok.extern.slf4j.Slf4j;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -21,9 +22,8 @@ import java.util.logging.Logger;
 /**
  * Owns and uses Connection to receive/send messages
  */
+@Slf4j
 public class ClientSession implements Session {
-
-    private static final Logger LOGGER = Logger.getLogger(ClientSession.class.getName());
 
     private final ExecutorService readExecutor = Executors.newSingleThreadExecutor();
     private final Connection connection;
@@ -53,7 +53,7 @@ public class ClientSession implements Session {
     @Override
     public void accept(String serverResponse) {
         synchronized (connection) { // sync because writing to the socket connection
-            LOGGER.log(Level.INFO, "{0} received server response: \n" + serverResponse);
+            log.info("{} received server response: {}\n", this, serverResponse);
             connection.send(serverResponse);
         }
     }
@@ -78,7 +78,7 @@ public class ClientSession implements Session {
 
                     connection.send(serverResponse);
                 } catch (RuntimeException ex) {
-                    LOGGER.log(Level.SEVERE, "Error: {0}, {1}", new Object[]{protocolContext.getSessionId(), ex});
+                    log.error("Error: {}", protocolContext.getSessionId(), ex);
                     eventBus.publish(new SessionEvent(SessionEventType.SESSION_FAILED, this, ex.getMessage()));
                 }
             }
@@ -109,7 +109,7 @@ public class ClientSession implements Session {
     private void sendSessionStartedEvent(SessionEvent sessionEvent, ProtocolContext protocolContext) {
         if (protocolContext.isAuthenticated() && !sessionStartedEventSent.get()) {
             // send event
-            LOGGER.log(Level.INFO, "Session started. Sending event: " + sessionEvent);
+            log.info("Session started. Sending event: {}", sessionEvent);
             eventBus.publish(sessionEvent);
             // mark control flag
             sessionStartedEventSent.set(true);
@@ -120,7 +120,7 @@ public class ClientSession implements Session {
         try {
             return connection.receive();
         } catch (ConnectionReceiveException ex) {
-            LOGGER.log(Level.SEVERE, "[ClientSession]: Error during reading socket data: {}", ex.getMessage());
+            log.error("[ClientSession]: Error during reading socket data: {}", ex.getMessage());
             return null;
         }
     }

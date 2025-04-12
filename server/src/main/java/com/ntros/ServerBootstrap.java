@@ -10,20 +10,18 @@ import com.ntros.runtime.WorldInstance;
 import com.ntros.server.Server;
 import com.ntros.server.TcpServer;
 import com.ntros.server.scheduler.WorldTickScheduler;
+import lombok.extern.slf4j.Slf4j;
 
 import java.io.IOException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
+@Slf4j
 public class ServerBootstrap {
 
-    private static final Logger LOGGER = Logger.getLogger(ServerBootstrap.class.getName());
     private static final int PORT = 5555;
-    private static final int TICK_RATE = 120; // 10 ticks per second
+    private static final int TICK_RATE = 120; // 120 ticks per second
 
     public static void startServer() {
-        LOGGER.log(Level.INFO, "Starting server on port " + PORT);
-
+        log.info("Starting server on port {}", PORT);
         // create event bus
         EventBus eventBus = new SessionEventBus();
         SessionManager sessionManager = new ServerSessionManager();
@@ -43,7 +41,7 @@ public class ServerBootstrap {
         try {
             server.start(PORT, eventBus);
         } catch (IOException ex) {
-            LOGGER.log(Level.SEVERE, "Server failed: {}", ex.getMessage());
+            log.error("Server failed: {}", ex.getMessage());
 
         }
 

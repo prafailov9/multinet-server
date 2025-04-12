@@ -1,20 +1,19 @@
 package com.ntros.connection;
 
+import lombok.extern.slf4j.Slf4j;
+
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * Wraps one client socket, abstracts I/O
  */
+@Slf4j
 public class SocketConnection implements Connection {
-
-    private static final Logger LOGGER = Logger.getLogger(SocketConnection.class.getName());
 
     private final Socket socket;
     private final InputStream input;
@@ -37,7 +36,7 @@ public class SocketConnection implements Connection {
                 output.flush(); // does this add new line?
             }
         } catch (IOException e) {
-            LOGGER.log(Level.SEVERE, "Error writing line: {}", e.getMessage());
+            log.error("Error writing line: {}", e.getMessage());
             close();
         }
     }
@@ -74,7 +73,7 @@ public class SocketConnection implements Connection {
             return lineBuffer.toString(StandardCharsets.UTF_8);
         } catch (IOException e) {
             String err = "Error reading line: " + e.getMessage();
-            LOGGER.log(Level.SEVERE, err);
+            log.error(err);
             close();
             throw new ConnectionReceiveException(err, e.getCause());
         }
@@ -85,7 +84,7 @@ public class SocketConnection implements Connection {
         try {
             socket.close();
         } catch (IOException e) {
-            LOGGER.log(Level.SEVERE, "[SocketConnection]: Error closing connection: {}", e.getMessage());
+            log.error("[SocketConnection]: Error closing connection: {}", e.getMessage());
         }
     }
 

@@ -3,9 +3,11 @@ package com.ntros.event.listener;
 import com.ntros.event.SessionEvent;
 import com.ntros.server.scheduler.WorldTickScheduler;
 import com.ntros.session.Session;
+import lombok.extern.slf4j.Slf4j;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
+@Slf4j
 public class ConnectionEventListener implements SessionEventListener {
 
     private final SessionManager sessionManager;
@@ -41,7 +43,7 @@ public class ConnectionEventListener implements SessionEventListener {
         if (sessionManager.activeSessions() == 0 && schedulerRunning.get()) {
             tickScheduler.stop();
             schedulerRunning.set(false);
-            System.out.println("TickScheduler stopped because the last session was destroyed.");
+            log.info("Last session was destroyed. TickScheduler stopped.");
         }
     }
 }

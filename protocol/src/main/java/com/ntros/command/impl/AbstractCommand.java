@@ -1,17 +1,13 @@
 package com.ntros.command.impl;
 
 import com.ntros.message.ProtocolContext;
+import lombok.extern.slf4j.Slf4j;
 
-import java.util.logging.Level;
-import java.util.logging.Logger;
-
+@Slf4j
 public abstract class AbstractCommand implements Command {
 
-    private static final Logger LOGGER = Logger.getLogger(AbstractCommand.class.getName());
-
-
     protected void validateContext(ProtocolContext context) {
-        LOGGER.log(Level.INFO, "validating context...");
+        log.info("Validating client info...");
         if (!context.isAuthenticated()) {
             logAndThrow("User not authenticated.");
         }
@@ -28,8 +24,8 @@ public abstract class AbstractCommand implements Command {
     }
 
     void logAndThrow(String err) {
-        LOGGER.log(Level.SEVERE, err);
-        throw new RuntimeException(err);
+        log.error(err);
+        throw new IllegalArgumentException(err);
     }
 
 }
