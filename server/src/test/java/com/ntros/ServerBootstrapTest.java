@@ -4,7 +4,7 @@ package com.ntros;
 import com.ntros.event.listener.SessionCleaner;
 import com.ntros.event.listener.ServerSessionManager;
 import com.ntros.model.world.WorldDispatcher;
-import com.ntros.model.world.context.WorldContext;
+import com.ntros.model.world.connector.WorldConnector;
 import com.ntros.server.TcpServer;
 import com.ntros.event.bus.SessionEventBus;
 import org.junit.jupiter.api.AfterEach;
@@ -20,7 +20,7 @@ import java.util.concurrent.*;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-public class AppBootstrapTest {
+public class ServerBootstrapTest {
 
     private static final int PORT = 5555;
     private TcpServer server;
@@ -69,8 +69,8 @@ public class AppBootstrapTest {
         System.out.println("Res2=" + taskResult2);
         System.out.println("Res3=" + taskResult3);
 
-        WorldContext worldContext = WorldDispatcher.getWorld("world-1");
-        System.out.println(worldContext.engine().serialize(worldContext.state()));
+        WorldConnector worldConnector = WorldDispatcher.getWorld("world-1");
+        System.out.println(worldConnector.serialize());
     }
 
     private Callable<String> task(int id) {
@@ -154,7 +154,7 @@ public class AppBootstrapTest {
 
     @Test
     public void startServerTest() {
-        AppBootstrap.startServer();
+        ServerBootstrap.startServer();
     }
 
 }

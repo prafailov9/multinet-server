@@ -17,9 +17,11 @@ public class WorldTickScheduler {
     public WorldTickScheduler(int tickRate) {
         this.tickRate = tickRate;
     }
+
     public WorldTickScheduler() {
         this(10);
     }
+
     public void register(Runtime runtime) {
         System.out.println("[WorldTickScheduler] Registered runtime: " + runtime.getWorldName());
         runtimes.add(runtime);

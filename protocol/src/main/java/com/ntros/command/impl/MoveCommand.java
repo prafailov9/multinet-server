@@ -4,7 +4,7 @@ import com.ntros.message.ProtocolContext;
 import com.ntros.model.entity.Direction;
 import com.ntros.model.world.Message;
 import com.ntros.model.world.WorldDispatcher;
-import com.ntros.model.world.context.WorldContext;
+import com.ntros.model.world.connector.WorldConnector;
 import com.ntros.model.world.protocol.MoveRequest;
 import com.ntros.model.world.protocol.Result;
 
@@ -21,12 +21,12 @@ public class MoveCommand extends AbstractCommand {
     public Optional<String> execute(Message message, ProtocolContext protocolContext) {
         validateContext(protocolContext);
 
-        WorldContext world = WorldDispatcher.getWorld(protocolContext.getWorldId());
+        WorldConnector world = WorldDispatcher.getWorld(protocolContext.getWorldId());
 
-        LOGGER.log(Level.INFO, "retrieved world {0}", world.state().worldName());
+        LOGGER.log(Level.INFO, "retrieved world {0}", world.worldName());
         Direction direction = resolveMoveIntent(message);
-        LOGGER.log(Level.INFO, "resolved world and direction: {0}, {1}", new Object[]{world.state().worldName(), direction.name()});
-        Result result = world.engine().storeMoveIntent(new MoveRequest(protocolContext.getSessionId(), direction), world.state());
+        LOGGER.log(Level.INFO, "resolved world and direction: {0}, {1}", new Object[]{world.worldName(), direction.name()});
+        Result result = world.storeMoveIntent(new MoveRequest(protocolContext.getSessionId(), direction));
 
         return handleResult(result, direction.name());
     }

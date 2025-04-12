@@ -2,7 +2,7 @@ package com.ntros.event.listener;
 
 import com.ntros.message.ProtocolContext;
 import com.ntros.model.world.WorldDispatcher;
-import com.ntros.model.world.context.WorldContext;
+import com.ntros.model.world.connector.WorldConnector;
 import com.ntros.event.SessionEvent;
 import com.ntros.event.SessionEventType;
 
@@ -20,8 +20,8 @@ public class SessionCleaner implements SessionEventListener {
         }
 
         if (context.getSessionId() != null && !context.getSessionId().isEmpty() && context.getWorldId() != null && !context.getWorldId().isEmpty()) {
-            WorldContext worldContext = WorldDispatcher.getWorld(context.getWorldId());
-            worldContext.engine().remove(context.getSessionId(), worldContext.state());
+            WorldConnector worldConnector = WorldDispatcher.getWorld(context.getWorldId());
+            worldConnector.remove(context.getSessionId());
         }
 
     }

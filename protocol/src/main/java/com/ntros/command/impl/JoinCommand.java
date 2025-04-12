@@ -2,7 +2,7 @@ package com.ntros.command.impl;
 
 import com.ntros.model.world.*;
 import com.ntros.message.ProtocolContext;
-import com.ntros.model.world.context.WorldContext;
+import com.ntros.model.world.connector.WorldConnector;
 import com.ntros.model.world.protocol.JoinRequest;
 import com.ntros.model.world.protocol.Result;
 
@@ -14,8 +14,8 @@ public class JoinCommand extends AbstractCommand {
     @Override
     public Optional<String> execute(Message message, ProtocolContext protocolContext) {
         String playerName = resolvePlayer(message);
-        WorldContext world = resolveWorld(message);
-        Result result = world.engine().add(new JoinRequest(playerName), world.state());
+        WorldConnector world = resolveWorld(message);
+        Result result = world.add(new JoinRequest(playerName));
 
         // return server command
         return handleResult(result, protocolContext);
@@ -30,7 +30,7 @@ public class JoinCommand extends AbstractCommand {
         return playerName;
     }
 
-    protected WorldContext resolveWorld(Message message) {
+    protected WorldConnector resolveWorld(Message message) {
         return message.getArgs().getLast().startsWith("world")
                 ? WorldDispatcher.getWorld(message.getArgs().getLast()) // only works for Move requests
                 : WorldDispatcher.getDefaultWorld();

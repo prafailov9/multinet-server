@@ -1,7 +1,7 @@
 package com.ntros.model.world;
 
-import com.ntros.model.world.context.GridWorldContext;
-import com.ntros.model.world.context.WorldContext;
+import com.ntros.model.world.connector.GridWorldConnector;
+import com.ntros.model.world.connector.WorldConnector;
 import com.ntros.model.world.engine.solid.GridWorldEngine;
 import com.ntros.model.world.state.solid.GridWorldState;
 
@@ -11,8 +11,8 @@ import java.util.Map;
 
 public final class WorldDispatcher {
 
-    private static final WorldContext DEFAULT_WORLD = new GridWorldContext(new GridWorldState("world-1", 10, 10), new GridWorldEngine());
-    private static final Map<String, WorldContext> WORLDS = new HashMap<>();
+    private static final WorldConnector DEFAULT_WORLD = new GridWorldConnector(new GridWorldState("world-1", 10, 10), new GridWorldEngine());
+    private static final Map<String, WorldConnector> WORLDS = new HashMap<>();
 
     static {
         // default available world
@@ -22,18 +22,18 @@ public final class WorldDispatcher {
     private WorldDispatcher() {
     }
 
-    public static void register(String id, WorldContext context) {
+    public static void register(String id, WorldConnector context) {
         WORLDS.put(id, context);
     }
 
-    public static WorldContext getWorld(String id) {
+    public static WorldConnector getWorld(String id) {
         return WORLDS.get(id);
     }
-    public static WorldContext getDefaultWorld() {
+    public static WorldConnector getDefaultWorld() {
         return DEFAULT_WORLD;
     }
 
-    public static Collection<WorldContext> getAllWorlds() {
+    public static Collection<WorldConnector> getAllWorlds() {
         return WORLDS.values();
     }
 

@@ -1,7 +1,7 @@
 package com.ntros.event.listener;
 
-import com.ntros.session.Session;
 import com.ntros.event.SessionEvent;
+import com.ntros.session.Session;
 
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -9,10 +9,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class ServerSessionManager implements SessionManager, SessionEventListener {
-
     private static final Logger LOGGER = Logger.getLogger(ServerSessionManager.class.getName());
-
-
     private final Set<Session> sessions = ConcurrentHashMap.newKeySet();
 
     @Override

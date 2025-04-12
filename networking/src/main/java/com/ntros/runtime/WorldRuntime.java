@@ -1,37 +1,36 @@
 package com.ntros.runtime;
 
-import com.ntros.model.world.context.WorldContext;
 import com.ntros.event.listener.SessionManager;
+import com.ntros.model.world.connector.WorldConnector;
 
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class WorldRuntime implements Runtime {
     private static final Logger LOGGER = Logger.getLogger(WorldRuntime.class.getName());
-
-    private final WorldContext worldContext;
+    private final WorldConnector worldConnector;
     private final SessionManager sessionManager;
 
-    public WorldRuntime(WorldContext worldContext, SessionManager sessionManager) {
-        this.worldContext = worldContext;
+    public WorldRuntime(WorldConnector worldConnector, SessionManager sessionManager) {
+        this.worldConnector = worldConnector;
         this.sessionManager = sessionManager;
     }
 
-
     @Override
     public String getWorldName() {
-        return worldContext.state().worldName();
+        return worldConnector.worldName();
     }
 
     @Override
     public void run() {
-        System.out.println("[WorldRuntime] World: " + worldContext.state().worldName() + " ticked and broadcasting state.");
-
         LOGGER.log(Level.INFO, "Updating {0} state...", getWorldName());
-        worldContext.engine().tick(worldContext.state());
-        String stateMessage = "STATE " + worldContext.engine().serialize(worldContext.state());
+        worldConnector.tick();
+
+        String stateMessage = "STATE " + worldConnector.serialize();
         LOGGER.log(Level.INFO, "Broadcasting server response to clients:\n {0}", stateMessage);
 
         sessionManager.broadcast(stateMessage);
     }
+
+
 }
