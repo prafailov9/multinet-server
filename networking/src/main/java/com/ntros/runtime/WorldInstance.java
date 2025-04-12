@@ -6,12 +6,12 @@ import com.ntros.model.world.connector.WorldConnector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-public class WorldRuntime implements Runtime {
-    private static final Logger LOGGER = Logger.getLogger(WorldRuntime.class.getName());
+public class WorldInstance implements Instance {
+    private static final Logger LOGGER = Logger.getLogger(WorldInstance.class.getName());
     private final WorldConnector worldConnector;
     private final SessionManager sessionManager;
 
-    public WorldRuntime(WorldConnector worldConnector, SessionManager sessionManager) {
+    public WorldInstance(WorldConnector worldConnector, SessionManager sessionManager) {
         this.worldConnector = worldConnector;
         this.sessionManager = sessionManager;
     }

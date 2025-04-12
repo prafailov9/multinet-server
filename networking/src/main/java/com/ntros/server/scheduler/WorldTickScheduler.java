@@ -1,6 +1,6 @@
 package com.ntros.server.scheduler;
 
-import com.ntros.runtime.Runtime;
+import com.ntros.runtime.Instance;
 
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -10,7 +10,7 @@ import java.util.concurrent.TimeUnit;
 
 public class WorldTickScheduler {
 
-    private final List<Runtime> runtimes = new CopyOnWriteArrayList<>();
+    private final List<Instance> instances = new CopyOnWriteArrayList<>();
     private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
     private final int tickRate;
 
@@ -22,23 +22,19 @@ public class WorldTickScheduler {
         this(10);
     }
 
-    public void register(Runtime runtime) {
-        System.out.println("[WorldTickScheduler] Registered runtime: " + runtime.getWorldName());
-        runtimes.add(runtime);
+    public void register(Instance instance) {
+        instances.add(instance);
     }
 
     public void start() {
-        System.out.println("[WorldTickScheduler] Scheduler thread starting...");
         long interval = 3000 / tickRate;
 
         scheduler.scheduleAtFixedRate(() -> {
             try {
-                System.out.println("[WorldTickScheduler] Tick executing. Runtime count: " + runtimes.size());
-                for (Runtime runtime : runtimes) {
-                    runtime.run();
+                for (Instance instance : instances) {
+                    instance.run();
                 }
             } catch (Exception ex) {
-                System.err.println("[WorldTickScheduler] ERROR during tick: " + ex.getMessage());
                 ex.printStackTrace();
             }
         }, 0, interval, TimeUnit.MILLISECONDS);

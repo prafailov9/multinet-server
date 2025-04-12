@@ -1,6 +1,6 @@
 package com.ntros.runtime;
 
-public interface Runtime {
+public interface Instance {
 
     void run();
     String getWorldName();

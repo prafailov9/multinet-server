@@ -8,8 +8,8 @@ import com.ntros.event.listener.SessionEventListener;
 import com.ntros.event.listener.SessionManager;
 import com.ntros.model.world.WorldDispatcher;
 import com.ntros.model.world.connector.WorldConnector;
-import com.ntros.runtime.Runtime;
-import com.ntros.runtime.WorldRuntime;
+import com.ntros.runtime.Instance;
+import com.ntros.runtime.WorldInstance;
 import com.ntros.server.Server;
 import com.ntros.server.TcpServer;
 import com.ntros.server.scheduler.WorldTickScheduler;
@@ -43,11 +43,11 @@ public class ServerBootstrap {
 
         // creating default world
         WorldConnector world = WorldDispatcher.getDefaultWorld();
-        Runtime runtime = new WorldRuntime(world, sessionManager);
+        Instance instance = new WorldInstance(world, sessionManager);
 
         // start heartbeat
         WorldTickScheduler tickScheduler = new WorldTickScheduler(TICK_RATE);
-        tickScheduler.register(runtime);
+        tickScheduler.register(instance);
 
         // run only when there is a client registered
         tickScheduler.start();
