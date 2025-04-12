@@ -6,6 +6,9 @@ import com.ntros.model.world.protocol.MoveRequest;
 import com.ntros.model.world.protocol.Result;
 import com.ntros.model.world.state.WorldState;
 
+/**
+ * Abstraction that manipulates a given world state.
+ */
 public interface WorldEngine {
 
     void tick(WorldState worldState);

@@ -54,7 +54,7 @@ public class ServerSessionManager implements SessionManager, SessionEventListene
     @Override
     public void broadcast(String serverMessage) {
         for (Session session : sessions) {
-            session.send(serverMessage);
+            session.accept(serverMessage);
         }
     }
 }

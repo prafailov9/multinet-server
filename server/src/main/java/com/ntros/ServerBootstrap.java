@@ -45,7 +45,8 @@ public class ServerBootstrap {
         WorldConnector world = WorldDispatcher.getDefaultWorld();
         Instance instance = new WorldInstance(world, sessionManager);
 
-        // start heartbeat
+//        instance.run();
+//        // start heartbeat
         WorldTickScheduler tickScheduler = new WorldTickScheduler(TICK_RATE);
         tickScheduler.register(instance);
 

@@ -41,11 +41,22 @@ public class ClientSession implements Session {
     }
 
     @Override
-    public void run() {
+    public void send() {
         SessionEvent event = new SessionEvent(SessionEventType.SESSION_STARTED, this, "starting client session...");
         LOGGER.log(Level.INFO, "Session started. Sending event: " + event);
         eventBus.publish(event);
         readExecutor.submit(this::readAndExecute);
+    }
+
+    /**
+     * sends the server response to the client.
+     */
+    @Override
+    public void accept(String serverResponse) {
+        synchronized (connection) { // sync because writing to the socket connection
+            LOGGER.log(Level.INFO, "{0} received server response: \n" + serverResponse);
+            connection.send(serverResponse);
+        }
     }
 
     /**
@@ -73,7 +84,6 @@ public class ClientSession implements Session {
         } finally {
             terminate();
         }
-
     }
 
     @Override
@@ -89,17 +99,6 @@ public class ClientSession implements Session {
         readExecutor.shutdownNow();
         connection.close();
         eventBus.publish(new SessionEvent(SessionEventType.SESSION_CLOSED, this, String.format("Closing %s session...", protocolContext.getSessionId())));
-    }
-
-    /**
-     * sends the server response to the client.
-     */
-    @Override
-    public void send(String serverResponse) {
-        synchronized (connection) { // sync because writing to the socket connection
-            LOGGER.log(Level.INFO, "{0} received server response: \n" + serverResponse);
-            connection.send(serverResponse);
-        }
     }
 
     private String readFromConnection() {

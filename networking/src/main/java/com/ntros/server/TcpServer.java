@@ -42,7 +42,7 @@ public class TcpServer implements Server {
                 Connection connection = new SocketConnection(socket);
                 Session session = new ClientSession(connection, eventBus);
                 // runs the client session in a managed thread pool
-                Thread.startVirtualThread(session::run);
+                Thread.startVirtualThread(session::send);
 //                clientExecutor.submit(session::run);
 
             } catch (SocketException ex) {

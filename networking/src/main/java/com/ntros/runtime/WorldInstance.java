@@ -6,6 +6,9 @@ import com.ntros.model.world.connector.WorldConnector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+/**
+ * Layer that allows the world to interact with clients. Unique per world connector + session manager.
+ */
 public class WorldInstance implements Instance {
     private static final Logger LOGGER = Logger.getLogger(WorldInstance.class.getName());
     private final WorldConnector worldConnector;
