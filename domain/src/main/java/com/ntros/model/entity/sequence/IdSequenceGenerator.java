@@ -6,7 +6,7 @@ import java.util.concurrent.atomic.AtomicLong;
 public class IdSequenceGenerator {
 
     public static final ThreadLocalRandom RNG = ThreadLocalRandom.current();
-    private static final int DEFAULT_INITIAL_ID = 0;
+    private static final int DEFAULT_INITIAL_ID = 1;
 
     private static final AtomicLong WORLD_COUNTER = new AtomicLong(DEFAULT_INITIAL_ID);
     private static final AtomicLong SESSION_ID_COUNTER = new AtomicLong(DEFAULT_INITIAL_ID);

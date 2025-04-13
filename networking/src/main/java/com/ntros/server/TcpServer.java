@@ -38,16 +38,12 @@ public class TcpServer implements Server {
 
         while (running) {
             try {
-                // blocks I/O until connection is received
+                // blocks main thread until connection is received
                 Socket socket = serverSocket.accept();
 
-                // once received, create session
-                Connection connection = new SocketConnection(socket);
-                Session session = new ClientSession(connection, eventBus);
-
+                // once received, create connection + session
                 // process client input in separate thread, unblocks server loop
-                Thread.startVirtualThread(session::send);
-
+                Thread.startVirtualThread(() -> handleConnection(socket, eventBus));
             } catch (SocketException ex) {
                 if (!running) {
                     log.info("Server socket closed, exiting accept() loop.");
@@ -58,6 +54,17 @@ public class TcpServer implements Server {
             }
         }
 
+    }
+
+    private void handleConnection(Socket socket, EventBus eventBus) {
+        try {
+            Connection connection = new SocketConnection(socket);
+            Session session = new ClientSession(connection, eventBus);
+
+            session.request();
+        } catch (Exception ex) {
+            log.error("Error occurred during connection handling:", ex);
+        }
     }
 
     @Override

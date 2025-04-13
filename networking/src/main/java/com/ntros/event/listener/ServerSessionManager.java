@@ -47,7 +47,7 @@ public class ServerSessionManager implements SessionManager {
     @Override
     public void broadcast(String serverMessage) {
         for (Session session : sessions) {
-            session.accept(serverMessage);
+            session.respond(serverMessage);
         }
     }
 }

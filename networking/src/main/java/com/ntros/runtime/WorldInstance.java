@@ -25,7 +25,7 @@ public class WorldInstance implements Instance {
     @Override
     public void run() {
         log.info("Updating {} state...", getWorldName());
-        worldConnector.tick();
+        worldConnector.update();
 
         String stateMessage = "STATE " + worldConnector.serialize();
         log.info("Broadcasting server response to clients:\n {}", stateMessage);

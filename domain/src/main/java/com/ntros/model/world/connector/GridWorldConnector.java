@@ -18,7 +18,7 @@ public class GridWorldConnector implements WorldConnector {
 
 
     @Override
-    public void tick() {
+    public void update() {
         gridWorldEngine.tick(gridWorldState);
     }
 

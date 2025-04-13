@@ -9,9 +9,9 @@ public interface Session {
 
     ProtocolContext getProtocolContext();
     // sends client request to server
-    void send();
+    void request();
     // sends server response to client
-    void accept(String serverResponse);
+    void respond(String serverResponse);
     // ends session
     void terminate();
 }

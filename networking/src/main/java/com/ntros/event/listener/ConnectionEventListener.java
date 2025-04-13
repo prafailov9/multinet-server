@@ -22,18 +22,19 @@ public class ConnectionEventListener implements SessionEventListener {
     @Override
     public void onSessionEvent(SessionEvent sessionEvent) {
         switch (sessionEvent.getEventType()) {
-            case SESSION_STARTED -> created(sessionEvent.getSession());
+            case SESSION_STARTED -> created(sessionEvent.getSession(), sessionEvent.getServerMessage());
             case SESSION_CLOSED -> destroyed(sessionEvent.getSession());
         }
     }
 
-    private void created(Session session) {
+    private void created(Session session, String serverWelcomeMessage) {
         // indicates a successful JOIN command
         sessionManager.register(session);
+        // send welcome response to client to trigger UI changes
+        session.respond(serverWelcomeMessage);
         if (sessionManager.activeSessions() > 0 && !schedulerRunning.get()) {
             tickScheduler.start();
             schedulerRunning.set(true);
-
         }
     }
 

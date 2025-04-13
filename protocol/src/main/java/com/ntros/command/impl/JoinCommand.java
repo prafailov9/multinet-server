@@ -1,15 +1,19 @@
 package com.ntros.command.impl;
 
-import com.ntros.model.entity.sequence.IdSequenceGenerator;
-import com.ntros.model.world.*;
 import com.ntros.message.ProtocolContext;
+import com.ntros.model.entity.sequence.IdSequenceGenerator;
+import com.ntros.model.world.CommandType;
+import com.ntros.model.world.Message;
+import com.ntros.model.world.WorldDispatcher;
 import com.ntros.model.world.connector.WorldConnector;
 import com.ntros.model.world.protocol.JoinRequest;
 import com.ntros.model.world.protocol.Result;
+import lombok.extern.slf4j.Slf4j;
 
 import java.time.OffsetDateTime;
 import java.util.Optional;
 
+@Slf4j
 public class JoinCommand extends AbstractCommand {
 
     @Override
@@ -44,12 +48,12 @@ public class JoinCommand extends AbstractCommand {
             protocolContext.setWorldId(result.worldName());
             protocolContext.setJoinedAt(OffsetDateTime.now());
             protocolContext.setAuthenticated(true);
-            System.out.println("[JOIN Command]: success. Sending WELCOME response to client: " + protocolContext);
+            log.info("[JOIN Command]: success. Sending WELCOME response to client: {}", protocolContext);
             return Optional.of(String.format("%s %s\n", CommandType.WELCOME.name(), result.playerName()));
         }
         protocolContext.setAuthenticated(false);
         String err = String.format("%s %s\n", CommandType.ERROR.name(), result.reason());
-        System.out.println("[JOIN Command]: failure. Sending ERROR response: " + err);
+        log.error("[JOIN Command]: failure. Sending ERROR response: {}", err);
         return Optional.of(err);
     }
 

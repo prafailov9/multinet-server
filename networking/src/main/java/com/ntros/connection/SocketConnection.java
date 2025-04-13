@@ -27,16 +27,19 @@ public class SocketConnection implements Connection {
         this.output = socket.getOutputStream();
     }
 
+    /**
+     * Sends data stream to the client.
+     */
     @Override
     public void send(String data) {
         try {
             String message = data + "\n"; // always use newline to mark end-of-line
             synchronized (output) {
-                output.write(message.getBytes(StandardCharsets.UTF_8));
-                output.flush(); // does this add new line?
+                output.write(message.getBytes(StandardCharsets.UTF_8)); // store message in internal buffer.
+                output.flush(); // immediately send the stored message to the socket connection.
             }
-        } catch (IOException e) {
-            log.error("Error writing line: {}", e.getMessage());
+        } catch (IOException ex) {
+            log.error("[SocketConnection]: Failed to write to socket ({}): {}", getRemoteAddress(), ex.getMessage());
             close();
         }
     }
@@ -53,43 +56,55 @@ public class SocketConnection implements Connection {
             int nextByte;
             while ((nextByte = input.read()) != -1) {
                 if (nextByte == '\n') {
-                    // Newline encountered; line is complete.
-                    break;
+                    break; // end of line
                 }
-                // Optionally ignore carriage return if present.
+                // ignore carriage return if present.
                 if (nextByte != '\r') {
                     lineBuffer.write(nextByte);
                 }
-                // Optional safeguard: limit line length to avoid potential issues with malicious clients.
+                // limited line length to avoid potential issues with malicious clients.
                 if (lineBuffer.size() > 8192) { // 8KB limit
                     throw new IOException("Line too long");
                 }
             }
-            // If we've reached end-of-stream without reading any data, return null.
+            // return null if no data read
             if (nextByte == -1 && lineBuffer.size() == 0) {
                 return null;
             }
-            // Convert the accumulated bytes to a String.
-            return lineBuffer.toString(StandardCharsets.UTF_8);
-        } catch (IOException e) {
-            String err = "Error reading line: " + e.getMessage();
-            log.error(err);
+
+        } catch (IOException ex) {
+            String err = String.format("[SocketConnection]: Failed to read line from socket (%s): %s",
+                    getRemoteAddress(), ex.getMessage());
+            log.error(err, ex);
             close();
-            throw new ConnectionReceiveException(err, e.getCause());
+//            throw new ConnectionReceiveException(err, ex);
         }
+        return lineBuffer.toString(StandardCharsets.UTF_8);
     }
 
     @Override
     public void close() {
         try {
-            socket.close();
-        } catch (IOException e) {
-            log.error("[SocketConnection]: Error closing connection: {}", e.getMessage());
+            if (isOpen()) {
+                socket.close();
+                log.info("[SocketConnection]: Closed socket connection to {}", getRemoteAddress());
+
+            }
+        } catch (IOException ex) {
+            log.error("[SocketConnection]: Error while closing socket ({}): {}", getRemoteAddress(), ex.getMessage(), ex);
         }
     }
 
     @Override
     public boolean isOpen() {
         return socket.isConnected() && !socket.isClosed() && !socket.isInputShutdown();
+    }
+
+    private String getRemoteAddress() {
+        try {
+            return socket.getRemoteSocketAddress().toString();
+        } catch (Exception ex) {
+            return "unknown";
+        }
     }
 }

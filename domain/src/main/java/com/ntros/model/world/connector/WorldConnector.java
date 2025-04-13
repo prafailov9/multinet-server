@@ -9,7 +9,7 @@ import com.ntros.model.world.protocol.Result;
  * Unique per engine + state.
  */
 public interface WorldConnector {
-    void tick();
+    void update();
 
     Result storeMoveIntent(MoveRequest move);
 
