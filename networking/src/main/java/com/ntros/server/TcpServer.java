@@ -56,6 +56,14 @@ public class TcpServer implements Server {
 
     }
 
+    @Override
+    public void stop() throws IOException {
+        log.info("Shutting down server...");
+        running = false;
+        serverSocket.close();
+        sessionManager.shutdownAll();
+    }
+
     private void handleConnection(Socket socket, EventBus eventBus) {
         try {
             Connection connection = new SocketConnection(socket);
@@ -65,13 +73,5 @@ public class TcpServer implements Server {
         } catch (Exception ex) {
             log.error("Error occurred during connection handling:", ex);
         }
-    }
-
-    @Override
-    public void stop() throws IOException {
-        log.info("Shutting down server...");
-        running = false;
-        serverSocket.close();
-        sessionManager.shutdownAll();
     }
 }

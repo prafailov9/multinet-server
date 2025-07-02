@@ -46,8 +46,8 @@ public class ClientSession implements Session {
                     String serverResponse = dispatcher.dispatch(message, protocolContext)
                             .orElseThrow(() -> new RuntimeException("[ClientSession]: no response from server."));
 
+                    // TODO: move event logic to protocol layer
                     SessionEvent sessionEvent = SessionEvent.ofSessionStarted(this, "starting client session...", serverResponse);
-
                     if (protocolContext.isAuthenticated()) {
                         log.info("Session started. Sending event: {}", sessionEvent);
                         eventBus.publish(sessionEvent);
