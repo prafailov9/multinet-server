@@ -11,6 +11,8 @@ import com.ntros.model.world.Message;
 import com.ntros.parser.MessageParser;
 import lombok.extern.slf4j.Slf4j;
 
+import static com.ntros.event.SessionEvent.sessionClosed;
+
 /**
  * Abstracts the external client, its behaviour and how it's represented in the system
  */
@@ -86,7 +88,11 @@ public class ClientSession implements Session {
 
         running = false;
         connection.close();
-        SessionEventBus.get().publish(SessionEvent.sessionClosed(this, String.format("Closing %s session...", protocolContext.getSessionId())));
+
+        String serverMessage = String.format("Closing %s session...", protocolContext.getSessionId());
+        log.info(serverMessage);
+        SessionEventBus.get().publish(sessionClosed(this, serverMessage));
+//        respond(serverMessage);
     }
 
 }
