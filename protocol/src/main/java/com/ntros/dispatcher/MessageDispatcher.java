@@ -5,18 +5,17 @@ import com.ntros.command.impl.Command;
 import com.ntros.command.impl.ErrorCommand;
 import com.ntros.message.ProtocolContext;
 import com.ntros.model.world.Message;
+import lombok.extern.slf4j.Slf4j;
 
 import java.util.Optional;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
+@Slf4j
 public class MessageDispatcher implements Dispatcher {
-    private static final Logger LOGGER = Logger.getLogger(MessageDispatcher.class.getName());
 
 
     @Override
     public Optional<String> dispatch(Message message, ProtocolContext protocolContext) {
-        LOGGER.log(Level.INFO, "received message: {0}", message);
+        log.info("received message: {}", message);
         Command command = getCommand(message.command().name());
 
         return command.execute(message, protocolContext);

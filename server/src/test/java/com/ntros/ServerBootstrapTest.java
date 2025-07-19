@@ -2,42 +2,44 @@ package com.ntros;
 
 
 import com.ntros.event.bus.SessionEventBus;
-import com.ntros.event.listener.*;
-import com.ntros.model.world.WorldDispatcher;
-import com.ntros.model.world.connector.WorldConnector;
+import com.ntros.event.listener.ClientSessionEventListener;
+import com.ntros.event.listener.ClientSessionManager;
+import com.ntros.event.listener.SessionEventListener;
+import com.ntros.event.listener.SessionManager;
 import com.ntros.server.TcpServer;
 import com.ntros.server.scheduler.WorldTickScheduler;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.io.*;
-import java.net.Socket;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
+import static com.ntros.ServerBootstrapHelper.sendJoinCommand;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class ServerBootstrapTest {
 
     private static final int PORT = 5555;
     private TcpServer server;
-    private ExecutorService serverExecutor;
+
+    private final ExecutorService serverExecutor = Executors.newSingleThreadExecutor();
+
 
     @BeforeEach
-    void setUp() throws Exception {
+    void setUp() {
         SessionManager sessionManager = new ClientSessionManager();
         WorldTickScheduler worldTickScheduler = new WorldTickScheduler();
 
         SessionEventListener clientSessionEventListener = new ClientSessionEventListener(sessionManager, worldTickScheduler);
         SessionEventBus.get().register(clientSessionEventListener);
-        server = new TcpServer(sessionManager, clientSessionEventListener);
-        serverExecutor = Executors.newSingleThreadExecutor();
+        server = new TcpServer(sessionManager);
 
         // Start the server in a background thread.
-        startServer();
+        ServerBootstrapHelper.startServer(server, serverExecutor, PORT);
     }
 
     @AfterEach
@@ -48,59 +50,23 @@ public class ServerBootstrapTest {
     }
 
     @Test
-    public void testMultClients() throws ExecutionException, InterruptedException {
-        // create tasks
-        FutureTask<String> task1 = new FutureTask<>(task(1));
-        FutureTask<String> task2 = new FutureTask<>(task(2));
-        FutureTask<String> task3 = new FutureTask<>(task(3));
+    void testSingleClientConnection_sendJoinCommand_joinServerSuccess() throws Exception {
+        ExecutorService clientExecutor = Executors.newSingleThreadExecutor();
+        String clientName = "client-1";
+        // Simulate several clients connecting concurrently.
+        Future<String> result = clientExecutor.submit(() -> sendJoinCommand(PORT, clientName));
 
-        // create threads
-        Thread t1 = new Thread(task1);
-        Thread t2 = new Thread(task2);
-        Thread t3 = new Thread(task3);
+        // Verify that each client received the expected response.
+        String expectedServerResponse = "WELCOME " + clientName;
+        String actual = result.get();
+        assertEquals(expectedServerResponse, actual, "Unexpected response from server for " + clientName);
 
-        // start threads
-        t1.start();
-        t2.start();
-        t3.start();
-
-        // block get results
-        String taskResult1 = task1.get();
-        String taskResult2 = task2.get();
-        String taskResult3 = task3.get();
-
-        System.out.println("Res1=" + taskResult1);
-        System.out.println("Res2=" + taskResult2);
-        System.out.println("Res3=" + taskResult3);
-
-        WorldConnector worldConnector = WorldDispatcher.getWorld("world-1");
-        System.out.println(worldConnector.serialize());
-    }
-
-    private Callable<String> task(int id) {
-        return () -> {
-            String res = "";
-            try (Socket socket = new Socket("localhost", PORT);
-                 BufferedReader in = new BufferedReader(
-                         new InputStreamReader(socket.getInputStream(), StandardCharsets.UTF_8)
-                 );
-                 PrintWriter out = new PrintWriter(
-                         new OutputStreamWriter(socket.getOutputStream(), StandardCharsets.UTF_8))) {
-
-                // send message to server
-                out.println("JOIN client-" + id + "\n");
-                out.flush();
-                // read server response
-                res = in.readLine();
-            } catch (IOException ex) {
-                System.out.println("Task failed for client: " + id);
-            }
-            return res;
-        };
+        // cleanup
+        clientExecutor.shutdownNow();
     }
 
     @Test
-    void testMultipleClients() throws Exception {
+    void testConcurrentClientConnections_sendJoinCommand_joinServerSuccess() throws Exception {
         int clientCount = 3;
         ExecutorService clientExecutor = Executors.newFixedThreadPool(clientCount);
         List<Future<String>> clientResults = new ArrayList<>();
@@ -109,22 +75,7 @@ public class ServerBootstrapTest {
         for (int i = 0; i < clientCount; i++) {
             final String clientName = "client-" + i;
 
-            Future<String> result = clientExecutor.submit(() -> {
-                try (Socket socket = new Socket("localhost", PORT);
-                     BufferedReader in = new BufferedReader(
-                             new InputStreamReader(socket.getInputStream(), StandardCharsets.UTF_8)
-                     );
-                     PrintWriter out = new PrintWriter(
-                             new OutputStreamWriter(socket.getOutputStream(), StandardCharsets.UTF_8), true)
-                ) {
-                    // Each client sends a message terminated by a newline.
-                    String message = "JOIN " + clientName;
-                    out.println(message);
-                    out.flush();
-                    // Read the response from the server.
-                    return in.readLine();
-                }
-            });
+            Future<String> result = clientExecutor.submit(() -> sendJoinCommand(PORT, clientName));
             clientResults.add(result);
         }
 
@@ -134,30 +85,9 @@ public class ServerBootstrapTest {
             String actual = clientResults.get(i).get();
             assertEquals(expectedServerResponse, actual, "Unexpected response from server for client " + i);
         }
+
+        // cleanup
         clientExecutor.shutdownNow();
-    }
-
-    private void startServer() throws InterruptedException {
-        serverExecutor.submit(() -> {
-            try {
-                SessionEventBus.get().register(new SessionCleaner());
-//                SessionEventBus.get().register(new ClientSessionManager());
-                server.start(PORT);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-            try {
-                Thread.sleep(2000);
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
-            }
-        });
-    }
-
-
-    @Test
-    public void startServerTest() {
-        ServerBootstrap.startServer();
     }
 
 }

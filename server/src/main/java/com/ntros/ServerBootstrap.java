@@ -48,7 +48,7 @@ public class ServerBootstrap {
     private static Server create(SessionManager serverSessionManager, SessionEventListener connectionEventListener) {
         SessionEventBus.get().register(new SessionCleaner());
         SessionEventBus.get().register(connectionEventListener);
-        return new TcpServer(serverSessionManager, connectionEventListener);
+        return new TcpServer(serverSessionManager);
     }
 
 }

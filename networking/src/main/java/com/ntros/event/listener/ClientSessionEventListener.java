@@ -24,6 +24,7 @@ public class ClientSessionEventListener implements SessionEventListener {
         switch (sessionEvent.getEventType()) {
             case SESSION_STARTED -> started(sessionEvent.getSession(), sessionEvent.getServerMessage());
             case SESSION_CLOSED -> closed(sessionEvent.getSession());
+            case SESSION_FAILED -> failed(sessionEvent.getSession());
         }
     }
 
@@ -44,7 +45,11 @@ public class ClientSessionEventListener implements SessionEventListener {
         if (sessionManager.activeSessions() == 0 && schedulerRunning.get()) {
             tickScheduler.stop();
             schedulerRunning.set(false);
-            log.info("Last session was destroyed. TickScheduler stopped.");
+            log.info("Last session was closed. TickScheduler stopped.");
         }
+    }
+
+    private void failed(Session session) {
+        closed(session);
     }
 }

@@ -1,17 +1,15 @@
 package com.ntros.command;
 
 import com.ntros.command.impl.*;
+import lombok.extern.slf4j.Slf4j;
 
 import java.util.Map;
 import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import static com.ntros.command.CommandUtil.*;
 
+@Slf4j
 public final class CommandRegistry {
-
-    private static final Logger LOGGER = Logger.getLogger(CommandRegistry.class.getName());
-
     private static final Map<String, Command> COMMAND_MAP;
 
     static {
@@ -25,8 +23,7 @@ public final class CommandRegistry {
 
     public static Command get(String key) {
         Command command = COMMAND_MAP.get(key.toUpperCase());
-        LOGGER.log(Level.INFO, "retrieved command: {0}", command);
-
+        log.info("retrieved command: {}", key);
         return command;
     }
 

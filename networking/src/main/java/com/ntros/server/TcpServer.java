@@ -2,8 +2,6 @@ package com.ntros.server;
 
 import com.ntros.connection.Connection;
 import com.ntros.connection.SocketConnection;
-import com.ntros.event.bus.EventBus;
-import com.ntros.event.listener.SessionEventListener;
 import com.ntros.event.listener.SessionManager;
 import com.ntros.session.ClientSession;
 import com.ntros.session.Session;
@@ -22,12 +20,10 @@ public class TcpServer implements Server {
 
     private ServerSocket serverSocket;
     private final SessionManager sessionManager;
-    private final SessionEventListener connectionEventListener;
     private volatile boolean running = true;
 
-    public TcpServer(SessionManager sessionManager, SessionEventListener connectionEventListener) {
+    public TcpServer(SessionManager sessionManager) {
         this.sessionManager = sessionManager;
-        this.connectionEventListener = connectionEventListener;
     }
 
     @Override
