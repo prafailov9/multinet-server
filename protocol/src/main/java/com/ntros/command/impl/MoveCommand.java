@@ -32,7 +32,7 @@ public class MoveCommand extends AbstractCommand {
 
     private Direction resolveMoveIntent(Message message) {
         // move has to be second argument of command.
-        String move = message.getArgs().getFirst();
+        String move = message.args().getFirst();
         if (move == null || move.isEmpty()) {
             logAndThrow("Move cannot be empty.");
         }

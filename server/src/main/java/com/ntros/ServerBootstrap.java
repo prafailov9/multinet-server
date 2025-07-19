@@ -1,6 +1,5 @@
 package com.ntros;
 
-import com.ntros.event.bus.EventBus;
 import com.ntros.event.bus.SessionEventBus;
 import com.ntros.event.listener.*;
 import com.ntros.model.world.WorldDispatcher;
@@ -23,8 +22,7 @@ public class ServerBootstrap {
     public static void startServer() {
         log.info("Starting server on port {}", PORT);
         // create event bus
-        EventBus eventBus = new SessionEventBus();
-        SessionManager sessionManager = new ServerSessionManager();
+        SessionManager sessionManager = new ClientSessionManager();
 
         // creating default world
         WorldConnector world = WorldDispatcher.getDefaultWorld();
@@ -34,12 +32,12 @@ public class ServerBootstrap {
         tickScheduler.register(instance);
 
         // registering the connection event listener
-        SessionEventListener connectionEventListener = new ConnectionEventListener(sessionManager, tickScheduler);
+        SessionEventListener connectionEventListener = new ClientSessionEventListener(sessionManager, tickScheduler);
 
-        Server server = create(eventBus, sessionManager, connectionEventListener);
+        Server server = create(sessionManager, connectionEventListener);
 
         try {
-            server.start(PORT, eventBus);
+            server.start(PORT);
         } catch (IOException ex) {
             log.error("Server failed: {}", ex.getMessage());
 
@@ -47,10 +45,9 @@ public class ServerBootstrap {
 
     }
 
-    private static Server create(EventBus eventBus, SessionManager serverSessionManager, SessionEventListener connectionEventListener) {
-        SessionEventListener sessionCleaner = new SessionCleaner();
-        eventBus.register(sessionCleaner);
-
+    private static Server create(SessionManager serverSessionManager, SessionEventListener connectionEventListener) {
+        SessionEventBus.get().register(new SessionCleaner());
+        SessionEventBus.get().register(connectionEventListener);
         return new TcpServer(serverSessionManager, connectionEventListener);
     }
 

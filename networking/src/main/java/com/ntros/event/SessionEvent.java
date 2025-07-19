@@ -27,15 +27,15 @@ public class SessionEvent {
         this.serverMessage = serverMessage;
     }
 
-    public static SessionEvent ofSessionStarted(Session session, String reason, String serverWelcomeMessage) {
+    public static SessionEvent sessionStarted(Session session, String reason, String serverWelcomeMessage) {
         return new SessionEvent(SessionEventType.SESSION_STARTED, session, reason, serverWelcomeMessage);
     }
 
-    public static SessionEvent ofSessionClosed(Session session, String reason) {
+    public static SessionEvent sessionClosed(Session session, String reason) {
         return new SessionEvent(SessionEventType.SESSION_CLOSED, session, reason);
     }
 
-    public static SessionEvent ofSessionFailed(Session session, String reason) {
+    public static SessionEvent sessionFailed(Session session, String reason) {
         return new SessionEvent(SessionEventType.SESSION_FAILED, session, reason);
     }
 

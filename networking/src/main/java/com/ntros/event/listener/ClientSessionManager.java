@@ -8,9 +8,16 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Slf4j
-public class ServerSessionManager implements SessionManager {
+public class ClientSessionManager implements SessionManager {
     private final Set<Session> sessions = ConcurrentHashMap.newKeySet();
     private final Map<Long, Session> sessionMap = new ConcurrentHashMap<>();
+
+    @Override
+    public void broadcast(String serverMessage) {
+        for (Session session : sessions) {
+            session.respond(serverMessage);
+        }
+    }
 
     @Override
     public void register(Session session) {
@@ -22,6 +29,7 @@ public class ServerSessionManager implements SessionManager {
     @Override
     public void remove(Session session) {
         sessions.remove(session);
+        sessionMap.remove(session.getProtocolContext().getSessionId());
         log.info("Removed session: {}", session.getProtocolContext().getSessionId());
     }
 
@@ -42,12 +50,5 @@ public class ServerSessionManager implements SessionManager {
         }
         sessions.clear();
         log.info("All sessions shut down.");
-    }
-
-    @Override
-    public void broadcast(String serverMessage) {
-        for (Session session : sessions) {
-            session.respond(serverMessage);
-        }
     }
 }

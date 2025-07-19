@@ -8,13 +8,13 @@ import lombok.extern.slf4j.Slf4j;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 @Slf4j
-public class ConnectionEventListener implements SessionEventListener {
+public class ClientSessionEventListener implements SessionEventListener {
 
     private final SessionManager sessionManager;
     private final WorldTickScheduler tickScheduler;
     private final AtomicBoolean schedulerRunning = new AtomicBoolean(false);
 
-    public ConnectionEventListener(SessionManager sessionManager, WorldTickScheduler tickScheduler) {
+    public ClientSessionEventListener(SessionManager sessionManager, WorldTickScheduler tickScheduler) {
         this.sessionManager = sessionManager;
         this.tickScheduler = tickScheduler;
     }

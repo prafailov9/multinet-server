@@ -5,7 +5,7 @@ import com.ntros.connection.Connection;
 import com.ntros.dispatcher.Dispatcher;
 import com.ntros.dispatcher.MessageDispatcher;
 import com.ntros.event.SessionEvent;
-import com.ntros.event.bus.EventBus;
+import com.ntros.event.bus.SessionEventBus;
 import com.ntros.message.ProtocolContext;
 import com.ntros.model.world.Message;
 import com.ntros.parser.MessageParser;
@@ -21,19 +21,17 @@ public class ClientSession implements Session {
     private final MessageParser messageParser;
     private final ProtocolContext protocolContext;
     private final Dispatcher dispatcher;
-    private final EventBus eventBus;
     private volatile boolean running = true;
 
-    public ClientSession(Connection connection, EventBus eventBus) {
+    public ClientSession(Connection connection) {
         this.connection = connection;
         this.messageParser = new MessageParser();
         this.protocolContext = new ProtocolContext();
         this.dispatcher = new MessageDispatcher();
-        this.eventBus = eventBus;
     }
 
     @Override
-    public void request() {
+    public void run() {
         try {
             while (running && connection.isOpen()) {
                 String data = connection.receive();
@@ -46,16 +44,19 @@ public class ClientSession implements Session {
                     String serverResponse = dispatcher.dispatch(message, protocolContext)
                             .orElseThrow(() -> new RuntimeException("[ClientSession]: no response from server."));
 
-                    // TODO: move event logic to protocol layer
-                    SessionEvent sessionEvent = SessionEvent.ofSessionStarted(this, "starting client session...", serverResponse);
                     if (protocolContext.isAuthenticated()) {
-                        log.info("Session started. Sending event: {}", sessionEvent);
-                        eventBus.publish(sessionEvent);
+                        respond(serverResponse);
+
+                        // TODO: move event logic to protocol layer
+//                    SessionEvent sessionEvent = SessionEvent.ofSessionStarted(this, "starting client session...", serverResponse);
+//                        log.info("Session started. Sending event: {}", sessionEvent);
+//                        eventBus.publish(sessionEvent);
                     }
 
-                } catch (RuntimeException ex) {
+                } catch (Exception ex) {
                     log.error("Error: {}", protocolContext.getSessionId(), ex);
-                    eventBus.publish(SessionEvent.ofSessionFailed(this, ex.getMessage()));
+                    SessionEventBus.get().publish(SessionEvent.sessionFailed(this, ex.getMessage()));
+
                 }
             }
         } finally {
@@ -85,7 +86,7 @@ public class ClientSession implements Session {
 
         running = false;
         connection.close();
-        eventBus.publish(SessionEvent.ofSessionClosed(this, String.format("Closing %s session...", protocolContext.getSessionId())));
+        SessionEventBus.get().publish(SessionEvent.sessionClosed(this, String.format("Closing %s session...", protocolContext.getSessionId())));
     }
 
 }

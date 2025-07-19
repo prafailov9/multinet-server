@@ -1,6 +1,5 @@
 package com.ntros.connection;
 
-import java.io.IOException;
 
 /**
  * Transport-Level Abstraction. Handles raw communication per session/client.

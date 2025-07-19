@@ -10,6 +10,10 @@ public class SessionEventBus implements EventBus {
 
     List<SessionEventListener> listeners = new ArrayList<>();
 
+    private SessionEventBus() {
+
+    }
+
     @Override
     public void register(SessionEventListener sessionEventListener) {
         listeners.add(sessionEventListener);
@@ -25,5 +29,13 @@ public class SessionEventBus implements EventBus {
         for (SessionEventListener listener: listeners) {
             listener.onSessionEvent(sessionEvent);
         }
+    }
+
+    private static class InstanceHolder {
+        static final SessionEventBus INSTANCE = new SessionEventBus();
+    }
+
+    public static SessionEventBus get() {
+        return InstanceHolder.INSTANCE;
     }
 }

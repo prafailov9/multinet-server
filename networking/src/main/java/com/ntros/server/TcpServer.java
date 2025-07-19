@@ -31,8 +31,7 @@ public class TcpServer implements Server {
     }
 
     @Override
-    public void start(int port, EventBus eventBus) throws IOException {
-        eventBus.register(connectionEventListener);
+    public void start(int port) throws IOException {
         serverSocket = new ServerSocket(port);
         log.info("Accepting connections...");
 
@@ -43,7 +42,7 @@ public class TcpServer implements Server {
 
                 // once received, create connection + session
                 // process client input in separate thread, unblocks server loop
-                Thread.startVirtualThread(() -> handleConnection(socket, eventBus));
+                Thread.startVirtualThread(() -> handleConnection(socket));
             } catch (SocketException ex) {
                 if (!running) {
                     log.info("Server socket closed, exiting accept() loop.");
@@ -64,12 +63,12 @@ public class TcpServer implements Server {
         sessionManager.shutdownAll();
     }
 
-    private void handleConnection(Socket socket, EventBus eventBus) {
+    private void handleConnection(Socket socket) {
         try {
             Connection connection = new SocketConnection(socket);
-            Session session = new ClientSession(connection, eventBus);
+            Session session = new ClientSession(connection);
 
-            session.request();
+            session.run();
         } catch (Exception ex) {
             log.error("Error occurred during connection handling:", ex);
         }

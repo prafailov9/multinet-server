@@ -1,11 +1,11 @@
 package com.ntros;
 
 
+import com.ntros.event.bus.SessionEventBus;
 import com.ntros.event.listener.*;
 import com.ntros.model.world.WorldDispatcher;
 import com.ntros.model.world.connector.WorldConnector;
 import com.ntros.server.TcpServer;
-import com.ntros.event.bus.SessionEventBus;
 import com.ntros.server.scheduler.WorldTickScheduler;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -28,11 +28,12 @@ public class ServerBootstrapTest {
 
     @BeforeEach
     void setUp() throws Exception {
-        SessionManager sessionManager = new ServerSessionManager();
+        SessionManager sessionManager = new ClientSessionManager();
         WorldTickScheduler worldTickScheduler = new WorldTickScheduler();
 
-        SessionEventListener connectionEventListener = new ConnectionEventListener(sessionManager, worldTickScheduler);
-        server = new TcpServer(sessionManager, connectionEventListener);
+        SessionEventListener clientSessionEventListener = new ClientSessionEventListener(sessionManager, worldTickScheduler);
+        SessionEventBus.get().register(clientSessionEventListener);
+        server = new TcpServer(sessionManager, clientSessionEventListener);
         serverExecutor = Executors.newSingleThreadExecutor();
 
         // Start the server in a background thread.
@@ -139,10 +140,9 @@ public class ServerBootstrapTest {
     private void startServer() throws InterruptedException {
         serverExecutor.submit(() -> {
             try {
-                SessionEventBus sessionEventBus = new SessionEventBus();
-                sessionEventBus.register(new SessionCleaner());
-//                sessionEventBus.register(new ServerSessionManager());
-                server.start(PORT, new SessionEventBus());
+                SessionEventBus.get().register(new SessionCleaner());
+//                SessionEventBus.get().register(new ClientSessionManager());
+                server.start(PORT);
             } catch (IOException e) {
                 e.printStackTrace();
             }

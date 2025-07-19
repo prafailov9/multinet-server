@@ -27,7 +27,7 @@ public class JoinCommand extends AbstractCommand {
     }
 
     protected String resolvePlayer(Message message) {
-        String playerName = message.getArgs().getFirst();
+        String playerName = message.args().getFirst();
         if (playerName == null || playerName.isEmpty()) {
             logAndThrow("[JOIN Command]: no player name given.");
         }
@@ -36,8 +36,8 @@ public class JoinCommand extends AbstractCommand {
     }
 
     protected WorldConnector resolveWorld(Message message) {
-        return message.getArgs().getLast().startsWith("world")
-                ? WorldDispatcher.getWorld(message.getArgs().getLast()) // only works for Move requests
+        return message.args().getLast().startsWith("world")
+                ? WorldDispatcher.getWorld(message.args().getLast()) // only works for Move requests
                 : WorldDispatcher.getDefaultWorld();
     }
 

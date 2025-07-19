@@ -17,7 +17,7 @@ public class MessageDispatcher implements Dispatcher {
     @Override
     public Optional<String> dispatch(Message message, ProtocolContext protocolContext) {
         LOGGER.log(Level.INFO, "received message: {0}", message);
-        Command command = getCommand(message.getCommand().name());
+        Command command = getCommand(message.command().name());
 
         return command.execute(message, protocolContext);
     }

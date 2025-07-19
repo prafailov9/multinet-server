@@ -1,10 +1,10 @@
 package com.ntros.event.listener;
 
+import com.ntros.event.SessionEvent;
+import com.ntros.event.SessionEventType;
 import com.ntros.message.ProtocolContext;
 import com.ntros.model.world.WorldDispatcher;
 import com.ntros.model.world.connector.WorldConnector;
-import com.ntros.event.SessionEvent;
-import com.ntros.event.SessionEventType;
 
 public class SessionCleaner implements SessionEventListener {
 
