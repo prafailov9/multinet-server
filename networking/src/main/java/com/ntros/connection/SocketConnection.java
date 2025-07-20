@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
+import java.net.SocketException;
 import java.nio.charset.StandardCharsets;
 
 /**
@@ -22,13 +23,14 @@ public class SocketConnection implements Connection {
 
     public SocketConnection(Socket socket) throws IOException {
         this.socket = socket;
+        socket.setSoTimeout(5000);
 
         this.input = socket.getInputStream();
         this.output = socket.getOutputStream();
     }
 
     /**
-     * Sends data stream to the client.
+     * Sends data stream to the client. Blocks until socket's out-buffer is flushed.
      */
     @Override
     public void send(String data) {
@@ -36,7 +38,7 @@ public class SocketConnection implements Connection {
             String message = data + "\n"; // always use newline to mark end-of-line
             synchronized (output) {
                 output.write(message.getBytes(StandardCharsets.UTF_8)); // store message in internal buffer.
-                output.flush(); // immediately send the stored message to the socket connection.
+                output.flush(); // immediately send the buffer to the socket connection.
             }
         } catch (IOException ex) {
             log.error("[SocketConnection]: Failed to write to socket ({}): {}", getRemoteAddress(), ex.getMessage());
@@ -73,12 +75,18 @@ public class SocketConnection implements Connection {
             }
 
         } catch (IOException ex) {
-            String err = String.format("[SocketConnection]: Failed to read line from socket (%s): %s",
-                    getRemoteAddress(), ex.getMessage());
-            log.error(err, ex);
+            // CONN_RESET can happen when the server shuts down, while client connections are still active. Just log and move on.
+            if ("Connection reset".equals(ex.getMessage())) {
+                log.info("[SocketConnection]: Connection reset, likely due to shutdown.");
+            } else {
+                String err = String.format("[SocketConnection]: Failed to read line from socket (%s): %s",
+                        getRemoteAddress(), ex.getMessage());
+
+                log.error(err, ex);
+            }
             close();
-//            throw new ConnectionReceiveException(err, ex);
         }
+//            throw new ConnectionReceiveException(err, ex);
         return lineBuffer.toString(StandardCharsets.UTF_8);
     }
 

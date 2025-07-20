@@ -11,6 +11,8 @@ import com.ntros.model.world.Message;
 import com.ntros.parser.MessageParser;
 import lombok.extern.slf4j.Slf4j;
 
+import java.util.concurrent.atomic.AtomicBoolean;
+
 import static com.ntros.event.SessionEvent.sessionClosed;
 
 /**
@@ -23,6 +25,7 @@ public class ClientSession implements Session {
     private final MessageParser messageParser;
     private final ProtocolContext protocolContext;
     private final Dispatcher dispatcher;
+    private final AtomicBoolean terminated = new AtomicBoolean(false);
     private volatile boolean running = true;
 
     public ClientSession(Connection connection) {
@@ -50,9 +53,9 @@ public class ClientSession implements Session {
                         respond(serverResponse);
 
                         // TODO: move event logic to protocol layer
-//                    SessionEvent sessionEvent = SessionEvent.ofSessionStarted(this, "starting client session...", serverResponse);
+//                        SessionEvent sessionEvent = SessionEvent.sessionStarted(this, "starting client session...", serverResponse);
 //                        log.info("Session started. Sending event: {}", sessionEvent);
-//                        eventBus.publish(sessionEvent);
+//                        SessionEventBus.get().publish(sessionEvent);
                     }
 
                 } catch (Exception ex) {
@@ -72,7 +75,7 @@ public class ClientSession implements Session {
     @Override
     public void respond(String serverResponse) {
         synchronized (connection) { // sync because writing to the socket connection
-            log.info("{} received server response: {}\n", this, serverResponse);
+            log.info("{} received server response: {}. Sending to client...\n", this, serverResponse);
             connection.send(serverResponse);
         }
     }
@@ -84,7 +87,10 @@ public class ClientSession implements Session {
 
     @Override
     public void terminate() {
-        if (!running) return;
+        if (!terminated.compareAndSet(false, true)) {
+            // already terminated once
+            return;
+        }
 
         running = false;
         connection.close();
@@ -92,7 +98,6 @@ public class ClientSession implements Session {
         String serverMessage = String.format("Closing %s session...", protocolContext.getSessionId());
         log.info(serverMessage);
         SessionEventBus.get().publish(sessionClosed(this, serverMessage));
-//        respond(serverMessage);
     }
 
 }
