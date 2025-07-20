@@ -1,10 +1,13 @@
 package com.ntros.model.world.connector;
 
+import com.ntros.model.entity.Entity;
 import com.ntros.model.world.engine.solid.GridWorldEngine;
 import com.ntros.model.world.protocol.JoinRequest;
 import com.ntros.model.world.protocol.MoveRequest;
 import com.ntros.model.world.protocol.Result;
 import com.ntros.model.world.state.solid.GridWorldState;
+
+import java.util.List;
 
 public class GridWorldConnector implements WorldConnector {
 
@@ -39,12 +42,22 @@ public class GridWorldConnector implements WorldConnector {
 
     @Override
     public String serialize() {
-        return gridWorldEngine.serialize(gridWorldState);
+        return gridWorldEngine.serializeOneLine(gridWorldState);
     }
 
     @Override
     public String worldName() {
         return gridWorldState.worldName();
+    }
+
+    @Override
+    public List<Entity> getCurrentEntities() {
+        return gridWorldState.entities().values().stream().toList();
+    }
+
+    @Override
+    public void reset() {
+        gridWorldEngine.reset(gridWorldState);
     }
 
 }

@@ -12,6 +12,10 @@ public interface Session {
     void run();
     // sends server response to client
     void respond(String serverResponse);
+
+    // flags session for termination
+    void stop();
+
     // ends session
     void terminate();
 }

@@ -17,7 +17,7 @@ public class TestClient implements Closeable {
 
     private static final String WHITESPACE = " ";
     private static final String NEW_LINE = "\n";
-    private static final String JOIN_COMMAND_TEMPLATE = "JOIN" + WHITESPACE + "%s" + NEW_LINE;
+    private static final String JOIN_COMMAND_TEMPLATE = "JOIN" + WHITESPACE + "%s" + WHITESPACE + "%s" + NEW_LINE;
     private static final String MOVE_COMMAND_TEMPLATE = "MOVE" + WHITESPACE + "%s" + WHITESPACE + "%s" + NEW_LINE;
     private final SocketConnection connection;
 
@@ -26,8 +26,8 @@ public class TestClient implements Closeable {
         this.connection = new SocketConnection(socket);
     }
 
-    public String join(String clientName, int timeoutSeconds) {
-        connection.send(String.format(JOIN_COMMAND_TEMPLATE, clientName));
+    public String join(String clientName, String worldName, int timeoutSeconds) {
+        connection.send(String.format(JOIN_COMMAND_TEMPLATE, clientName, worldName));
         return timeoutSeconds <= 0 ? connection.receive() : awaitResponse(timeoutSeconds);
     }
 

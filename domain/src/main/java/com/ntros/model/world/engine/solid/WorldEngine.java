@@ -20,4 +20,7 @@ public interface WorldEngine {
     Entity remove(String entityId, WorldState worldState);
 
     String serialize(WorldState worldState);
+    String serializeOneLine(WorldState worldState);
+
+    void reset(WorldState worldState);
 }

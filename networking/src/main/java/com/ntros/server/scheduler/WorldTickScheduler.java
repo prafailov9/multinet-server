@@ -19,10 +19,6 @@ public class WorldTickScheduler {
         this.tickRate = tickRate;
     }
 
-    public WorldTickScheduler() {
-        this(10);
-    }
-
     public void register(Instance instance) {
         instances.add(instance);
     }
@@ -32,7 +28,7 @@ public class WorldTickScheduler {
         if (isTickTaskRunning()) {
             return;
         }
-        long interval = 1000 / tickRate;
+        long interval = 100000000 / tickRate;
 
         // init the task
         tickTask = scheduler.scheduleAtFixedRate(() -> {

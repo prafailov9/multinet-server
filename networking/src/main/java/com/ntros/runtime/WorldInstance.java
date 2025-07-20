@@ -24,7 +24,7 @@ public class WorldInstance implements Instance {
 
     @Override
     public void run() {
-        log.info("Updating {} state...", getWorldName());
+        log.info("[IN WORLD INSTANCE]: Updating {} state...", getWorldName());
         worldConnector.update();
 
         String stateMessage = "STATE " + worldConnector.serialize();

@@ -25,6 +25,9 @@ public final class WorldDispatcher {
     public static void register(String id, WorldConnector context) {
         WORLDS.put(id, context);
     }
+    public static void remove(String id) {
+        WORLDS.remove(id);
+    }
 
     public static WorldConnector getWorld(String id) {
         return WORLDS.get(id);

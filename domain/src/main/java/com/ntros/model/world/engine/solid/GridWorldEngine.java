@@ -17,7 +17,6 @@ import java.util.Map;
 import java.util.concurrent.locks.ReentrantLock;
 
 import static com.ntros.model.entity.DirectionUtil.createPosition;
-import static com.ntros.model.world.utils.LockingUtils.runSafe;
 
 @Slf4j
 public class GridWorldEngine implements WorldEngine {
@@ -37,7 +36,7 @@ public class GridWorldEngine implements WorldEngine {
     @Override
     public void tick(WorldState state) {
         for (Map.Entry<String, Direction> intent : state.moveIntents().entrySet()) {
-            StaticEntity entity = state.entities().get(intent.getKey());
+            Entity entity = state.entities().get(intent.getKey());
 
             if (entity == null) {
                 log.warn("No entity found for id: {}", intent.getKey());
@@ -50,15 +49,17 @@ public class GridWorldEngine implements WorldEngine {
             moveEntity(entity, currentPosition, newPosition, state);
         }
 
-        runSafe(state.moveIntents()::clear, moveIntentsLock);
+        state.moveIntents().clear();
+//        runSafe(state.moveIntents()::clear, moveIntentsLock);
     }
 
     @Override
     public Result storeMoveIntent(MoveRequest moveRequest, WorldState state) {
-        StaticEntity entity = state.entities().get(moveRequest.playerId());
+        Entity entity = state.entities().get(moveRequest.playerId());
         Position position = createPosition(entity.getPosition(), moveRequest.direction());
         if (state.isWithinBounds(position)) { // allow all moves if within bounds
-            runSafe(() -> state.moveIntents().put(moveRequest.playerId(), moveRequest.direction()), moveIntentsLock);
+            state.moveIntents().put(moveRequest.playerId(), moveRequest.direction());
+//            runSafe(() -> state.moveIntents().put(moveRequest.playerId(), moveRequest.direction()), moveIntentsLock);
             log.info("Added move intent: {}", moveRequest);
             return new Result(true, entity.getName(), state.worldName(), null);
         }
@@ -80,15 +81,16 @@ public class GridWorldEngine implements WorldEngine {
 
         // create result
         Result result = new Result(true, player.getName(), worldState.worldName(), null);
-        System.out.printf("[GridWorld]: player: %s joined on position %s%n", player.getName(), player.getPosition());
+        System.out.printf("[GridWorld]: player: %s joined World %s on position %s%n", player.getName(), worldState.worldName(), player.getPosition());
         return result;
     }
 
     @Override
     public Entity remove(String entityId, WorldState worldState) {
-        StaticEntity entity = runSafe(() -> worldState.entities().remove(entityId), entityMapLock);
-        runSafe(() -> worldState.takenPositions().remove(entity.getPosition()), positionMapLock);
-
+//        Entity entity = runSafe(() -> worldState.entities().remove(entityId), entityMapLock);
+        Entity entity = worldState.entities().remove(entityId);
+//        runSafe(() -> worldState.takenPositions().remove(entity.getPosition()), positionMapLock);
+        worldState.takenPositions().remove(entity.getPosition());
         return entity;
     }
 
@@ -111,7 +113,7 @@ public class GridWorldEngine implements WorldEngine {
         // Entities
         sb.append("\"entities\": {\n");
         int e = 0;
-        for (StaticEntity entity : worldState.entities().values()) {
+        for (Entity entity : worldState.entities().values()) {
             Position pos = entity.getPosition();
             sb.append(String.format("\t\"%s\": {\n\t\t\"x\": %d,\n\t\t\"y\": %d\n\t}", entity.getName(), pos.getX(), pos.getY()));
             if (++e < worldState.entities().size()) sb.append(",\n");
@@ -121,19 +123,60 @@ public class GridWorldEngine implements WorldEngine {
         return sb.toString();
     }
 
-    private void addEntity(StaticEntity entity, WorldState worldState) {
-        runSafe(() -> worldState.entities().put(entity.getName(), entity), entityMapLock);
-        runSafe(() -> worldState.takenPositions().put(entity.getPosition(), entity.getName()), positionMapLock);
-        log.info("Added entity: {0}", entity);
+    @Override
+    public String serializeOneLine(WorldState worldState) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("{");
+
+        // Terrain first
+        sb.append("\"tiles\": {");
+        int t = 0;
+        for (Map.Entry<Position, TileType> entry : worldState.terrain().entrySet()) {
+            Position p = entry.getKey();
+            sb.append(String.format("\t\"%d,%d\": \"%s\"", p.getX(), p.getY(), entry.getValue().name()));
+            if (++t < worldState.terrain().size()) sb.append(",");
+        }
+        sb.append("},");
+
+        // Entities
+        sb.append("\"entities\": {");
+        int e = 0;
+        for (Entity entity : worldState.entities().values()) {
+            Position pos = entity.getPosition();
+            sb.append(String.format("\t\"%s\": {\t\t\"x\": %d,\t\t\"y\": %d\t}", entity.getName(), pos.getX(), pos.getY()));
+            if (++e < worldState.entities().size()) sb.append(",");
+        }
+        sb.append("}}");
+
+        return sb.toString();
     }
 
-    private void moveEntity(StaticEntity entity, Position origin, Position target, WorldState worldState) {
+    @Override
+    public void reset(WorldState worldState) {
+        worldState.entities().clear();
+        worldState.takenPositions().clear();
+        worldState.moveIntents().clear();
+        worldState.terrain().clear();
+    }
+
+    private void addEntity(StaticEntity entity, WorldState worldState) {
+//        runSafe(() -> worldState.entities().put(entity.getName(), entity), entityMapLock);
+        worldState.entities().put(entity.getName(), entity);
+//        runSafe(() -> worldState.takenPositions().put(entity.getPosition(), entity.getName()), positionMapLock);
+        worldState.takenPositions().put(entity.getPosition(), entity.getName());
+        log.info("Added entity: {}", entity);
+    }
+
+    private void moveEntity(Entity entity, Position origin, Position target, WorldState worldState) {
         if (worldState.isLegalMove(target)) {
-            runSafe(() -> {
-                worldState.takenPositions().remove(origin);
-                worldState.takenPositions().put(target, entity.getName());
-                entity.setPosition(target);
-            }, positionMapLock);
+//            runSafe(() -> {
+//                worldState.takenPositions().remove(origin);
+//                worldState.takenPositions().put(target, entity.getName());
+//                entity.setPosition(target);
+//            }, positionMapLock);
+            worldState.takenPositions().remove(origin);
+            worldState.takenPositions().put(target, entity.getName());
+            entity.setPosition(target);
             log.info("Moved {} from {} to {}.", entity.getName(), origin, target);
         } else {
             log.warn("Failed to move {} to {} position. Illegal move.", entity.getName(), target);

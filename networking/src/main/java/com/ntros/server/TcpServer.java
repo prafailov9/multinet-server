@@ -55,8 +55,8 @@ public class TcpServer implements Server {
     public void stop() throws IOException {
         log.info("Shutting down server...");
         running = false;
-        serverSocket.close();
         sessionManager.shutdownAll();
+        serverSocket.close();
     }
 
     private void handleConnection(Socket socket) {

@@ -11,7 +11,9 @@ import com.ntros.model.world.protocol.Result;
 import lombok.extern.slf4j.Slf4j;
 
 import java.time.OffsetDateTime;
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Slf4j
 public class JoinCommand extends AbstractCommand {
@@ -36,9 +38,17 @@ public class JoinCommand extends AbstractCommand {
     }
 
     protected WorldConnector resolveWorld(Message message) {
-        return message.args().getLast().startsWith("world")
-                ? WorldDispatcher.getWorld(message.args().getLast()) // only works for Move requests
-                : WorldDispatcher.getDefaultWorld();
+        log.info("[JOIN COMMAND]: All worlds: {}", WorldDispatcher.getAllWorlds().stream().map(WorldConnector::worldName).collect(Collectors.toList()));
+        List<String> args = message.args();
+
+        if (args.size() >= 2) {
+            String worldName = args.get(1);
+            WorldConnector world = WorldDispatcher.getWorld(worldName);
+            if (world != null) return world;
+            log.warn("[JOIN COMMAND]: Unknown world '{}', falling back to default", worldName);
+        }
+
+        return WorldDispatcher.getDefaultWorld();
     }
 
     private Optional<String> handleResult(Result result, ProtocolContext protocolContext) {

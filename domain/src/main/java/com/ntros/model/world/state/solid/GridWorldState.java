@@ -1,6 +1,7 @@
 package com.ntros.model.world.state.solid;
 
 import com.ntros.model.entity.Direction;
+import com.ntros.model.entity.Entity;
 import com.ntros.model.entity.movement.Position;
 import com.ntros.model.entity.solid.StaticEntity;
 import com.ntros.model.world.TileType;
@@ -13,20 +14,17 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.locks.ReentrantLock;
-import java.util.logging.Logger;
 
-import static com.ntros.model.world.utils.LockingUtils.runSafe;
 
 @Slf4j
 public class GridWorldState implements WorldState {
 
     private final String worldName;
-
     private final Dimension dimension;
     private final int width;
     private final int height;
 
-    private final Map<String, StaticEntity> entityMap;
+    private final Map<String, Entity> entityMap;
     private final Map<Position, String> positionMap;
     private final Map<String, Direction> moveIntentMap;
     private final Map<Position, TileType> terrainMap;
@@ -63,7 +61,7 @@ public class GridWorldState implements WorldState {
     }
 
     @Override
-    public Map<String, StaticEntity> entities() {
+    public Map<String, Entity> entities() {
         return entityMap;
     }
 
@@ -108,22 +106,22 @@ public class GridWorldState implements WorldState {
     }
 
     private void generateTerrain() {
-        runSafe(() -> {
-            for (int x = 0; x < width; x++) {
-                for (int y = 0; y < height; y++) {
-                    Position pos = Position.of(x, y);
+//        runSafe(() -> {
+        for (int x = 0; x < width; x++) {
+            for (int y = 0; y < height; y++) {
+                Position pos = Position.of(x, y);
 
-                    double rand = Math.random();
+                double rand = Math.random();
 
-                    TileType tile = rand < 0.1 ? TileType.WALL :
-                            rand < 0.15 ? TileType.TRAP :
-                                    rand < 0.17 ? TileType.WATER :
-                                            TileType.EMPTY;
+                TileType tile = rand < 0.1 ? TileType.WALL :
+                        rand < 0.15 ? TileType.TRAP :
+                                rand < 0.17 ? TileType.WATER :
+                                        TileType.EMPTY;
 
-                    terrainMap.put(pos, tile);
-                }
+                terrainMap.put(pos, tile);
             }
-        }, terrainMapLock);
+        }
+//        }, terrainMapLock);
 
         log.info("Generated terrain for world: {}", worldName);
     }

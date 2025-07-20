@@ -1,11 +1,14 @@
 package com.ntros.event.listener;
 
+import com.ntros.event.bus.SessionEventBus;
 import com.ntros.session.Session;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+
+import static com.ntros.event.SessionEvent.sessionClosed;
 
 @Slf4j
 public class ClientSessionManager implements SessionManager {
@@ -41,9 +44,15 @@ public class ClientSessionManager implements SessionManager {
 
     @Override
     public void shutdownAll() {
+        log.info("SessionManger: current active sessions count: {}", sessions.size());
+        if (sessions.isEmpty()) {
+            log.info("SessionManager: no active sessions, nothing to shut down.");
+            return;
+        }
         for (Session session : sessions) {
             try {
-                session.terminate();
+                log.info("SessionManager: Stopping all sessions.");
+                session.stop();
             } catch (Exception ex) {
                 log.error("Failed to close session: {}", session.getProtocolContext().getSessionId());
             }

@@ -4,16 +4,16 @@ package com.ntros.session;
 import com.ntros.connection.Connection;
 import com.ntros.dispatcher.Dispatcher;
 import com.ntros.dispatcher.MessageDispatcher;
-import com.ntros.event.SessionEvent;
 import com.ntros.event.bus.SessionEventBus;
 import com.ntros.message.ProtocolContext;
 import com.ntros.model.world.Message;
 import com.ntros.parser.MessageParser;
 import lombok.extern.slf4j.Slf4j;
 
+import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static com.ntros.event.SessionEvent.sessionClosed;
+import static com.ntros.event.SessionEvent.*;
 
 /**
  * Abstracts the external client, its behaviour and how it's represented in the system
@@ -49,22 +49,17 @@ public class ClientSession implements Session {
                     String serverResponse = dispatcher.dispatch(message, protocolContext)
                             .orElseThrow(() -> new RuntimeException("[ClientSession]: no response from server."));
 
-                    if (protocolContext.isAuthenticated()) {
-                        respond(serverResponse);
-
-                        // TODO: move event logic to protocol layer
-//                        SessionEvent sessionEvent = SessionEvent.sessionStarted(this, "starting client session...", serverResponse);
-//                        log.info("Session started. Sending event: {}", sessionEvent);
-//                        SessionEventBus.get().publish(sessionEvent);
+                    if (protocolContext.isAuthenticated() && serverResponse.startsWith("WELCOME")) {
+                        SessionEventBus.get().publish(sessionStarted(this, "Starting client session...", serverResponse));
                     }
 
                 } catch (Exception ex) {
                     log.error("Error: {}", protocolContext.getSessionId(), ex);
-                    SessionEventBus.get().publish(SessionEvent.sessionFailed(this, ex.getMessage()));
-
+                    SessionEventBus.get().publish(sessionFailed(this, ex.getMessage()));
                 }
             }
         } finally {
+            log.info("ClientSession calling terminate()...");
             terminate();
         }
     }
@@ -81,13 +76,20 @@ public class ClientSession implements Session {
     }
 
     @Override
+    public void stop() {
+        running = false;
+    }
+
+    @Override
     public ProtocolContext getProtocolContext() {
         return protocolContext;
     }
 
     @Override
     public void terminate() {
+        log.info(">>> [IN CLIENT_SESSION TERMINATE]: Called from: {}", Arrays.toString(Thread.currentThread().getStackTrace()));
         if (!terminated.compareAndSet(false, true)) {
+            log.info("[IN CLIENT_SESSION TERMINATE]: Session {} already terminated. Returning...", protocolContext);
             // already terminated once
             return;
         }
@@ -95,8 +97,8 @@ public class ClientSession implements Session {
         running = false;
         connection.close();
 
-        String serverMessage = String.format("Closing %s session...", protocolContext.getSessionId());
-        log.info(serverMessage);
+        String serverMessage = String.format("Closing session %s...", protocolContext.getSessionId());
+        log.info("[IN CLIENT_SESSION TERMINATE]: publishing SESSION_CLOSED Event..." + serverMessage);
         SessionEventBus.get().publish(sessionClosed(this, serverMessage));
     }
 

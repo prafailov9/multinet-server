@@ -1,6 +1,7 @@
 package com.ntros.model.world.state;
 
 import com.ntros.model.entity.Direction;
+import com.ntros.model.entity.Entity;
 import com.ntros.model.entity.movement.Position;
 import com.ntros.model.entity.solid.StaticEntity;
 import com.ntros.model.world.TileType;
@@ -17,7 +18,7 @@ public interface WorldState {
 
     Dimension dimension();
 
-    Map<String, StaticEntity> entities();
+    Map<String, Entity> entities();
 
     Map<Position, String> takenPositions();
 

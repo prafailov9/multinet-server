@@ -2,14 +2,19 @@ package com.ntros;
 
 import com.ntros.event.bus.SessionEventBus;
 import com.ntros.event.listener.SessionCleaner;
+import com.ntros.event.listener.SessionManager;
 import com.ntros.model.world.Message;
+import com.ntros.model.world.WorldDispatcher;
 import com.ntros.server.Server;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.*;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
+import java.util.function.Supplier;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.awaitility.Awaitility.await;
@@ -29,6 +34,45 @@ public class ServerTestHelper {
             waitForPort(port, 10000);
         });
     }
+
+    public static void stopServerWhen(SessionManager sessionManager, Server server, ExecutorService serverExecutor) throws IOException {
+        server.stop();
+
+        await()
+                .pollDelay(Duration.ofMillis(100)) // Give some room for shutdown event handling
+                .pollInterval(Duration.ofMillis(50))
+                .atMost(Duration.ofSeconds(5))
+                .conditionEvaluationListener(condition -> {
+                    int sessions = sessionManager.activeSessions();
+                    int entities = WorldDispatcher.getDefaultWorld().getCurrentEntities().size();
+                    log.info("[Awaitility Poll] Sessions: {}, Entities: {}", sessions, entities);
+                })
+                .until(() -> {
+                    int sessions = sessionManager.activeSessions();
+                    int entities = WorldDispatcher.getDefaultWorld().getCurrentEntities().size();
+                    return sessions == 0 && entities == 0;
+                });
+
+        serverExecutor.shutdownNow();
+    }
+
+//    public static void stopServerWhen(SessionManager sessionManager, Server server, ExecutorService serverExecutor) throws IOException {
+//        server.stop();
+//
+//        await()
+//                .pollDelay(Duration.ofMillis(150)) // wait before first poll
+//                .pollInterval(Duration.ofMillis(50))
+//                .atMost(Duration.ofSeconds(5))
+//                .until(() -> {
+//                    int sessions = sessionManager.activeSessions();
+//                    int entities = WorldDispatcher.getDefaultWorld().getCurrentEntities().size();
+//                    log.info("[Awaitility] Sessions: {}, Entities: {}", sessions, entities);
+//                    return sessions == 0 && entities == 0;
+//                });
+//
+//
+//        serverExecutor.shutdownNow();
+//    }
 
     public static void waitForPort(int port, long timeoutMillis) {
         await()

@@ -9,6 +9,8 @@ public class DisconnectCommand implements Command {
 
     @Override
     public Optional<String> execute(Message message, ProtocolContext protocolContext) {
+        // DISCONNECT client-name\n
+
         return Optional.empty();
     }
 }
