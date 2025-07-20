@@ -1,9 +1,6 @@
 package com.ntros;
 
-import com.ntros.event.bus.SessionEventBus;
-import com.ntros.event.listener.SessionCleaner;
 import com.ntros.event.listener.SessionManager;
-import com.ntros.model.world.Message;
 import com.ntros.model.world.WorldDispatcher;
 import com.ntros.server.Server;
 import lombok.extern.slf4j.Slf4j;
@@ -12,9 +9,7 @@ import java.io.*;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
-import java.util.function.Supplier;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.awaitility.Awaitility.await;

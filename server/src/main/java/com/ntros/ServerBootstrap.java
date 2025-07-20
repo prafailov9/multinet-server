@@ -1,7 +1,10 @@
 package com.ntros;
 
 import com.ntros.event.bus.SessionEventBus;
-import com.ntros.event.listener.*;
+import com.ntros.event.listener.ClientSessionEventListener;
+import com.ntros.event.listener.ClientSessionManager;
+import com.ntros.event.listener.SessionEventListener;
+import com.ntros.event.listener.SessionManager;
 import com.ntros.model.world.WorldDispatcher;
 import com.ntros.model.world.connector.WorldConnector;
 import com.ntros.runtime.Instance;
@@ -46,7 +49,6 @@ public class ServerBootstrap {
     }
 
     private static Server create(SessionManager serverSessionManager, SessionEventListener connectionEventListener) {
-        SessionEventBus.get().register(new SessionCleaner());
         SessionEventBus.get().register(connectionEventListener);
         return new TcpServer(serverSessionManager);
     }
