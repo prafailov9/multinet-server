@@ -34,8 +34,6 @@ public class ClientSessionEventListener implements SessionEventListener {
     /**
      * Registers the current session.
      * Starts the Tick Server on first registered session.
-     * @param session
-     * @param serverWelcomeMessage
      */
     private void started(Session session, String serverWelcomeMessage) {
         // indicates a successful JOIN command
@@ -49,14 +47,12 @@ public class ClientSessionEventListener implements SessionEventListener {
     }
 
     private void closed(Session session) {
-        log.info("[EVENT_LISTENER]: Received SESSION_CLOSED Event. Closing {}.", session.getProtocolContext());
         sessionManager.remove(session);
         removeSessionEntityFromWorld(session.getProtocolContext());
         closeAll();
     }
 
     private void failed(Session session) {
-        log.info("[EVENT_LISTENER]: Received SESSION_FAILED Event. Closing {}.", session.getProtocolContext());
         sessionManager.remove(session);
 
         removeSessionEntityFromWorld(session.getProtocolContext());
