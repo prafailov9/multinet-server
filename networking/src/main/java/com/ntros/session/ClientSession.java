@@ -23,8 +23,8 @@ public class ClientSession implements Session {
 
     private final Connection connection;
     private final MessageParser messageParser;
-    private final ProtocolContext protocolContext;
     private final Dispatcher dispatcher;
+    private final ProtocolContext protocolContext;
     private final AtomicBoolean terminated = new AtomicBoolean(false);
     private volatile boolean running = true;
 
@@ -46,11 +46,17 @@ public class ClientSession implements Session {
 
                 try {
                     Message message = messageParser.parse(data);
+                    log.info("Message received: {}", message);
                     String serverResponse = dispatcher.dispatch(message, protocolContext)
                             .orElseThrow(() -> new RuntimeException("[ClientSession]: no response from server."));
 
                     if (protocolContext.isAuthenticated() && serverResponse.startsWith("WELCOME")) {
                         SessionEventBus.get().publish(sessionStarted(this, "Starting client session...", serverResponse));
+                    }
+
+                    if (protocolContext.isAuthenticated() && serverResponse.startsWith("ACK")) {
+                        // just log, server is already ticking the state.
+                        log.info("Response from server: {}", serverResponse);
                     }
 
                 } catch (Exception ex) {

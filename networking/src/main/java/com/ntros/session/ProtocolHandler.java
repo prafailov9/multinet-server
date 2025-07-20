@@ -1,8 +1,12 @@
 package com.ntros.session;
 
+import com.ntros.message.ProtocolContext;
+
 import java.util.Optional;
 
-public class ProtocolHandler {
+public interface ProtocolHandler {
+
+    Optional<String> handle(String rawMessage, ProtocolContext context);
 
 
 }

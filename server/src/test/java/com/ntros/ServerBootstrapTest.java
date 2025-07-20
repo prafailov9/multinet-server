@@ -145,4 +145,38 @@ public class ServerBootstrapTest {
         assertEquals(0, entities.size());
     }
 
+//    @Test
+//    void concurrentConnections_sendMoveCommand_moveInTheWorldSuccess() throws Exception {
+//        int clientCount = 3;
+//        List<TestClient> clients = new ArrayList<>();
+//        try {
+//            for (int i = 0; i < clientCount; i++) {
+//                String clientName = "client-" + i;
+//                TestClient client = new TestClient("localhost", PORT);
+//                clients.add(client);
+//                String actualJoinResponse = client.join(clientName, world.worldName(), 100);
+//                String expectedJoinResponse = "WELCOME " + clientName;
+//                assertEquals(expectedJoinResponse, actualJoinResponse);
+//
+//                // send move command to server
+//                log.info("[TEST]: Sending MOVE request to server...");
+//                String actualMoveResponse = client.move(clientName, "UP", 100);
+//                String expectedMoveResponse = "STATE " + world.serialize();
+//                log.info("[TEST]: Received MOVE response from server: {}", actualMoveResponse);
+//                assertEquals(expectedMoveResponse, actualMoveResponse, "Unexpected response from server for " + clientName);
+//            }
+//        } finally {
+//            // TestClient is auto-closable, but with simulating multiple clients, close them explicitly
+//            for (TestClient client : clients) {
+//                client.close();
+//            }
+//        }
+//        // stop server
+//        stopServerWhen(sessionManager, server, serverExecutor);
+//
+//        List<Entity> entities = world.getCurrentEntities();
+//        log.info("Entities in world: {}", entities);
+//        assertEquals(0, entities.size());
+//    }
+
 }
