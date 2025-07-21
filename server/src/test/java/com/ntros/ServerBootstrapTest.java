@@ -7,7 +7,8 @@ import com.ntros.event.listener.ClientSessionManager;
 import com.ntros.event.listener.SessionEventListener;
 import com.ntros.event.listener.SessionManager;
 import com.ntros.model.entity.Entity;
-import com.ntros.model.world.WorldDispatcher;
+import com.ntros.model.entity.sequence.IdSequenceGenerator;
+import com.ntros.model.world.WorldConnectorHolder;
 import com.ntros.model.world.connector.GridWorldConnector;
 import com.ntros.model.world.engine.solid.GridWorldEngine;
 import com.ntros.model.world.state.solid.GridWorldState;
@@ -35,7 +36,7 @@ public class ServerBootstrapTest {
     private static final int PORT = 5555;
     private static final int TICK_RATE = 1;
     private final GridWorldEngine engine = new GridWorldEngine();
-    private final GridWorldConnector world = new GridWorldConnector(new GridWorldState("test-world", 3, 3), engine);
+    private final GridWorldConnector world = new GridWorldConnector(new GridWorldState("arena-x", 3, 3), engine);
     private TcpServer server;
     private final SessionManager sessionManager = new ClientSessionManager();
     private final Instance instance = new WorldInstance(world, sessionManager);
@@ -46,21 +47,23 @@ public class ServerBootstrapTest {
 
     @BeforeEach
     void setUp() {
-        WorldDispatcher.register(world.worldName(), world);
+        WorldConnectorHolder.register(world.worldName(), world);
         // register the world instance(state + engine) with the tick server
         worldTickScheduler.register(instance);
         SessionEventBus.get().register(clientSessionEventListener);
-        server = new TcpServer(sessionManager);
+        server = new TcpServer(worldTickScheduler);
         // Start the server in a background thread.
         ServerTestHelper.startServer(server, serverExecutor, PORT);
     }
 
     @AfterEach
     public void tearDown() {
-        WorldDispatcher.remove(world.worldName());
+        WorldConnectorHolder.remove(world.worldName());
         world.reset();
         // Clear all active listeners from prev tests
         SessionEventBus.get().removeAll();
+        IdSequenceGenerator.getInstance().reset();
+        clientSessionEventListener = null;
     }
 
     @Test

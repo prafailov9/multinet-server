@@ -14,7 +14,7 @@ public interface Session {
     void respond(String serverResponse);
 
     // flags session for termination
-    void stop();
+    void stop(boolean notifyOnTerminate);
 
     // ends session
     void terminate();

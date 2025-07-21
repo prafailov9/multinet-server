@@ -1,7 +1,7 @@
 package com.ntros;
 
 import com.ntros.event.listener.SessionManager;
-import com.ntros.model.world.WorldDispatcher;
+import com.ntros.model.world.WorldConnectorHolder;
 import com.ntros.server.Server;
 import lombok.extern.slf4j.Slf4j;
 
@@ -39,12 +39,12 @@ public class ServerTestHelper {
                 .atMost(Duration.ofSeconds(5))
                 .conditionEvaluationListener(condition -> {
                     int sessions = sessionManager.activeSessions();
-                    int entities = WorldDispatcher.getDefaultWorld().getCurrentEntities().size();
+                    int entities = WorldConnectorHolder.getDefaultWorld().getCurrentEntities().size();
                     log.info("[Awaitility Poll] Sessions: {}, Entities: {}", sessions, entities);
                 })
                 .until(() -> {
                     int sessions = sessionManager.activeSessions();
-                    int entities = WorldDispatcher.getDefaultWorld().getCurrentEntities().size();
+                    int entities = WorldConnectorHolder.getDefaultWorld().getCurrentEntities().size();
                     return sessions == 0 && entities == 0;
                 });
 
@@ -60,7 +60,7 @@ public class ServerTestHelper {
 //                .atMost(Duration.ofSeconds(5))
 //                .until(() -> {
 //                    int sessions = sessionManager.activeSessions();
-//                    int entities = WorldDispatcher.getDefaultWorld().getCurrentEntities().size();
+//                    int entities = WorldConnectorHolder.getDefaultWorld().getCurrentEntities().size();
 //                    log.info("[Awaitility] Sessions: {}, Entities: {}", sessions, entities);
 //                    return sessions == 0 && entities == 0;
 //                });

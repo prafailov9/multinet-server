@@ -4,7 +4,7 @@ import com.ntros.message.ProtocolContext;
 import com.ntros.model.entity.sequence.IdSequenceGenerator;
 import com.ntros.model.world.CommandType;
 import com.ntros.model.world.Message;
-import com.ntros.model.world.WorldDispatcher;
+import com.ntros.model.world.WorldConnectorHolder;
 import com.ntros.model.world.connector.WorldConnector;
 import com.ntros.model.world.protocol.JoinRequest;
 import com.ntros.model.world.protocol.Result;
@@ -38,17 +38,17 @@ public class JoinCommand extends AbstractCommand {
     }
 
     protected WorldConnector resolveWorld(Message message) {
-        log.info("[JOIN COMMAND]: All worlds: {}", WorldDispatcher.getAllWorlds().stream().map(WorldConnector::worldName).collect(Collectors.toList()));
+        log.info("[JOIN COMMAND]: All worlds: {}", WorldConnectorHolder.getAllWorlds().stream().map(WorldConnector::worldName).collect(Collectors.toList()));
         List<String> args = message.args();
 
         if (args.size() >= 2) {
             String worldName = args.get(1);
-            WorldConnector world = WorldDispatcher.getWorld(worldName);
+            WorldConnector world = WorldConnectorHolder.getWorld(worldName);
             if (world != null) return world;
             log.warn("[JOIN COMMAND]: Unknown world '{}', falling back to default", worldName);
         }
 
-        return WorldDispatcher.getDefaultWorld();
+        return WorldConnectorHolder.getDefaultWorld();
     }
 
     private Optional<String> handleResult(Result result, ProtocolContext protocolContext) {

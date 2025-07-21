@@ -1,7 +1,7 @@
 package com.ntros;
 
 import com.ntros.event.listener.SessionManager;
-import com.ntros.model.world.WorldDispatcher;
+import com.ntros.model.world.WorldConnectorHolder;
 import com.ntros.model.world.connector.WorldConnector;
 import com.ntros.runtime.Instance;
 import com.ntros.runtime.WorldInstance;
@@ -12,7 +12,7 @@ public class WorldBootstrap {
     private final static WorldTickScheduler worldTickScheduler = new WorldTickScheduler(TICK_RATE);
     public static void initializeWorld(SessionManager sessionManager) {
         // creating default world
-        WorldConnector world = WorldDispatcher.getDefaultWorld();
+        WorldConnector world = WorldConnectorHolder.getDefaultWorld();
         Instance instance = new WorldInstance(world, sessionManager);
 
         // start heartbeat

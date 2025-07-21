@@ -34,9 +34,10 @@ public class IdSequenceGenerator {
         return SESSION_ID_COUNTER.incrementAndGet();
     }
 
-    public long getNextWorldId() {
-        return WORLD_COUNTER.incrementAndGet();
+    public void reset() {
+        NPC_ENTITY_COUNTER.set(0);
+        SESSION_ID_COUNTER.set(0);
+        WORLD_COUNTER.set(0);
     }
-
 
 }

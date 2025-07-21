@@ -4,6 +4,7 @@ import com.ntros.session.Session;
 
 public interface SessionManager {
 
+    // Broadcasts to all registered sessions
     void broadcast(String serverMessage);
 
     void register(Session session);

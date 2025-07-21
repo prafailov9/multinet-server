@@ -5,9 +5,9 @@ import com.ntros.event.listener.ClientSessionEventListener;
 import com.ntros.event.listener.ClientSessionManager;
 import com.ntros.event.listener.SessionEventListener;
 import com.ntros.event.listener.SessionManager;
-import com.ntros.model.world.WorldDispatcher;
+import com.ntros.model.world.WorldConnectorHolder;
 import com.ntros.model.world.connector.WorldConnector;
-import com.ntros.runtime.Instance;
+import com.ntros.runtime.InstanceRegistry;
 import com.ntros.runtime.WorldInstance;
 import com.ntros.server.Server;
 import com.ntros.server.TcpServer;
@@ -24,20 +24,16 @@ public class ServerBootstrap {
 
     public static void startServer() {
         log.info("Starting server on port {}", PORT);
-        // create event bus
-        SessionManager sessionManager = new ClientSessionManager();
+        // create tick scheduler
+        WorldTickScheduler scheduler = new WorldTickScheduler(TICK_RATE);
 
-        // creating default world
-        WorldConnector world = WorldDispatcher.getDefaultWorld();
-        Instance instance = new WorldInstance(world, sessionManager);
+        initWorld("world-1", scheduler);
+        initWorld("world-2", scheduler);
+        initWorld("arena-x", scheduler);
+        initWorld("arena-y", scheduler);
+        initWorld("arena-z", scheduler);
 
-        WorldTickScheduler tickScheduler = new WorldTickScheduler(TICK_RATE);
-        tickScheduler.register(instance);
-
-        // registering the connection event listener
-        SessionEventListener connectionEventListener = new ClientSessionEventListener(sessionManager, tickScheduler);
-
-        Server server = create(sessionManager, connectionEventListener);
+        Server server = new TcpServer(scheduler);
 
         try {
             server.start(PORT);
@@ -48,9 +44,18 @@ public class ServerBootstrap {
 
     }
 
-    private static Server create(SessionManager serverSessionManager, SessionEventListener connectionEventListener) {
-        SessionEventBus.get().register(connectionEventListener);
-        return new TcpServer(serverSessionManager);
+    private static void initWorld(String name, WorldTickScheduler scheduler) {
+        WorldConnector world = WorldConnectorHolder.getWorld(name);
+        SessionManager sessionManager = new ClientSessionManager();
+
+        WorldInstance instance = new WorldInstance(world, sessionManager);
+        InstanceRegistry.register(instance);
+        scheduler.register(instance);
+
+        // Register the per-world listener
+        SessionEventListener listener = new ClientSessionEventListener(sessionManager, scheduler);
+        SessionEventBus.get().register(listener);
+
     }
 
 }

@@ -3,7 +3,7 @@ package com.ntros.command.impl;
 import com.ntros.message.ProtocolContext;
 import com.ntros.model.entity.Direction;
 import com.ntros.model.world.Message;
-import com.ntros.model.world.WorldDispatcher;
+import com.ntros.model.world.WorldConnectorHolder;
 import com.ntros.model.world.connector.WorldConnector;
 import com.ntros.model.world.protocol.MoveRequest;
 import com.ntros.model.world.protocol.Result;
@@ -18,7 +18,7 @@ public class MoveCommand extends AbstractCommand {
     public Optional<String> execute(Message message, ProtocolContext protocolContext) {
         validateContext(protocolContext);
 
-        WorldConnector world = WorldDispatcher.getWorld(protocolContext.getWorldId());
+        WorldConnector world = WorldConnectorHolder.getWorld(protocolContext.getWorldId());
         Direction direction = resolveMoveIntent(message);
         Result result = world.storeMoveIntent(new MoveRequest(protocolContext.getPlayerId(), direction));
 

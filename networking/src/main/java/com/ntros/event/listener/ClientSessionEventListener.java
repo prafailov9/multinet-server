@@ -2,7 +2,7 @@ package com.ntros.event.listener;
 
 import com.ntros.event.SessionEvent;
 import com.ntros.message.ProtocolContext;
-import com.ntros.model.world.WorldDispatcher;
+import com.ntros.model.world.WorldConnectorHolder;
 import com.ntros.model.world.connector.WorldConnector;
 import com.ntros.server.scheduler.WorldTickScheduler;
 import com.ntros.session.Session;
@@ -77,7 +77,7 @@ public class ClientSessionEventListener implements SessionEventListener {
             return;
         }
         if (context.getSessionId() != null && context.getWorldId() != null && !context.getWorldId().isEmpty()) {
-            WorldConnector worldConnector = WorldDispatcher.getWorld(context.getWorldId());
+            WorldConnector worldConnector = WorldConnectorHolder.getWorld(context.getWorldId());
             log.info("IN EVENT_LISTENER: Removing entity {} from world {}. ", context, worldConnector.worldName());
             worldConnector.remove(context.getPlayerId());
         }

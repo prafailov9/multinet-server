@@ -3,6 +3,10 @@ package com.ntros.server;
 import com.ntros.connection.Connection;
 import com.ntros.connection.SocketConnection;
 import com.ntros.event.listener.SessionManager;
+import com.ntros.model.world.WorldConnectorHolder;
+import com.ntros.runtime.Instance;
+import com.ntros.runtime.InstanceRegistry;
+import com.ntros.server.scheduler.WorldTickScheduler;
 import com.ntros.session.ClientSession;
 import com.ntros.session.Session;
 import lombok.extern.slf4j.Slf4j;
@@ -17,13 +21,13 @@ import java.net.SocketException;
  */
 @Slf4j
 public class TcpServer implements Server {
-
     private ServerSocket serverSocket;
-    private final SessionManager sessionManager;
     private volatile boolean running = true;
 
-    public TcpServer(SessionManager sessionManager) {
-        this.sessionManager = sessionManager;
+    private final WorldTickScheduler worldTickScheduler;
+
+    public TcpServer(WorldTickScheduler worldTickScheduler) {
+        this.worldTickScheduler = worldTickScheduler;
     }
 
     @Override
@@ -38,12 +42,13 @@ public class TcpServer implements Server {
 
                 // once received, create connection + session
                 // process client input in separate thread, unblocks server loop
-                Thread.startVirtualThread(() -> handleConnection(socket));
+                Thread.startVirtualThread(() -> startSession(socket));
             } catch (SocketException ex) {
                 if (!running) {
                     log.info("Server socket closed, exiting accept() loop.");
                     break;
                 } else {
+                    log.info("Unexpected exit accept loop: {}", ex.getMessage());
                     throw ex; // unexpected error
                 }
             }
@@ -55,11 +60,13 @@ public class TcpServer implements Server {
     public void stop() throws IOException {
         log.info("Shutting down server...");
         running = false;
-        sessionManager.shutdownAll();
+
+        worldTickScheduler.shutdownInstances();
+        worldTickScheduler.stop();
         serverSocket.close();
     }
 
-    private void handleConnection(Socket socket) {
+    private void startSession(Socket socket) {
         try {
             Connection connection = new SocketConnection(socket);
             Session session = new ClientSession(connection);

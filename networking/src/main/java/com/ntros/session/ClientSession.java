@@ -2,18 +2,14 @@ package com.ntros.session;
 
 
 import com.ntros.connection.Connection;
-import com.ntros.dispatcher.Dispatcher;
-import com.ntros.dispatcher.MessageDispatcher;
 import com.ntros.event.bus.SessionEventBus;
 import com.ntros.message.ProtocolContext;
-import com.ntros.parser.MessageParser;
 import com.ntros.session.process.ClientMessageProcessor;
 import com.ntros.session.process.RequestClientMessageProcessor;
 import com.ntros.session.process.ResponseServerMessageProcessor;
 import com.ntros.session.process.ServerMessageProcessor;
 import lombok.extern.slf4j.Slf4j;
 
-import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.ntros.event.SessionEvent.sessionClosed;
@@ -27,21 +23,19 @@ import static com.ntros.event.SessionEvent.sessionFailed;
 public class ClientSession implements Session {
 
     private final Connection connection;
-    private final MessageParser messageParser;
-    private final Dispatcher dispatcher;
     private final ProtocolContext protocolContext;
-
     private final ClientMessageProcessor clientMessageProcessor;
     private final ServerMessageProcessor serverMessageProcessor;
 
     private final AtomicBoolean terminated = new AtomicBoolean(false);
+    private final AtomicBoolean notifyOnTerminate = new AtomicBoolean(false);
+
     private volatile boolean running = true;
+
 
     public ClientSession(Connection connection) {
         this.connection = connection;
-        this.messageParser = new MessageParser();
         this.protocolContext = new ProtocolContext();
-        this.dispatcher = new MessageDispatcher();
         this.clientMessageProcessor = new RequestClientMessageProcessor();
         this.serverMessageProcessor = new ResponseServerMessageProcessor();
     }
@@ -67,7 +61,7 @@ public class ClientSession implements Session {
                 }
             }
         } finally {
-            log.info("ClientSession calling terminate()...");
+            log.info("ClientSession {} calling terminate()...", protocolContext.getSessionId());
             terminate();
         }
     }
@@ -84,8 +78,9 @@ public class ClientSession implements Session {
     }
 
     @Override
-    public void stop() {
+    public void stop(boolean notifyOnTerminate) {
         running = false;
+        this.notifyOnTerminate.set(notifyOnTerminate);
     }
 
     @Override
@@ -103,9 +98,11 @@ public class ClientSession implements Session {
         running = false;
         connection.close();
 
-        String serverMessage = String.format("Closing session %s...", protocolContext.getSessionId());
-        log.info("publishing SESSION_CLOSED Event..." + serverMessage);
-        SessionEventBus.get().publish(sessionClosed(this, serverMessage));
+        if (notifyOnTerminate.get()) {
+            String serverMessage = String.format("Closing session %s...", protocolContext.getSessionId());
+            log.info("publishing SESSION_CLOSED Event..." + serverMessage);
+            SessionEventBus.get().publish(sessionClosed(this, serverMessage));
+        }
     }
 
 }

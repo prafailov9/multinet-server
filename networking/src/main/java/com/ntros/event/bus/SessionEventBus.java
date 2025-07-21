@@ -8,6 +8,10 @@ import java.util.Collection;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
 
+/**
+ * Broadcasts session events to all attached listeners.
+ * Singleton.
+ */
 @Slf4j
 public class SessionEventBus implements EventBus {
 

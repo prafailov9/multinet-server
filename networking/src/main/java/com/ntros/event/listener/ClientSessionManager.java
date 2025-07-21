@@ -51,8 +51,8 @@ public class ClientSessionManager implements SessionManager {
         }
         for (Session session : sessions) {
             try {
-                log.info("SessionManager: Stopping all sessions.");
-                session.stop();
+                log.info("SessionManager: Sending stop signal for session {}", session.getProtocolContext());
+                session.stop(false);
             } catch (Exception ex) {
                 log.error("Failed to close session: {}", session.getProtocolContext().getSessionId());
             }

@@ -5,7 +5,6 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.util.List;
 import java.util.concurrent.*;
-import java.util.logging.Logger;
 
 @Slf4j
 public class WorldTickScheduler {
@@ -28,7 +27,7 @@ public class WorldTickScheduler {
         if (isTickTaskRunning()) {
             return;
         }
-        long interval = 100000000 / tickRate;
+        long interval = 1000 / tickRate;
 
         // init the task
         tickTask = scheduler.scheduleAtFixedRate(() -> {
@@ -52,6 +51,13 @@ public class WorldTickScheduler {
 
     public void shutdown() {
         scheduler.shutdownNow();
+    }
+
+    public void shutdownInstances() {
+        shutdown();
+        for (Instance instance : instances) {
+            instance.reset();
+        }
     }
 
     private boolean isTickTaskRunning() {
