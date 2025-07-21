@@ -25,6 +25,7 @@ public class ServerBootstrap {
     public static void startServer() {
         log.info("Starting server on port {}", PORT);
         // create tick scheduler
+        // TODO: try refactor scheduler per world instance
         WorldTickScheduler scheduler = new WorldTickScheduler(TICK_RATE);
 
         initWorld("world-1", scheduler);
