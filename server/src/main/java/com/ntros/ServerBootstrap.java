@@ -7,10 +7,11 @@ import com.ntros.event.listener.SessionEventListener;
 import com.ntros.event.listener.SessionManager;
 import com.ntros.model.world.WorldConnectorHolder;
 import com.ntros.model.world.connector.WorldConnector;
-import com.ntros.runtime.InstanceRegistry;
-import com.ntros.runtime.WorldInstance;
+import com.ntros.instance.InstanceRegistry;
+import com.ntros.instance.WorldInstance;
 import com.ntros.server.Server;
 import com.ntros.server.TcpServer;
+import com.ntros.server.scheduler.ServerTickScheduler;
 import com.ntros.server.scheduler.WorldTickScheduler;
 import lombok.extern.slf4j.Slf4j;
 
@@ -28,11 +29,11 @@ public class ServerBootstrap {
         // TODO: try refactor scheduler per world instance
         WorldTickScheduler scheduler = new WorldTickScheduler(TICK_RATE);
 
-        initWorld("world-1", scheduler);
-        initWorld("world-2", scheduler);
-        initWorld("arena-x", scheduler);
-        initWorld("arena-y", scheduler);
-        initWorld("arena-z", scheduler);
+        initWorld("world-1", new ServerTickScheduler(TICK_RATE));
+        initWorld("world-2", new WorldTickScheduler(TICK_RATE));
+        initWorld("arena-x", new WorldTickScheduler(TICK_RATE));
+        initWorld("arena-y", new WorldTickScheduler(TICK_RATE));
+        initWorld("arena-z", new WorldTickScheduler(TICK_RATE));
 
         Server server = new TcpServer(scheduler);
 
@@ -52,6 +53,19 @@ public class ServerBootstrap {
         WorldInstance instance = new WorldInstance(world, sessionManager);
         InstanceRegistry.register(instance);
         scheduler.register(instance);
+
+        // Register the per-world listener
+        SessionEventListener listener = new ClientSessionEventListener(sessionManager, scheduler);
+        SessionEventBus.get().register(listener);
+
+    }
+
+    private static void initWorld(String name, ServerTickScheduler scheduler) {
+        WorldConnector world = WorldConnectorHolder.getWorld(name);
+        SessionManager sessionManager = new ClientSessionManager();
+
+        WorldInstance instance = new WorldInstance(world, sessionManager);
+        InstanceRegistry.register(instance);
 
         // Register the per-world listener
         SessionEventListener listener = new ClientSessionEventListener(sessionManager, scheduler);

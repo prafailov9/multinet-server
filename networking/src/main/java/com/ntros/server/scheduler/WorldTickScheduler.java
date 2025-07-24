@@ -1,13 +1,13 @@
 package com.ntros.server.scheduler;
 
-import com.ntros.runtime.Instance;
+import com.ntros.instance.Instance;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.List;
 import java.util.concurrent.*;
 
 @Slf4j
-public class WorldTickScheduler {
+public class WorldTickScheduler implements TickScheduler {
 
     private final List<Instance> instances = new CopyOnWriteArrayList<>();
     private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(2);
@@ -22,7 +22,13 @@ public class WorldTickScheduler {
         instances.add(instance);
     }
 
-    public synchronized void start() {
+    @Override
+    public synchronized void tick(Runnable task) {
+
+    }
+
+    @Override
+    public synchronized void tick() {
         // avoid scheduling multiple tasks if tickTask is already running
         if (isTickTaskRunning()) {
             return;

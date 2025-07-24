@@ -2,10 +2,8 @@ package com.ntros.server;
 
 import com.ntros.connection.Connection;
 import com.ntros.connection.SocketConnection;
-import com.ntros.event.listener.SessionManager;
-import com.ntros.model.world.WorldConnectorHolder;
-import com.ntros.runtime.Instance;
-import com.ntros.runtime.InstanceRegistry;
+import com.ntros.instance.Instance;
+import com.ntros.instance.InstanceRegistry;
 import com.ntros.server.scheduler.WorldTickScheduler;
 import com.ntros.session.ClientSession;
 import com.ntros.session.Session;
@@ -60,6 +58,10 @@ public class TcpServer implements Server {
     public void stop() throws IOException {
         log.info("Shutting down server...");
         running = false;
+
+        for (Instance instance : InstanceRegistry.getAll()) {
+            instance.reset();
+        }
 
         worldTickScheduler.shutdownInstances();
         worldTickScheduler.stop();

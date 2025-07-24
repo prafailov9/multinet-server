@@ -38,12 +38,12 @@ public class ServerTestHelper {
                 .pollInterval(Duration.ofMillis(50))
                 .atMost(Duration.ofSeconds(5))
                 .conditionEvaluationListener(condition -> {
-                    int sessions = sessionManager.activeSessions();
+                    int sessions = sessionManager.activeSessionsCount();
                     int entities = WorldConnectorHolder.getDefaultWorld().getCurrentEntities().size();
                     log.info("[Awaitility Poll] Sessions: {}, Entities: {}", sessions, entities);
                 })
                 .until(() -> {
-                    int sessions = sessionManager.activeSessions();
+                    int sessions = sessionManager.activeSessionsCount();
                     int entities = WorldConnectorHolder.getDefaultWorld().getCurrentEntities().size();
                     return sessions == 0 && entities == 0;
                 });

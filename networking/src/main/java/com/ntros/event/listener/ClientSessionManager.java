@@ -1,11 +1,9 @@
 package com.ntros.event.listener;
 
-import com.ntros.event.bus.SessionEventBus;
 import com.ntros.session.Session;
 import lombok.extern.slf4j.Slf4j;
 
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static com.ntros.event.SessionEvent.sessionClosed;
@@ -37,8 +35,13 @@ public class ClientSessionManager implements SessionManager {
     }
 
     @Override
-    public int activeSessions() {
+    public int activeSessionsCount() {
         return sessions.size();
+    }
+
+    @Override
+    public List<Session> getActiveSessions() {
+        return new ArrayList<>(sessionMap.values());
     }
 
 

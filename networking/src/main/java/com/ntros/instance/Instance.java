@@ -1,4 +1,4 @@
-package com.ntros.runtime;
+package com.ntros.instance;
 
 public interface Instance {
 

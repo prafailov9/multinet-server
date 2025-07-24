@@ -2,6 +2,8 @@ package com.ntros.event.listener;
 
 import com.ntros.session.Session;
 
+import java.util.List;
+
 public interface SessionManager {
 
     // Broadcasts to all registered sessions
@@ -11,7 +13,9 @@ public interface SessionManager {
 
     void remove(Session session);
 
-    int activeSessions();
+    int activeSessionsCount();
+
+    List<Session> getActiveSessions();
 
     void shutdownAll();
 

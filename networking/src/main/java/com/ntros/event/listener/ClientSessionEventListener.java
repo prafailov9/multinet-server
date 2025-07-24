@@ -4,6 +4,7 @@ import com.ntros.event.SessionEvent;
 import com.ntros.message.ProtocolContext;
 import com.ntros.model.world.WorldConnectorHolder;
 import com.ntros.model.world.connector.WorldConnector;
+import com.ntros.server.scheduler.TickScheduler;
 import com.ntros.server.scheduler.WorldTickScheduler;
 import com.ntros.session.Session;
 import lombok.extern.slf4j.Slf4j;
@@ -14,10 +15,10 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class ClientSessionEventListener implements SessionEventListener {
 
     private final SessionManager sessionManager;
-    private final WorldTickScheduler tickScheduler;
+    private final TickScheduler tickScheduler;
     private final AtomicBoolean tickSchedulerRunning = new AtomicBoolean(false);
 
-    public ClientSessionEventListener(SessionManager sessionManager, WorldTickScheduler tickScheduler) {
+    public ClientSessionEventListener(SessionManager sessionManager, TickScheduler tickScheduler) {
         this.sessionManager = sessionManager;
         this.tickScheduler = tickScheduler;
     }
@@ -40,8 +41,8 @@ public class ClientSessionEventListener implements SessionEventListener {
         sessionManager.register(session);
         // send welcome response to client to trigger UI changes
         session.respond(serverWelcomeMessage);
-        if (sessionManager.activeSessions() - 1 == 0 && !tickSchedulerRunning.get()) {
-            tickScheduler.start();
+        if (sessionManager.activeSessionsCount() - 1 == 0 && !tickSchedulerRunning.get()) {
+            tickScheduler.tick();
             tickSchedulerRunning.set(true);
         }
     }
@@ -64,7 +65,7 @@ public class ClientSessionEventListener implements SessionEventListener {
      */
     private void closeAll() {
         // Check if there are any remaining active sessions.
-        if (sessionManager.activeSessions() == 0 && tickSchedulerRunning.get()) {
+        if (sessionManager.activeSessionsCount() == 0 && tickSchedulerRunning.get()) {
             tickScheduler.stop();
             tickSchedulerRunning.set(false);
             log.info("Last session was closed. TickScheduler stopped.");

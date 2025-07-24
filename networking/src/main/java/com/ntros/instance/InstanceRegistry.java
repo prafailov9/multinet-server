@@ -1,4 +1,4 @@
-package com.ntros.runtime;
+package com.ntros.instance;
 
 import java.util.Collection;
 import java.util.Map;

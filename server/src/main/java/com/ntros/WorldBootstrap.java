@@ -3,8 +3,8 @@ package com.ntros;
 import com.ntros.event.listener.SessionManager;
 import com.ntros.model.world.WorldConnectorHolder;
 import com.ntros.model.world.connector.WorldConnector;
-import com.ntros.runtime.Instance;
-import com.ntros.runtime.WorldInstance;
+import com.ntros.instance.Instance;
+import com.ntros.instance.WorldInstance;
 import com.ntros.server.scheduler.WorldTickScheduler;
 
 public class WorldBootstrap {
@@ -20,7 +20,7 @@ public class WorldBootstrap {
         worldTickScheduler.register(instance);
 
         // run only when there is a client registered
-        worldTickScheduler.start();
+        worldTickScheduler.tick();
     }
 
     public static void shutdownWorld(SessionManager sessionManager) {

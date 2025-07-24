@@ -9,7 +9,7 @@ public class ServerTickScheduler implements TickScheduler {
 
     private final int tickRate;
     private ScheduledFuture<?> tickTask; // reference to the tick task for management;
-    private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(2);
+    private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(3);
 
     public ServerTickScheduler(int tickRate) {
         this.tickRate = tickRate;
@@ -28,8 +28,21 @@ public class ServerTickScheduler implements TickScheduler {
     }
 
     @Override
-    public synchronized void stop() {
+    public void tick() {
 
+    }
+
+    @Override
+    public synchronized void stop() {
+        if (tickTask != null) {
+            tickTask.cancel(false); // cancel the scheduled task without interrupting if running
+            tickTask = null;
+        }
+    }
+
+    @Override
+    public void shutdown() {
+        scheduler.shutdownNow();
     }
 
     private boolean isTickTaskRunning() {
