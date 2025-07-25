@@ -37,8 +37,7 @@ public class ServerBootstrapTest {
 
 
     private static final int PORT = 5555;
-    // TODO: Tests fail at higher tick-rates. Fix.
-    private static final int TICK_RATE = 120;
+    private static final int TICK_RATE = 500;
     private final GridWorldConnector DEFAULT_WORLD =
             new GridWorldConnector(new GridWorldState("arena-x", 3, 3),
                     new GridWorldEngine());
