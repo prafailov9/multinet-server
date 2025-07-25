@@ -1,27 +1,22 @@
 package com.ntros.event.listener;
 
 import com.ntros.event.SessionEvent;
+import com.ntros.instance.Instance;
 import com.ntros.message.ProtocolContext;
 import com.ntros.model.world.WorldConnectorHolder;
 import com.ntros.model.world.connector.WorldConnector;
-import com.ntros.server.scheduler.TickScheduler;
-import com.ntros.server.scheduler.WorldTickScheduler;
 import com.ntros.session.Session;
 import lombok.extern.slf4j.Slf4j;
 
-import java.util.concurrent.atomic.AtomicBoolean;
-
 @Slf4j
-public class ClientSessionEventListener implements SessionEventListener {
+public class InstanceSessionEventListener implements SessionEventListener {
 
-    private final SessionManager sessionManager;
-    private final TickScheduler tickScheduler;
-    private final AtomicBoolean tickSchedulerRunning = new AtomicBoolean(false);
+    private final Instance instance;
 
-    public ClientSessionEventListener(SessionManager sessionManager, TickScheduler tickScheduler) {
-        this.sessionManager = sessionManager;
-        this.tickScheduler = tickScheduler;
+    public InstanceSessionEventListener(Instance instance) {
+        this.instance = instance;
     }
+
 
     @Override
     public void onSessionEvent(SessionEvent sessionEvent) {
@@ -38,24 +33,22 @@ public class ClientSessionEventListener implements SessionEventListener {
      */
     private void started(Session session, String serverWelcomeMessage) {
         // indicates a successful JOIN command
-        sessionManager.register(session);
+        instance.registerSession(session);
         // send welcome response to client to trigger UI changes
         session.respond(serverWelcomeMessage);
-        if (sessionManager.activeSessionsCount() - 1 == 0 && !tickSchedulerRunning.get()) {
-            tickScheduler.tick();
-            tickSchedulerRunning.set(true);
+        if (instance.getActiveSessionsCount() > 0 && !instance.isRunning()) {
+            instance.run();
         }
     }
 
     private void closed(Session session) {
-        sessionManager.remove(session);
+        instance.removeSession(session);
         removeSessionEntityFromWorld(session.getProtocolContext());
         closeAll();
     }
 
     private void failed(Session session) {
-        sessionManager.remove(session);
-
+        instance.removeSession(session);
         removeSessionEntityFromWorld(session.getProtocolContext());
         closeAll();
     }
@@ -65,9 +58,8 @@ public class ClientSessionEventListener implements SessionEventListener {
      */
     private void closeAll() {
         // Check if there are any remaining active sessions.
-        if (sessionManager.activeSessionsCount() == 0 && tickSchedulerRunning.get()) {
-            tickScheduler.stop();
-            tickSchedulerRunning.set(false);
+        if (instance.getActiveSessionsCount() == 0 && instance.isRunning()) {
+            instance.reset();
             log.info("Last session was closed. TickScheduler stopped.");
         }
     }
@@ -83,5 +75,4 @@ public class ClientSessionEventListener implements SessionEventListener {
             worldConnector.remove(context.getPlayerId());
         }
     }
-
 }

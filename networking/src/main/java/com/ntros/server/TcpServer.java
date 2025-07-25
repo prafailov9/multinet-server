@@ -24,6 +24,10 @@ public class TcpServer implements Server {
 
     private final WorldTickScheduler worldTickScheduler;
 
+    public TcpServer() {
+        worldTickScheduler = new WorldTickScheduler(120);
+    }
+
     public TcpServer(WorldTickScheduler worldTickScheduler) {
         this.worldTickScheduler = worldTickScheduler;
     }
@@ -63,8 +67,8 @@ public class TcpServer implements Server {
             instance.reset();
         }
 
-        worldTickScheduler.shutdownInstances();
-        worldTickScheduler.stop();
+//        worldTickScheduler.shutdownInstances();
+//        worldTickScheduler.stop();
         serverSocket.close();
     }
 

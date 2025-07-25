@@ -2,10 +2,8 @@ package com.ntros;
 
 
 import com.ntros.event.bus.SessionEventBus;
-import com.ntros.event.listener.ClientSessionEventListener;
-import com.ntros.event.listener.ClientSessionManager;
-import com.ntros.event.listener.SessionEventListener;
-import com.ntros.event.listener.SessionManager;
+import com.ntros.event.listener.*;
+import com.ntros.instance.InstanceRegistry;
 import com.ntros.model.entity.Entity;
 import com.ntros.model.entity.sequence.IdSequenceGenerator;
 import com.ntros.model.world.WorldConnectorHolder;
@@ -24,6 +22,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
@@ -37,15 +36,17 @@ public class ServerBootstrapTest {
 
 
     private static final int PORT = 5555;
-    private static final int TICK_RATE = 1;
-    private final GridWorldEngine engine = new GridWorldEngine();
-    private final GridWorldConnector DEFAULT_WORLD = new GridWorldConnector(new GridWorldState("arena-x", 3, 3), engine);
+    // TODO: Tests fail at higher tick-rates. Fix.
+    private static final int TICK_RATE = 5;
+    private final GridWorldConnector DEFAULT_WORLD =
+            new GridWorldConnector(new GridWorldState("arena-x", 3, 3),
+                    new GridWorldEngine());
     private TcpServer server;
     private final SessionManager sessionManager = new ClientSessionManager();
-    private final TickScheduler tickScheduler = new ServerTickScheduler(TICK_RATE);
-    private final Instance instance = new WorldInstance(DEFAULT_WORLD, sessionManager, tickScheduler);
+    private final TickScheduler serverTickScheduler = new ServerTickScheduler(TICK_RATE);
+    private final Instance instance = new WorldInstance(DEFAULT_WORLD, sessionManager, serverTickScheduler);
     private final WorldTickScheduler worldTickScheduler = new WorldTickScheduler(TICK_RATE);
-    SessionEventListener clientSessionEventListener = new ClientSessionEventListener(sessionManager, worldTickScheduler);
+    private SessionEventListener instanceSessionEventListener;
     private final ExecutorService serverExecutor = Executors.newSingleThreadExecutor();
 
 
@@ -54,10 +55,11 @@ public class ServerBootstrapTest {
 //        WorldConnector worldConnector = createWorld("w-1", 3, 3);
 //        Instance ins = createInstance(worldConnector, 100);
 
+        instanceSessionEventListener = new InstanceSessionEventListener(instance);
         WorldConnectorHolder.register(DEFAULT_WORLD);
         // register the world instance(state + engine) with the tick server
-        worldTickScheduler.register(instance);
-        SessionEventBus.get().register(clientSessionEventListener);
+        InstanceRegistry.register(instance);
+        SessionEventBus.get().register(instanceSessionEventListener);
         server = new TcpServer(worldTickScheduler);
         // Start the server in a background thread.
         ServerTestHelper.startServer(server, serverExecutor, PORT);
@@ -70,7 +72,7 @@ public class ServerBootstrapTest {
         // Clear all active listeners from prev tests
         SessionEventBus.get().removeAll();
         IdSequenceGenerator.getInstance().reset();
-        clientSessionEventListener = null;
+        instanceSessionEventListener = null;
     }
 
     @Test
@@ -129,7 +131,7 @@ public class ServerBootstrapTest {
     }
 
     @Test
-    void concurrentConnections_sendJoinCommand_joinServerSuccess() throws Exception {
+    void multipleClients_sendJoinCommand_welcomeMessageResponse() throws Exception {
         int clientCount = 3;
         List<TestClient> clients = new ArrayList<>();
         try {
@@ -159,12 +161,8 @@ public class ServerBootstrapTest {
         return new GridWorldConnector(new GridWorldState(worldName, width, height), new GridWorldEngine());
     }
 
-    private Instance createInstance(WorldConnector worldConnector, int tickRate) {
-        return new WorldInstance(worldConnector, new ClientSessionManager(), new ServerTickScheduler(tickRate));
-    }
-
 //    @Test
-//    void concurrentConnections_sendMoveCommand_moveInTheWorldSuccess() throws Exception {
+//    void multipleClients_sendMoveCommand_receiveWorldStateResponse() throws Exception {
 //        int clientCount = 3;
 //        List<TestClient> clients = new ArrayList<>();
 //        try {
@@ -172,14 +170,18 @@ public class ServerBootstrapTest {
 //                String clientName = "client-" + i;
 //                TestClient client = new TestClient("localhost", PORT);
 //                clients.add(client);
-//                String actualJoinResponse = client.join(clientName, world.worldName(), 100);
+//                String actualJoinResponse = client.join(clientName, DEFAULT_WORLD.worldName(), 100);
 //                String expectedJoinResponse = "WELCOME " + clientName;
 //                assertEquals(expectedJoinResponse, actualJoinResponse);
 //
 //                // send move command to server
 //                log.info("[TEST]: Sending MOVE request to server...");
 //                String actualMoveResponse = client.move(clientName, "UP", 100);
-//                String expectedMoveResponse = "STATE " + world.serialize();
+//                String expectedMoveResponse = "STATE " + DEFAULT_WORLD.serialize();
+////                String expectedMoveResponse = "STATE {\"tiles\": {\t\"1,0\": \"EMPTY\",\t\"2,1\": \"WALL\",\t\"0,0\":" +
+////                        " \"EMPTY\",\t\"1,1\": \"EMPTY\",\t\"2,2\": \"EMPTY\",\t\"0,1\": \"EMPTY\",\t\"1,2\": \"WALL\"," +
+////                        "\t\"0,2\": \"EMPTY\",\t\"2,0\": \"EMPTY\"}," +
+////                        "\"entities\": {\t\"client-0\": {\t\t\"x\": 1,\t\t\"y\": 0\t}}}";
 //                log.info("[TEST]: Received MOVE response from server: {}", actualMoveResponse);
 //                assertEquals(expectedMoveResponse, actualMoveResponse, "Unexpected response from server for " + clientName);
 //            }
@@ -192,9 +194,41 @@ public class ServerBootstrapTest {
 //        // stop server
 //        stopServerWhen(sessionManager, server, serverExecutor);
 //
-//        List<Entity> entities = world.getCurrentEntities();
+//        List<Entity> entities = DEFAULT_WORLD.getCurrentEntities();
 //        log.info("Entities in world: {}", entities);
 //        assertEquals(0, entities.size());
 //    }
 
+//    @Test
+//    private void multipleClients_joinDifferentWorlds_welcomeMessageResponse() throws IOException {
+//         create second world
+//
+//        TestClient testClient = null;
+//        try {
+//            testClient = new TestClient("localhost", PORT);
+//            String firstClient = "client-1";
+//            String secondClient = "client-2";
+//             join server
+//            String actualFirstClientJoinResponse = testClient.join(firstClient, DEFAULT_WORLD.worldName(), 100);
+//            String actualSecondClientJoinResponse = testClient.join(firstClient, "arena-x", 100);
+//            String expectedFirstClientJoinResponse = "WELCOME " + firstClient;
+//             Verify success join
+//            log.info("[TEST]: Received JOIN response from server: {}", actualFirstClientJoinResponse);
+//            assertEquals(expectedFirstClientJoinResponse, actualFirstClientJoinResponse, "Unexpected response from server for " + firstClient);
+//        } finally {
+//            assert testClient != null;
+//            testClient.close();
+//        }
+//
+//         stop server
+//        stopServerWhen(sessionManager, server, serverExecutor);
+//
+//        List<Entity> entities = DEFAULT_WORLD.getCurrentEntities();
+//        log.info("Entities in world: {}", entities);
+//        assertEquals(0, entities.size());
+//    }
+
+    private Instance createInstance(WorldConnector worldConnector, int tickRate) {
+        return new WorldInstance(worldConnector, new ClientSessionManager(), new ServerTickScheduler(tickRate));
+    }
 }

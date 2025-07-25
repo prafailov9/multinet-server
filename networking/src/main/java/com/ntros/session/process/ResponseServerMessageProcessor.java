@@ -13,6 +13,7 @@ public class ResponseServerMessageProcessor implements ServerMessageProcessor {
         boolean isAuth = session.getProtocolContext().isAuthenticated();
 
         if (isAuth && serverResponse.startsWith("WELCOME")) {
+            log.info("Sending start session event. Sharing world state with user: {}", session.getProtocolContext().getSessionId());
             SessionEventBus.get().publish(sessionStarted(session, "Starting client session...", serverResponse));
         }
 
