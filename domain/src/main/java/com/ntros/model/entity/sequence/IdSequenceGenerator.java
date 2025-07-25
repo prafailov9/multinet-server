@@ -5,39 +5,39 @@ import java.util.concurrent.atomic.AtomicLong;
 
 public class IdSequenceGenerator {
 
-    public static final ThreadLocalRandom RNG = ThreadLocalRandom.current();
-    private static final int DEFAULT_INITIAL_ID = 1;
+  public static final ThreadLocalRandom RNG = ThreadLocalRandom.current();
+  private static final int DEFAULT_INITIAL_ID = 1;
 
-    private static final AtomicLong WORLD_COUNTER = new AtomicLong(DEFAULT_INITIAL_ID);
-    private static final AtomicLong SESSION_ID_COUNTER = new AtomicLong(DEFAULT_INITIAL_ID);
-    private static final AtomicLong NPC_ENTITY_COUNTER = new AtomicLong(DEFAULT_INITIAL_ID);
+  private static final AtomicLong WORLD_COUNTER = new AtomicLong(DEFAULT_INITIAL_ID);
+  private static final AtomicLong SESSION_ID_COUNTER = new AtomicLong(DEFAULT_INITIAL_ID);
+  private static final AtomicLong NPC_ENTITY_COUNTER = new AtomicLong(DEFAULT_INITIAL_ID);
 
-    private IdSequenceGenerator() {
+  private IdSequenceGenerator() {
 
-    }
+  }
 
-    static class InstanceHolder {
+  public static IdSequenceGenerator getInstance() {
+    return InstanceHolder.INSTANCE;
+  }
 
-        static IdSequenceGenerator INSTANCE = new IdSequenceGenerator();
+  public long getNextNpcId() {
+    return NPC_ENTITY_COUNTER.incrementAndGet();
+  }
 
-    }
+  public long getNextSessionId() {
+    return SESSION_ID_COUNTER.incrementAndGet();
+  }
 
-    public static IdSequenceGenerator getInstance() {
-        return InstanceHolder.INSTANCE;
-    }
+  public void reset() {
+    NPC_ENTITY_COUNTER.set(0);
+    SESSION_ID_COUNTER.set(0);
+    WORLD_COUNTER.set(0);
+  }
 
-    public long getNextNpcId() {
-        return NPC_ENTITY_COUNTER.incrementAndGet();
-    }
+  static class InstanceHolder {
 
-    public long getNextSessionId() {
-        return SESSION_ID_COUNTER.incrementAndGet();
-    }
+    static IdSequenceGenerator INSTANCE = new IdSequenceGenerator();
 
-    public void reset() {
-        NPC_ENTITY_COUNTER.set(0);
-        SESSION_ID_COUNTER.set(0);
-        WORLD_COUNTER.set(0);
-    }
+  }
 
 }

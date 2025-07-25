@@ -4,15 +4,18 @@ import com.ntros.session.Session;
 
 public interface Instance {
 
-    void run();
-    String worldName();
-    void reset();
+  void run();
 
-    void registerSession(Session session);
-    void removeSession(Session session);
+  String worldName();
 
-    int getActiveSessionsCount();
+  void reset();
 
-    boolean isRunning();
+  void registerSession(Session session);
+
+  void removeSession(Session session);
+
+  int getActiveSessionsCount();
+
+  boolean isRunning();
 
 }

@@ -6,18 +6,18 @@ import com.ntros.model.entity.movement.Velocity;
 
 public interface DynamicEntity extends Entity {
 
-    Vector getDynamicPosition();
+  Vector getDynamicPosition();
 
-    Velocity getVelocity();
+  Velocity getVelocity();
 
-    void setVelocity(Velocity velocity);
+  void setVelocity(Velocity velocity);
 
-    void updatePosition(float deltaTime);
+  void updatePosition(float deltaTime);
 
-    float rotation(); // angle in degrees
+  float rotation(); // angle in degrees
 
-    float acceleration();
+  float acceleration();
 
-    float maxSpeed();
+  float maxSpeed();
 
 }

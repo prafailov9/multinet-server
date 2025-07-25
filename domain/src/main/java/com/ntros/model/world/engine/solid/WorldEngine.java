@@ -11,16 +11,17 @@ import com.ntros.model.world.state.WorldState;
  */
 public interface WorldEngine {
 
-    void tick(WorldState worldState);
+  void tick(WorldState worldState);
 
-    Result storeMoveIntent(MoveRequest move, WorldState worldState);
+  Result storeMoveIntent(MoveRequest move, WorldState worldState);
 
-    Result add(JoinRequest joinRequest, WorldState worldState);
+  Result add(JoinRequest joinRequest, WorldState worldState);
 
-    Entity remove(String entityId, WorldState worldState);
+  Entity remove(String entityId, WorldState worldState);
 
-    String serialize(WorldState worldState);
-    String serializeOneLine(WorldState worldState);
+  String serialize(WorldState worldState);
 
-    void reset(WorldState worldState);
+  String serializeOneLine(WorldState worldState);
+
+  void reset(WorldState worldState);
 }

@@ -1,11 +1,13 @@
 package com.ntros.server.scheduler;
 
 public interface TickScheduler {
-    void tick(Runnable task);
 
-    void tick();
+  void tick(Runnable task);
 
-    // signals to shutdown
-    void stop();
-    void shutdown();
+  void tick();
+
+  // signals to shutdown
+  void stop();
+
+  void shutdown();
 }

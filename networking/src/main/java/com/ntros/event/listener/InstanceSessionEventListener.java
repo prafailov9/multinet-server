@@ -11,68 +11,70 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class InstanceSessionEventListener implements SessionEventListener {
 
-    private final Instance instance;
+  private final Instance instance;
 
-    public InstanceSessionEventListener(Instance instance) {
-        this.instance = instance;
+  public InstanceSessionEventListener(Instance instance) {
+    this.instance = instance;
+  }
+
+
+  @Override
+  public void onSessionEvent(SessionEvent sessionEvent) {
+    switch (sessionEvent.getEventType()) {
+      case SESSION_STARTED -> started(sessionEvent.getSession(), sessionEvent.getServerMessage());
+      case SESSION_CLOSED -> closed(sessionEvent.getSession());
+      case SESSION_FAILED -> failed(sessionEvent.getSession());
     }
+  }
 
-
-    @Override
-    public void onSessionEvent(SessionEvent sessionEvent) {
-        switch (sessionEvent.getEventType()) {
-            case SESSION_STARTED -> started(sessionEvent.getSession(), sessionEvent.getServerMessage());
-            case SESSION_CLOSED -> closed(sessionEvent.getSession());
-            case SESSION_FAILED -> failed(sessionEvent.getSession());
-        }
+  /**
+   * Registers the current session. Starts the Tick Server on first registered session.
+   */
+  private void started(Session session, String serverWelcomeMessage) {
+    // indicates a successful JOIN command
+    instance.registerSession(session);
+    // send welcome response to client to trigger UI changes
+    session.respond(serverWelcomeMessage);
+    if (instance.getActiveSessionsCount() > 0 && !instance.isRunning()) {
+      instance.run();
     }
+  }
 
-    /**
-     * Registers the current session.
-     * Starts the Tick Server on first registered session.
-     */
-    private void started(Session session, String serverWelcomeMessage) {
-        // indicates a successful JOIN command
-        instance.registerSession(session);
-        // send welcome response to client to trigger UI changes
-        session.respond(serverWelcomeMessage);
-        if (instance.getActiveSessionsCount() > 0 && !instance.isRunning()) {
-            instance.run();
-        }
-    }
+  private void closed(Session session) {
+    instance.removeSession(session);
+    removeSessionEntityFromWorld(session.getProtocolContext());
+    closeAll();
+  }
 
-    private void closed(Session session) {
-        instance.removeSession(session);
-        removeSessionEntityFromWorld(session.getProtocolContext());
-        closeAll();
-    }
+  private void failed(Session session) {
+    instance.removeSession(session);
+    removeSessionEntityFromWorld(session.getProtocolContext());
+    closeAll();
+  }
 
-    private void failed(Session session) {
-        instance.removeSession(session);
-        removeSessionEntityFromWorld(session.getProtocolContext());
-        closeAll();
+  /**
+   * stops session and tick scheduler
+   */
+  private void closeAll() {
+    // Check if there are any remaining active sessions.
+    if (instance.getActiveSessionsCount() == 0 && instance.isRunning()) {
+      instance.reset();
+      log.info("Last session was closed. TickScheduler stopped.");
     }
+  }
 
-    /**
-     * stops session and tick scheduler
-     */
-    private void closeAll() {
-        // Check if there are any remaining active sessions.
-        if (instance.getActiveSessionsCount() == 0 && instance.isRunning()) {
-            instance.reset();
-            log.info("Last session was closed. TickScheduler stopped.");
-        }
+  private void removeSessionEntityFromWorld(ProtocolContext context) {
+    if (context == null || !context.isAuthenticated()) {
+      log.warn("IN EVENT_LISTENER- removeEntity from World: sessionContext is invalid: {}. ",
+          context);
+      return;
     }
-
-    private void removeSessionEntityFromWorld(ProtocolContext context) {
-        if (context == null || !context.isAuthenticated()) {
-            log.warn("IN EVENT_LISTENER- removeEntity from World: sessionContext is invalid: {}. ", context);
-            return;
-        }
-        if (context.getSessionId() != null && context.getWorldId() != null && !context.getWorldId().isEmpty()) {
-            WorldConnector worldConnector = WorldConnectorHolder.getWorld(context.getWorldId());
-            log.info("IN EVENT_LISTENER: Removing entity {} from world {}. ", context, worldConnector.worldName());
-            worldConnector.remove(context.getPlayerId());
-        }
+    if (context.getSessionId() != null && context.getWorldId() != null && !context.getWorldId()
+        .isEmpty()) {
+      WorldConnector worldConnector = WorldConnectorHolder.getWorld(context.getWorldId());
+      log.info("IN EVENT_LISTENER: Removing entity {} from world {}. ", context,
+          worldConnector.worldName());
+      worldConnector.remove(context.getPlayerId());
     }
+  }
 }

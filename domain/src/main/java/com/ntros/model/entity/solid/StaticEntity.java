@@ -5,6 +5,6 @@ import com.ntros.model.entity.movement.Position;
 
 public interface StaticEntity extends Entity {
 
-    void setPosition(Position position);
+  void setPosition(Position position);
 
 }

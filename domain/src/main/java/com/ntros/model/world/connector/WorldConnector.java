@@ -4,27 +4,27 @@ import com.ntros.model.entity.Entity;
 import com.ntros.model.world.protocol.JoinRequest;
 import com.ntros.model.world.protocol.MoveRequest;
 import com.ntros.model.world.protocol.Result;
-
 import java.util.List;
 
 /**
- * Layer, connecting clients to the actual game world. Exposes minimal contract for client interaction with the world.
- * Unique per engine + state.
+ * Layer, connecting clients to the actual game world. Exposes minimal contract for client
+ * interaction with the world. Unique per engine + state.
  */
 public interface WorldConnector {
-    void update();
 
-    Result storeMoveIntent(MoveRequest move);
+  void update();
 
-    Result add(JoinRequest joinRequest);
+  Result storeMoveIntent(MoveRequest move);
 
-    void remove(String entityId);
+  Result add(JoinRequest joinRequest);
 
-    String serialize();
+  void remove(String entityId);
 
-    String worldName();
+  String serialize();
 
-    List<Entity> getCurrentEntities();
+  String worldName();
 
-    void reset();
+  List<Entity> getCurrentEntities();
+
+  void reset();
 }

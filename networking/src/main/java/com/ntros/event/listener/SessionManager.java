@@ -1,22 +1,21 @@
 package com.ntros.event.listener;
 
 import com.ntros.session.Session;
-
 import java.util.List;
 
 public interface SessionManager {
 
-    // Broadcasts to all registered sessions
-    void broadcast(String serverMessage);
+  // Broadcasts to all registered sessions
+  void broadcast(String serverMessage);
 
-    void register(Session session);
+  void register(Session session);
 
-    void remove(Session session);
+  void remove(Session session);
 
-    int activeSessionsCount();
+  int activeSessionsCount();
 
-    List<Session> getActiveSessions();
+  List<Session> getActiveSessions();
 
-    void shutdownAll();
+  void shutdownAll();
 
 }

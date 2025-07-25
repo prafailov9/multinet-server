@@ -2,8 +2,9 @@ package com.ntros.model.entity.movement;
 
 public interface Vector {
 
-    float getX();
-    float getY();
+  float getX();
+
+  float getY();
 
 
 }

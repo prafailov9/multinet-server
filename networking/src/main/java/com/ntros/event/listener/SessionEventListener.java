@@ -4,6 +4,6 @@ import com.ntros.event.SessionEvent;
 
 public interface SessionEventListener {
 
-    void onSessionEvent(SessionEvent sessionEvent);
+  void onSessionEvent(SessionEvent sessionEvent);
 
 }

@@ -4,6 +4,6 @@ import com.ntros.session.Session;
 
 public interface ServerMessageProcessor {
 
-    void processResponse(String serverResponse, Session session);
+  void processResponse(String serverResponse, Session session);
 
 }

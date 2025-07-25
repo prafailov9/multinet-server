@@ -13,49 +13,48 @@ import com.ntros.server.Server;
 import com.ntros.server.TcpServer;
 import com.ntros.server.scheduler.ServerTickScheduler;
 import com.ntros.server.scheduler.WorldTickScheduler;
-import lombok.extern.slf4j.Slf4j;
-
 import java.io.IOException;
+import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class ServerBootstrap {
 
-    private static final int PORT = 5555;
-    private static final int TICK_RATE = 120; // 120 ticks per second
+  private static final int PORT = 5555;
+  private static final int TICK_RATE = 120; // 120 ticks per second
 
-    public static void startServer() {
-        log.info("Starting server on port {}", PORT);
-        // create tick scheduler
-        // TODO: try refactor scheduler per world instance
-        WorldTickScheduler scheduler = new WorldTickScheduler(TICK_RATE);
+  public static void startServer() {
+    log.info("Starting server on port {}", PORT);
+    // create tick scheduler
+    // TODO: try refactor scheduler per world instance
+    WorldTickScheduler scheduler = new WorldTickScheduler(TICK_RATE);
 
-        initWorld("world-1", new ServerTickScheduler(TICK_RATE));
-        initWorld("world-2", new ServerTickScheduler(TICK_RATE));
-        initWorld("arena-x", new ServerTickScheduler(TICK_RATE));
-        initWorld("arena-y", new ServerTickScheduler(TICK_RATE));
-        initWorld("arena-z", new ServerTickScheduler(TICK_RATE));
+    initWorld("world-1", new ServerTickScheduler(TICK_RATE));
+    initWorld("world-2", new ServerTickScheduler(TICK_RATE));
+    initWorld("arena-x", new ServerTickScheduler(TICK_RATE));
+    initWorld("arena-y", new ServerTickScheduler(TICK_RATE));
+    initWorld("arena-z", new ServerTickScheduler(TICK_RATE));
 
-        Server server = new TcpServer();
+    Server server = new TcpServer();
 
-        try {
-            server.start(PORT);
-        } catch (IOException ex) {
-            log.error("Server failed: {}", ex.getMessage());
-
-        }
+    try {
+      server.start(PORT);
+    } catch (IOException ex) {
+      log.error("Server failed: {}", ex.getMessage());
 
     }
 
-    private static void initWorld(String name, ServerTickScheduler scheduler) {
-        WorldConnector world = WorldConnectorHolder.getWorld(name);
-        SessionManager sessionManager = new ClientSessionManager();
+  }
 
-        WorldInstance instance = new WorldInstance(world, sessionManager, scheduler);
-        InstanceRegistry.register(instance);
+  private static void initWorld(String name, ServerTickScheduler scheduler) {
+    WorldConnector world = WorldConnectorHolder.getWorld(name);
+    SessionManager sessionManager = new ClientSessionManager();
 
-        // Register the per-world listener
-        SessionEventListener instanceListener = new InstanceSessionEventListener(instance);
-        SessionEventBus.get().register(instanceListener);
-    }
+    WorldInstance instance = new WorldInstance(world, sessionManager, scheduler);
+    InstanceRegistry.register(instance);
+
+    // Register the per-world listener
+    SessionEventListener instanceListener = new InstanceSessionEventListener(instance);
+    SessionEventBus.get().register(instanceListener);
+  }
 
 }
