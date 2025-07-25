@@ -40,7 +40,7 @@ public class ServerBootstrapTest {
 
 
     private static final int PORT = 5555;
-    private static final int TICK_RATE = 500;
+    private static final int TICK_RATE = 1000;
     private final GridWorldConnector DEFAULT_WORLD =
             new GridWorldConnector(new GridWorldState("arena-x", 3, 3),
                     new GridWorldEngine());

@@ -48,7 +48,10 @@ public class ClientSession implements Session {
                 if (rawMessage == null || rawMessage.isEmpty()) {
                     continue;
                 }
-
+                if (rawMessage.equals("_TIMEOUT_")) {
+                    // could send PING message to client
+                    continue;
+                }
                 try {
                     String serverResponse = clientMessageProcessor.process(rawMessage, protocolContext)
                             .orElseThrow(() -> new RuntimeException("[ClientSession]: no response from server."));
@@ -104,5 +107,4 @@ public class ClientSession implements Session {
             SessionEventBus.get().publish(sessionClosed(this, serverMessage));
         }
     }
-
 }

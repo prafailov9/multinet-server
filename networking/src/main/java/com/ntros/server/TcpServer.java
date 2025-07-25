@@ -61,15 +61,12 @@ public class TcpServer implements Server {
             instance.reset();
         }
 
-//        worldTickScheduler.shutdownInstances();
-//        worldTickScheduler.stop();
         serverSocket.close();
     }
 
     private void startSession(Socket socket) {
         try {
-            Connection connection = new SocketConnection(socket);
-            Session session = new ClientSession(connection);
+            Session session = new ClientSession(new SocketConnection(socket));
 
             session.run();
         } catch (Exception ex) {

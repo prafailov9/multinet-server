@@ -6,7 +6,7 @@ package com.ntros.connection;
  */
 public interface Connection {
 
-    void send(String data);
+    void send(String message);
     String receive();
     void close();
     boolean isOpen();

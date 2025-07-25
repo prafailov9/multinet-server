@@ -42,7 +42,7 @@ public class GridWorldConnector implements WorldConnector {
 
     @Override
     public String serialize() {
-        return gridWorldEngine.serializeOneLine(gridWorldState);
+        return gridWorldEngine.serialize(gridWorldState);
     }
 
     @Override

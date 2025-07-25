@@ -8,7 +8,12 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
 import java.net.SocketException;
+import java.net.SocketTimeoutException;
 import java.nio.charset.StandardCharsets;
+import java.util.Queue;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Wraps one client socket, abstracts I/O
@@ -21,9 +26,15 @@ public class SocketConnection implements Connection {
     private final OutputStream output;
 
 
+    private static final int MAX_TIMEOUT_MILLIS = 5000;
+    private static final int MAX_QUEUE_SIZE = 1024;
+    private final Queue<String> sendQueue = new ConcurrentLinkedQueue<>();
+    private final AtomicBoolean sending = new AtomicBoolean(false);
+
+
     public SocketConnection(Socket socket) throws IOException {
         this.socket = socket;
-        socket.setSoTimeout(5000);
+        socket.setSoTimeout(MAX_TIMEOUT_MILLIS);
 
         this.input = socket.getInputStream();
         this.output = socket.getOutputStream();
@@ -33,17 +44,13 @@ public class SocketConnection implements Connection {
      * Sends data stream to the client. Blocks until socket's out-buffer is flushed.
      */
     @Override
-    public void send(String data) {
-        try {
-            String message = data + "\n"; // always use newline to mark end-of-line
-            synchronized (output) {
-                output.write(message.getBytes(StandardCharsets.UTF_8)); // store message in internal buffer.
-                output.flush(); // immediately send the buffer to the socket connection.
-            }
-        } catch (IOException ex) {
-            log.error("[SocketConnection]: Failed to write to socket ({}): {}", getRemoteAddress(), ex.getMessage());
-            close();
+    public void send(String message) {
+
+        if (sendQueue.size() > MAX_QUEUE_SIZE) {
+            throw new RuntimeException("Backpressure: client not reading data.");
         }
+        sendQueue.add(message);
+        trySend(); // schedule flush
     }
 
     /**
@@ -74,6 +81,9 @@ public class SocketConnection implements Connection {
                 return null;
             }
 
+        } catch(SocketTimeoutException ex) {
+            // no data within MAX_TIMEOUT_MILLIS time. Signal to Session.
+            return "_TIMEOUT_";
         } catch (IOException ex) {
             // CONN_RESET can happen when the server shuts down, while client connections are still active. Just log and move on.
             if ("Connection reset".equals(ex.getMessage())) {
@@ -115,4 +125,45 @@ public class SocketConnection implements Connection {
             return "unknown";
         }
     }
+
+    private void trySend() {
+        if (!sending.compareAndSet(false, true)) {
+            return;
+        }
+
+        CompletableFuture.runAsync(() -> {
+            try {
+                while (!sendQueue.isEmpty()) {
+                    String msg = sendQueue.poll();
+                    if (msg != null) {
+                        output.write((msg + "\n").getBytes(StandardCharsets.UTF_8));
+                    }
+                }
+                output.flush();
+            } catch (IOException ex) {
+                log.error("Send failed: {}", ex.getMessage());
+                close();
+            } finally {
+                sending.set(false);
+                if (!sendQueue.isEmpty()) {
+                    trySend(); // retry
+                }
+            }
+        });
+    }
+
+    // Deprecated version of the send() method
+    private void sendV1(String data) {
+                try {
+            String message = data + "\n"; // always use newline to mark end-of-line
+            synchronized (output) {
+                output.write(message.getBytes(StandardCharsets.UTF_8)); // store message in internal buffer.
+                output.flush(); // immediately send the buffer to the socket connection.
+            }
+        } catch (IOException ex) {
+            log.error("[SocketConnection]: Failed to write to socket ({}): {}", getRemoteAddress(), ex.getMessage());
+            close();
+        }
+    }
+
 }
