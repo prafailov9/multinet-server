@@ -12,6 +12,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 /**
  * Layer that allows the world to interact with clients. Unique per world connector + session manager.
  */
+
+// TODO: Explore Refactor for Instance to BE the TickScheduler
 @Slf4j
 public class WorldInstance implements Instance {
     private final WorldConnector worldConnector;
