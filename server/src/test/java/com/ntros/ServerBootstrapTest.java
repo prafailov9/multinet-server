@@ -2,8 +2,13 @@ package com.ntros;
 
 
 import com.ntros.event.bus.SessionEventBus;
-import com.ntros.event.listener.*;
+import com.ntros.event.listener.ClientSessionManager;
+import com.ntros.event.listener.InstanceSessionEventListener;
+import com.ntros.event.listener.SessionEventListener;
+import com.ntros.event.listener.SessionManager;
+import com.ntros.instance.Instance;
 import com.ntros.instance.InstanceRegistry;
+import com.ntros.instance.WorldInstance;
 import com.ntros.model.entity.Entity;
 import com.ntros.model.entity.sequence.IdSequenceGenerator;
 import com.ntros.model.world.WorldConnectorHolder;
@@ -11,8 +16,6 @@ import com.ntros.model.world.connector.GridWorldConnector;
 import com.ntros.model.world.connector.WorldConnector;
 import com.ntros.model.world.engine.solid.GridWorldEngine;
 import com.ntros.model.world.state.solid.GridWorldState;
-import com.ntros.instance.Instance;
-import com.ntros.instance.WorldInstance;
 import com.ntros.server.TcpServer;
 import com.ntros.server.scheduler.ServerTickScheduler;
 import com.ntros.server.scheduler.TickScheduler;
@@ -60,7 +63,7 @@ public class ServerBootstrapTest {
         // register the world instance(state + engine) with the tick server
         InstanceRegistry.register(instance);
         SessionEventBus.get().register(instanceSessionEventListener);
-        server = new TcpServer(worldTickScheduler);
+        server = new TcpServer();
         // Start the server in a background thread.
         ServerTestHelper.startServer(server, serverExecutor, PORT);
     }
@@ -203,6 +206,7 @@ public class ServerBootstrapTest {
         log.info("Entities in world: {}", entities);
         assertEquals(0, entities.size());
     }
+
     @Test
     public void multipleClients_joinDifferentWorlds_welcomeMessageResponse() throws IOException {
 

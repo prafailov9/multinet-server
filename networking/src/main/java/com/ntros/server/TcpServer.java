@@ -4,7 +4,6 @@ import com.ntros.connection.Connection;
 import com.ntros.connection.SocketConnection;
 import com.ntros.instance.Instance;
 import com.ntros.instance.InstanceRegistry;
-import com.ntros.server.scheduler.WorldTickScheduler;
 import com.ntros.session.ClientSession;
 import com.ntros.session.Session;
 import lombok.extern.slf4j.Slf4j;
@@ -22,14 +21,9 @@ public class TcpServer implements Server {
     private ServerSocket serverSocket;
     private volatile boolean running = true;
 
-    private final WorldTickScheduler worldTickScheduler;
 
     public TcpServer() {
-        worldTickScheduler = new WorldTickScheduler(120);
-    }
 
-    public TcpServer(WorldTickScheduler worldTickScheduler) {
-        this.worldTickScheduler = worldTickScheduler;
     }
 
     @Override

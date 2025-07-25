@@ -35,7 +35,7 @@ public class ServerBootstrap {
         initWorld("arena-y", new ServerTickScheduler(TICK_RATE));
         initWorld("arena-z", new ServerTickScheduler(TICK_RATE));
 
-        Server server = new TcpServer(scheduler);
+        Server server = new TcpServer();
 
         try {
             server.start(PORT);
