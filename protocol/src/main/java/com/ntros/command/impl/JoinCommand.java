@@ -7,7 +7,7 @@ import com.ntros.model.world.Message;
 import com.ntros.model.world.WorldConnectorHolder;
 import com.ntros.model.world.connector.WorldConnector;
 import com.ntros.model.world.protocol.JoinRequest;
-import com.ntros.model.world.protocol.Result;
+import com.ntros.model.world.protocol.ServerResponse;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -21,10 +21,10 @@ public class JoinCommand extends AbstractCommand {
   public Optional<String> execute(Message message, ProtocolContext protocolContext) {
     String playerName = resolvePlayer(message);
     WorldConnector world = resolveWorld(message);
-    Result result = world.add(new JoinRequest(playerName));
+    ServerResponse serverResponse = world.add(new JoinRequest(playerName));
 
     // return server command
-    return handleResult(result, protocolContext);
+    return handleResult(serverResponse, protocolContext);
   }
 
   protected String resolvePlayer(Message message) {
@@ -54,18 +54,18 @@ public class JoinCommand extends AbstractCommand {
     return WorldConnectorHolder.getDefaultWorld();
   }
 
-  private Optional<String> handleResult(Result result, ProtocolContext protocolContext) {
-    if (result.success()) {
+  private Optional<String> handleResult(ServerResponse serverResponse, ProtocolContext protocolContext) {
+    if (serverResponse.success()) {
       protocolContext.setSessionId(IdSequenceGenerator.getInstance().getNextSessionId());
-      protocolContext.setPlayerId(result.playerName());
-      protocolContext.setWorldId(result.worldName());
+      protocolContext.setPlayerId(serverResponse.playerName());
+      protocolContext.setWorldId(serverResponse.worldName());
       protocolContext.setJoinedAt(OffsetDateTime.now());
       protocolContext.setAuthenticated(true);
       log.info("[JOIN Command]: success. Sending WELCOME response to client: {}", protocolContext);
-      return Optional.of(String.format("%s %s\n", CommandType.WELCOME.name(), result.playerName()));
+      return Optional.of(String.format("%s %s\n", CommandType.WELCOME.name(), serverResponse.playerName()));
     }
     protocolContext.setAuthenticated(false);
-    String err = String.format("%s %s\n", CommandType.ERROR.name(), result.reason());
+    String err = String.format("%s %s\n", CommandType.ERROR.name(), serverResponse.reason());
     log.error("[JOIN Command]: failure. Sending ERROR response: {}", err);
     return Optional.of(err);
   }

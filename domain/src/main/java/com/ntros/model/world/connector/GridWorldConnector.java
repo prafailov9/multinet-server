@@ -4,7 +4,7 @@ import com.ntros.model.entity.Entity;
 import com.ntros.model.world.engine.solid.GridWorldEngine;
 import com.ntros.model.world.protocol.JoinRequest;
 import com.ntros.model.world.protocol.MoveRequest;
-import com.ntros.model.world.protocol.Result;
+import com.ntros.model.world.protocol.ServerResponse;
 import com.ntros.model.world.state.solid.GridWorldState;
 import java.util.List;
 
@@ -25,12 +25,12 @@ public class GridWorldConnector implements WorldConnector {
   }
 
   @Override
-  public Result storeMoveIntent(MoveRequest move) {
+  public ServerResponse storeMoveIntent(MoveRequest move) {
     return gridWorldEngine.storeMoveIntent(move, gridWorldState);
   }
 
   @Override
-  public Result add(JoinRequest joinRequest) {
+  public ServerResponse add(JoinRequest joinRequest) {
     return gridWorldEngine.add(joinRequest, gridWorldState);
   }
 

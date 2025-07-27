@@ -12,7 +12,7 @@ import com.ntros.model.entity.solid.StaticEntity;
 import com.ntros.model.world.TileType;
 import com.ntros.model.world.protocol.JoinRequest;
 import com.ntros.model.world.protocol.MoveRequest;
-import com.ntros.model.world.protocol.Result;
+import com.ntros.model.world.protocol.ServerResponse;
 import com.ntros.model.world.state.WorldState;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
@@ -44,37 +44,37 @@ public class GridWorldEngine implements WorldEngine {
   }
 
   @Override
-  public Result storeMoveIntent(MoveRequest moveRequest, WorldState state) {
+  public ServerResponse storeMoveIntent(MoveRequest moveRequest, WorldState state) {
     Entity entity = state.entities().get(moveRequest.playerId());
     Position position = createPosition(entity.getPosition(), moveRequest.direction());
     if (state.isWithinBounds(position)) { // allow all moves if within bounds
       state.moveIntents().put(moveRequest.playerId(), moveRequest.direction());
       log.info("Added move intent: {}", moveRequest);
-      return new Result(true, entity.getName(), state.worldName(), null);
+      return new ServerResponse(true, entity.getName(), state.worldName(), null);
     }
     String msg = String.format("[%s]: invalid move: %s. Out of bounds.", state.worldName(),
         position);
     log.info(msg);
-    return new Result(false, entity.getName(), state.worldName(), msg);
+    return new ServerResponse(false, entity.getName(), state.worldName(), msg);
   }
 
   @Override
-  public Result add(JoinRequest joinRequest, WorldState worldState) {
+  public ServerResponse add(JoinRequest joinRequest, WorldState worldState) {
     long id = IdSequenceGenerator.getInstance().getNextSessionId();
     Position freePosition = findRandomFreePosition(worldState);
     if (freePosition == null) {
-      return new Result(false, joinRequest.getPlayerName(), worldState.worldName(),
+      return new ServerResponse(false, joinRequest.getPlayerName(), worldState.worldName(),
           "could not find free position in world.");
     }
     // register player in world
     Player player = new Player(freePosition, joinRequest.getPlayerName(), id, 100);
     addEntity(player, worldState);
 
-    // create result
-    Result result = new Result(true, player.getName(), worldState.worldName(), null);
+    // create serverResponse
+    ServerResponse serverResponse = new ServerResponse(true, player.getName(), worldState.worldName(), null);
     System.out.printf("[GridWorld]: player: %s joined World %s on position %s%n", player.getName(),
         worldState.worldName(), player.getPosition());
-    return result;
+    return serverResponse;
   }
 
   @Override
