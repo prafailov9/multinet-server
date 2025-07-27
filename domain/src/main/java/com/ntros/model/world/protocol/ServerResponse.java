@@ -1,5 +1,7 @@
 package com.ntros.model.world.protocol;
 
-public record ServerResponse(boolean success, String playerName, String worldName, String reason) {
+import com.ntros.model.world.WorldType;
+
+public record ServerResponse(boolean success, String playerName, String worldName, String reason, WorldType worldType) {
 
 }

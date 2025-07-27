@@ -2,6 +2,7 @@ package com.ntros.model.world.engine.solid;
 
 import static com.ntros.model.entity.DirectionUtil.createPosition;
 import static com.ntros.model.entity.sequence.IdSequenceGenerator.RNG;
+import static com.ntros.model.world.WorldType.GRID;
 
 import com.ntros.model.entity.Direction;
 import com.ntros.model.entity.Entity;
@@ -50,12 +51,12 @@ public class GridWorldEngine implements WorldEngine {
     if (state.isWithinBounds(position)) { // allow all moves if within bounds
       state.moveIntents().put(moveRequest.playerId(), moveRequest.direction());
       log.info("Added move intent: {}", moveRequest);
-      return new ServerResponse(true, entity.getName(), state.worldName(), null);
+      return new ServerResponse(true, entity.getName(), state.worldName(), null, GRID);
     }
     String msg = String.format("[%s]: invalid move: %s. Out of bounds.", state.worldName(),
         position);
     log.info(msg);
-    return new ServerResponse(false, entity.getName(), state.worldName(), msg);
+    return new ServerResponse(false, entity.getName(), state.worldName(), msg, GRID);
   }
 
   @Override
@@ -64,14 +65,15 @@ public class GridWorldEngine implements WorldEngine {
     Position freePosition = findRandomFreePosition(worldState);
     if (freePosition == null) {
       return new ServerResponse(false, joinRequest.getPlayerName(), worldState.worldName(),
-          "could not find free position in world.");
+          "could not find free position in world.", GRID);
     }
     // register player in world
     Player player = new Player(freePosition, joinRequest.getPlayerName(), id, 100);
     addEntity(player, worldState);
 
     // create serverResponse
-    ServerResponse serverResponse = new ServerResponse(true, player.getName(), worldState.worldName(), null);
+    ServerResponse serverResponse = new ServerResponse(true, player.getName(),
+        worldState.worldName(), null, GRID);
     System.out.printf("[GridWorld]: player: %s joined World %s on position %s%n", player.getName(),
         worldState.worldName(), player.getPosition());
     return serverResponse;
