@@ -2,9 +2,8 @@ package com.ntros.instance;
 
 import com.ntros.event.listener.SessionManager;
 import com.ntros.model.world.connector.WorldConnector;
-import com.ntros.server.scheduler.WorldTickScheduler;
-import com.ntros.server.scheduler.TickScheduler;
 import com.ntros.session.Session;
+import com.ntros.ticker.Ticker;
 import java.util.concurrent.atomic.AtomicBoolean;
 import lombok.extern.slf4j.Slf4j;
 
@@ -13,27 +12,20 @@ import lombok.extern.slf4j.Slf4j;
  * manager.
  */
 
-// TODO: Explore Refactor for Instance to BE the TickScheduler
+// TODO: Explore Idea to Refactor for Instance to Be the Ticker
 @Slf4j
 public class WorldInstance implements Instance {
 
   private final WorldConnector worldConnector;
   private final SessionManager sessionManager;
-  private final TickScheduler tickScheduler;
-  private final AtomicBoolean tickSchedulerRunning = new AtomicBoolean(false);
-
-
-  public WorldInstance(WorldConnector worldConnector, SessionManager sessionManager) {
-    this.worldConnector = worldConnector;
-    this.sessionManager = sessionManager;
-    tickScheduler = new WorldTickScheduler(120);
-  }
+  private final Ticker ticker;
+  private final AtomicBoolean tickerRunning = new AtomicBoolean(false);
 
   public WorldInstance(WorldConnector worldConnector, SessionManager sessionManager,
-      TickScheduler tickScheduler) {
+      Ticker ticker) {
     this.worldConnector = worldConnector;
     this.sessionManager = sessionManager;
-    this.tickScheduler = tickScheduler;
+    this.ticker = ticker;
   }
 
   @Override
@@ -44,7 +36,7 @@ public class WorldInstance implements Instance {
   @Override
   public void run() {
     log.info("[IN WORLD INSTANCE]: Updating {} state...", worldName());
-    tickScheduler.tick(() -> {
+    ticker.tick(() -> {
       worldConnector.update();
 
       String stateMessage = "STATE " + worldConnector.serialize();
@@ -52,14 +44,14 @@ public class WorldInstance implements Instance {
 
       sessionManager.broadcast(stateMessage);
     });
-    tickSchedulerRunning.set(true);
+    tickerRunning.set(true);
   }
 
   @Override
   public void reset() {
     log.info("Resetting World {}... stopping active sessions.", worldName());
-    tickScheduler.shutdown();
-    tickSchedulerRunning.set(false);
+    ticker.shutdown();
+    tickerRunning.set(false);
     sessionManager.shutdownAll();
     worldConnector.reset();
   }
@@ -81,7 +73,7 @@ public class WorldInstance implements Instance {
 
   @Override
   public boolean isRunning() {
-    return tickSchedulerRunning.get();
+    return tickerRunning.get();
   }
 
 

@@ -21,8 +21,8 @@ import com.ntros.model.world.connector.WorldConnector;
 import com.ntros.model.world.engine.solid.GridWorldEngine;
 import com.ntros.model.world.state.solid.GridWorldState;
 import com.ntros.server.TcpServer;
-import com.ntros.server.scheduler.WorldTickScheduler;
-import com.ntros.server.scheduler.TickScheduler;
+import com.ntros.ticker.WorldTicker;
+import com.ntros.ticker.Ticker;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -38,14 +38,14 @@ public class ServerBootstrapTest {
 
 
   private static final int PORT = 5555;
-  private static final int TICK_RATE = 1000;
+  private static final int TICK_RATE = 100;
   private final GridWorldConnector DEFAULT_WORLD =
       new GridWorldConnector(new GridWorldState("arena-x", 3, 3),
           new GridWorldEngine());
   private final SessionManager sessionManager = new ClientSessionManager();
-  private final TickScheduler serverTickScheduler = new WorldTickScheduler(TICK_RATE);
+  private final Ticker serverTicker = new WorldTicker(TICK_RATE);
   private final Instance instance = new WorldInstance(DEFAULT_WORLD, sessionManager,
-      serverTickScheduler);
+      serverTicker);
   private final ExecutorService serverExecutor = Executors.newSingleThreadExecutor();
   private TcpServer server;
   private SessionEventListener instanceSessionEventListener;
@@ -236,6 +236,6 @@ public class ServerBootstrapTest {
 
   private Instance createInstance(WorldConnector worldConnector, int tickRate) {
     return new WorldInstance(worldConnector, new ClientSessionManager(),
-        new WorldTickScheduler(tickRate));
+        new WorldTicker(tickRate));
   }
 }

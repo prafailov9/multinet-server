@@ -59,7 +59,7 @@ public class InstanceSessionEventListener implements SessionEventListener {
     // Check if there are any remaining active sessions.
     if (instance.getActiveSessionsCount() == 0 && instance.isRunning()) {
       instance.reset();
-      log.info("Last session was closed. TickScheduler stopped.");
+      log.info("Last session was closed. Ticker stopped.");
     }
   }
 
