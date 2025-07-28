@@ -1,7 +1,7 @@
 package com.ntros.parser;
 
-import com.ntros.model.world.CommandType;
-import com.ntros.model.world.Message;
+import com.ntros.model.world.protocol.CommandType;
+import com.ntros.model.world.protocol.Message;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;

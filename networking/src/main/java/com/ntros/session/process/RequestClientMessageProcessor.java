@@ -3,7 +3,8 @@ package com.ntros.session.process;
 import com.ntros.dispatcher.Dispatcher;
 import com.ntros.dispatcher.MessageDispatcher;
 import com.ntros.message.ProtocolContext;
-import com.ntros.model.world.Message;
+import com.ntros.model.world.protocol.Message;
+import com.ntros.model.world.protocol.ServerResponse;
 import com.ntros.parser.MessageParser;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
@@ -23,6 +24,11 @@ public class RequestClientMessageProcessor implements ClientMessageProcessor {
   public Optional<String> process(String rawMessage, ProtocolContext protocolContext) {
     Message message = messageParser.parse(rawMessage);
     log.info("Message received: {}", message);
-    return dispatcher.dispatch(message, protocolContext);
+
+    ServerResponse serverResponse = dispatcher.dispatch(message, protocolContext)
+        .orElseThrow(() -> new NoResponseFromServerException("Server returned empty response"));
+
+    String serverMessageString = serverResponse.serverMessage().toString();
+    return Optional.of(serverMessageString);
   }
 }

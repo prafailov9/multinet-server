@@ -1,12 +1,15 @@
 package com.ntros.command.impl;
 
+import static com.ntros.model.world.protocol.CommandType.ERROR;
+import static com.ntros.model.world.protocol.CommandType.WELCOME;
+
 import com.ntros.message.ProtocolContext;
 import com.ntros.model.entity.sequence.IdSequenceGenerator;
-import com.ntros.model.world.CommandType;
-import com.ntros.model.world.Message;
 import com.ntros.model.world.WorldConnectorHolder;
 import com.ntros.model.world.connector.WorldConnector;
+import com.ntros.model.world.protocol.CommandResult;
 import com.ntros.model.world.protocol.JoinRequest;
+import com.ntros.model.world.protocol.Message;
 import com.ntros.model.world.protocol.ServerResponse;
 import java.time.OffsetDateTime;
 import java.util.List;
@@ -18,13 +21,13 @@ import lombok.extern.slf4j.Slf4j;
 public class JoinCommand extends AbstractCommand {
 
   @Override
-  public Optional<String> execute(Message message, ProtocolContext protocolContext) {
+  public Optional<ServerResponse> execute(Message message, ProtocolContext protocolContext) {
     String playerName = resolvePlayer(message);
     WorldConnector world = resolveWorld(message);
-    ServerResponse serverResponse = world.add(new JoinRequest(playerName));
+    CommandResult commandResult = world.add(new JoinRequest(playerName));
 
     // return server command
-    return handleResult(serverResponse, protocolContext);
+    return Optional.of(handleServerResponse(commandResult, protocolContext));
   }
 
   protected String resolvePlayer(Message message) {
@@ -54,20 +57,24 @@ public class JoinCommand extends AbstractCommand {
     return WorldConnectorHolder.getDefaultWorld();
   }
 
-  private Optional<String> handleResult(ServerResponse serverResponse, ProtocolContext protocolContext) {
-    if (serverResponse.success()) {
+  private ServerResponse handleServerResponse(CommandResult commandResult,
+      ProtocolContext protocolContext) {
+    if (commandResult.success()) {
       protocolContext.setSessionId(IdSequenceGenerator.getInstance().getNextSessionId());
-      protocolContext.setPlayerId(serverResponse.playerName());
-      protocolContext.setWorldId(serverResponse.worldName());
+      protocolContext.setPlayerId(commandResult.playerName());
+      protocolContext.setWorldId(commandResult.worldName());
       protocolContext.setJoinedAt(OffsetDateTime.now());
       protocolContext.setAuthenticated(true);
       log.info("[JOIN Command]: success. Sending WELCOME response to client: {}", protocolContext);
-      return Optional.of(String.format("%s %s\n", CommandType.WELCOME.name(), serverResponse.playerName()));
+      return new ServerResponse(new Message(WELCOME, List.of(commandResult.playerName())),
+          commandResult);
     }
     protocolContext.setAuthenticated(false);
-    String err = String.format("%s %s\n", CommandType.ERROR.name(), serverResponse.reason());
+    String err = String.format("%s %s\n", ERROR.name(), commandResult.reason());
     log.error("[JOIN Command]: failure. Sending ERROR response: {}", err);
-    return Optional.of(err);
+
+    return new ServerResponse(new Message(ERROR, List.of(
+        commandResult.reason())), commandResult);
   }
 
 

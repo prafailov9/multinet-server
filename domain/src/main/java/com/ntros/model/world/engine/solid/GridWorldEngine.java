@@ -2,7 +2,7 @@ package com.ntros.model.world.engine.solid;
 
 import static com.ntros.model.entity.DirectionUtil.createPosition;
 import static com.ntros.model.entity.sequence.IdSequenceGenerator.RNG;
-import static com.ntros.model.world.WorldType.GRID;
+import static com.ntros.model.world.protocol.WorldType.GRID;
 
 import com.ntros.model.entity.Direction;
 import com.ntros.model.entity.Entity;
@@ -10,10 +10,10 @@ import com.ntros.model.entity.Player;
 import com.ntros.model.entity.movement.Position;
 import com.ntros.model.entity.sequence.IdSequenceGenerator;
 import com.ntros.model.entity.solid.StaticEntity;
-import com.ntros.model.world.TileType;
+import com.ntros.model.world.protocol.TileType;
 import com.ntros.model.world.protocol.JoinRequest;
 import com.ntros.model.world.protocol.MoveRequest;
-import com.ntros.model.world.protocol.ServerResponse;
+import com.ntros.model.world.protocol.CommandResult;
 import com.ntros.model.world.state.WorldState;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
@@ -45,38 +45,38 @@ public class GridWorldEngine implements WorldEngine {
   }
 
   @Override
-  public ServerResponse storeMoveIntent(MoveRequest moveRequest, WorldState state) {
+  public CommandResult storeMoveIntent(MoveRequest moveRequest, WorldState state) {
     Entity entity = state.entities().get(moveRequest.playerId());
     Position position = createPosition(entity.getPosition(), moveRequest.direction());
     if (state.isWithinBounds(position)) { // allow all moves if within bounds
       state.moveIntents().put(moveRequest.playerId(), moveRequest.direction());
       log.info("Added move intent: {}", moveRequest);
-      return new ServerResponse(true, entity.getName(), state.worldName(), null, GRID);
+      return new CommandResult(true, entity.getName(), state.worldName(), null, GRID);
     }
     String msg = String.format("[%s]: invalid move: %s. Out of bounds.", state.worldName(),
         position);
     log.info(msg);
-    return new ServerResponse(false, entity.getName(), state.worldName(), msg, GRID);
+    return new CommandResult(false, entity.getName(), state.worldName(), msg, GRID);
   }
 
   @Override
-  public ServerResponse add(JoinRequest joinRequest, WorldState worldState) {
+  public CommandResult add(JoinRequest joinRequest, WorldState worldState) {
     long id = IdSequenceGenerator.getInstance().getNextSessionId();
     Position freePosition = findRandomFreePosition(worldState);
     if (freePosition == null) {
-      return new ServerResponse(false, joinRequest.getPlayerName(), worldState.worldName(),
+      return new CommandResult(false, joinRequest.getPlayerName(), worldState.worldName(),
           "could not find free position in world.", GRID);
     }
     // register player in world
     Player player = new Player(freePosition, joinRequest.getPlayerName(), id, 100);
     addEntity(player, worldState);
 
-    // create serverResponse
-    ServerResponse serverResponse = new ServerResponse(true, player.getName(),
+    // create commandResult
+    CommandResult commandResult = new CommandResult(true, player.getName(),
         worldState.worldName(), null, GRID);
     System.out.printf("[GridWorld]: player: %s joined World %s on position %s%n", player.getName(),
         worldState.worldName(), player.getPosition());
-    return serverResponse;
+    return commandResult;
   }
 
   @Override

@@ -2,9 +2,9 @@ package com.ntros.model.world.connector;
 
 import com.ntros.model.entity.Entity;
 import com.ntros.model.world.engine.solid.GridWorldEngine;
+import com.ntros.model.world.protocol.CommandResult;
 import com.ntros.model.world.protocol.JoinRequest;
 import com.ntros.model.world.protocol.MoveRequest;
-import com.ntros.model.world.protocol.ServerResponse;
 import com.ntros.model.world.state.solid.GridWorldState;
 import java.util.List;
 
@@ -25,12 +25,12 @@ public class GridWorldConnector implements WorldConnector {
   }
 
   @Override
-  public ServerResponse storeMoveIntent(MoveRequest move) {
+  public CommandResult storeMoveIntent(MoveRequest move) {
     return gridWorldEngine.storeMoveIntent(move, gridWorldState);
   }
 
   @Override
-  public ServerResponse add(JoinRequest joinRequest) {
+  public CommandResult add(JoinRequest joinRequest) {
     return gridWorldEngine.add(joinRequest, gridWorldState);
   }
 

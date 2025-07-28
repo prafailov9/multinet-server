@@ -3,7 +3,7 @@ package com.ntros.model.world.connector;
 import com.ntros.model.entity.Entity;
 import com.ntros.model.world.protocol.JoinRequest;
 import com.ntros.model.world.protocol.MoveRequest;
-import com.ntros.model.world.protocol.ServerResponse;
+import com.ntros.model.world.protocol.CommandResult;
 import java.util.List;
 
 /**
@@ -14,9 +14,9 @@ public interface WorldConnector {
 
   void update();
 
-  ServerResponse storeMoveIntent(MoveRequest move);
+  CommandResult storeMoveIntent(MoveRequest move);
 
-  ServerResponse add(JoinRequest joinRequest);
+  CommandResult add(JoinRequest joinRequest);
 
   void remove(String entityId);
 

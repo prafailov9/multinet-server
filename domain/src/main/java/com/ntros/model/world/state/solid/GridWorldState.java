@@ -3,7 +3,7 @@ package com.ntros.model.world.state.solid;
 import com.ntros.model.entity.Direction;
 import com.ntros.model.entity.Entity;
 import com.ntros.model.entity.movement.Position;
-import com.ntros.model.world.TileType;
+import com.ntros.model.world.protocol.TileType;
 import com.ntros.model.world.state.WorldState;
 import com.ntros.model.world.state.dimension.Dimension;
 import com.ntros.model.world.state.dimension.Dimension2D;

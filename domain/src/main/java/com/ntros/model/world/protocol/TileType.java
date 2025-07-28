@@ -1,4 +1,4 @@
-package com.ntros.model.world;
+package com.ntros.model.world.protocol;
 
 public enum TileType {
   EMPTY,

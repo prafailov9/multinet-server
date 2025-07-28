@@ -4,7 +4,8 @@ import com.ntros.command.CommandRegistry;
 import com.ntros.command.impl.Command;
 import com.ntros.command.impl.ErrorCommand;
 import com.ntros.message.ProtocolContext;
-import com.ntros.model.world.Message;
+import com.ntros.model.world.protocol.Message;
+import com.ntros.model.world.protocol.ServerResponse;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 
@@ -13,7 +14,7 @@ public class MessageDispatcher implements Dispatcher {
 
 
   @Override
-  public Optional<String> dispatch(Message message, ProtocolContext protocolContext) {
+  public Optional<ServerResponse> dispatch(Message message, ProtocolContext protocolContext) {
     log.info("received message: {}", message);
     Command command = getCommand(message.command().name());
 

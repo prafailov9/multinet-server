@@ -1,6 +1,6 @@
 package com.ntros.command;
 
-import com.ntros.model.world.CommandType;
+import com.ntros.model.world.protocol.CommandType;
 import java.util.List;
 
 public class CommandUtil {

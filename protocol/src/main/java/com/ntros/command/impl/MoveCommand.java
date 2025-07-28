@@ -2,11 +2,14 @@ package com.ntros.command.impl;
 
 import com.ntros.message.ProtocolContext;
 import com.ntros.model.entity.Direction;
-import com.ntros.model.world.Message;
+import com.ntros.model.world.protocol.CommandType;
+import com.ntros.model.world.protocol.Message;
 import com.ntros.model.world.WorldConnectorHolder;
 import com.ntros.model.world.connector.WorldConnector;
 import com.ntros.model.world.protocol.MoveRequest;
+import com.ntros.model.world.protocol.CommandResult;
 import com.ntros.model.world.protocol.ServerResponse;
+import java.util.List;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 
@@ -14,21 +17,24 @@ import lombok.extern.slf4j.Slf4j;
 public class MoveCommand extends AbstractCommand {
 
   @Override
-  public Optional<String> execute(Message message, ProtocolContext protocolContext) {
+  public Optional<ServerResponse> execute(Message message, ProtocolContext protocolContext) {
     validateContext(protocolContext);
 
     WorldConnector world = WorldConnectorHolder.getWorld(protocolContext.getWorldId());
     Direction direction = resolveMoveIntent(message);
-    ServerResponse serverResponse = world.storeMoveIntent(
+    CommandResult commandResult = world.storeMoveIntent(
         new MoveRequest(protocolContext.getPlayerId(), direction));
 
-    return handleResult(serverResponse, direction.name());
+    return Optional.of(handleResult(commandResult, direction.name()));
   }
 
-  private Optional<String> handleResult(ServerResponse serverResponse, String move) {
-    log.info("Received serverResponse from world: {}", serverResponse);
-    return serverResponse.success() ? Optional.of(String.format("ACK %s\n", move))
-        : Optional.of(String.format("ERROR %s\n", serverResponse.reason()));
+  private ServerResponse handleResult(CommandResult commandResult, String move) {
+    log.info("Received commandResult from world: {}", commandResult);
+    return commandResult.success()
+        ? new ServerResponse(new Message(CommandType.ACK, List.of(move)), commandResult)
+        : new ServerResponse(new Message(CommandType.ERROR, List.of(commandResult.reason())), commandResult);
+//    return commandResult.success() ? Optional.of(String.format("ACK %s\n", move))
+//        : Optional.of(String.format("ERROR %s\n", commandResult.reason()));
   }
 
   private Direction resolveMoveIntent(Message message) {

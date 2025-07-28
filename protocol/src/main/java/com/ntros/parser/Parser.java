@@ -1,6 +1,6 @@
 package com.ntros.parser;
 
-import com.ntros.model.world.Message;
+import com.ntros.model.world.protocol.Message;
 
 public interface Parser {
 

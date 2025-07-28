@@ -1,9 +1,9 @@
 package com.ntros.model.world.engine.solid;
 
 import com.ntros.model.entity.Entity;
+import com.ntros.model.world.protocol.CommandResult;
 import com.ntros.model.world.protocol.JoinRequest;
 import com.ntros.model.world.protocol.MoveRequest;
-import com.ntros.model.world.protocol.ServerResponse;
 import com.ntros.model.world.state.WorldState;
 
 /**
@@ -13,9 +13,9 @@ public interface WorldEngine {
 
   void tick(WorldState worldState);
 
-  ServerResponse storeMoveIntent(MoveRequest move, WorldState worldState);
+  CommandResult storeMoveIntent(MoveRequest move, WorldState worldState);
 
-  ServerResponse add(JoinRequest joinRequest, WorldState worldState);
+  CommandResult add(JoinRequest joinRequest, WorldState worldState);
 
   Entity remove(String entityId, WorldState worldState);
 
