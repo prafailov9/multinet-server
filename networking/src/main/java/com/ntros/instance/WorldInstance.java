@@ -2,7 +2,7 @@ package com.ntros.instance;
 
 import com.ntros.event.listener.SessionManager;
 import com.ntros.model.world.connector.WorldConnector;
-import com.ntros.server.scheduler.ServerTickScheduler;
+import com.ntros.server.scheduler.WorldTickScheduler;
 import com.ntros.server.scheduler.TickScheduler;
 import com.ntros.session.Session;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -26,7 +26,7 @@ public class WorldInstance implements Instance {
   public WorldInstance(WorldConnector worldConnector, SessionManager sessionManager) {
     this.worldConnector = worldConnector;
     this.sessionManager = sessionManager;
-    tickScheduler = new ServerTickScheduler(120);
+    tickScheduler = new WorldTickScheduler(120);
   }
 
   public WorldInstance(WorldConnector worldConnector, SessionManager sessionManager,

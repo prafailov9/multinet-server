@@ -6,13 +6,13 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 
-public class ServerTickScheduler implements TickScheduler {
+public class WorldTickScheduler implements TickScheduler {
 
   private final int tickRate;
   private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(3);
   private ScheduledFuture<?> tickTask; // reference to the tick task for management;
 
-  public ServerTickScheduler(int tickRate) {
+  public WorldTickScheduler(int tickRate) {
     this.tickRate = tickRate;
   }
 
