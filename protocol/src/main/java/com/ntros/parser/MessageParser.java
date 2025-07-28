@@ -14,16 +14,16 @@ public class MessageParser implements Parser {
   private static final int MIN_WORD_COUNT = 2;
 
   @Override
-  public Message parse(String data) {
-    log.info("received data: {}", data);
-    String[] words = data.split(DELIMITER);
+  public Message parse(String rawMessage) {
+    log.info("received data: {}", rawMessage);
+    String[] words = rawMessage.split(DELIMITER);
     if (words.length < MIN_WORD_COUNT) {
       String err = "[Parser]: Invalid message - word count less than 2.";
       log.error(err);
       throw new MessageParsingException(err);
     }
     CommandType command = CommandType.valueOf(
-        words[0]); // throws IllegalArgument if command doesnt exist
+        words[0]); // throws IllegalArgument if command doesn't exist
     List<String> args = new ArrayList<>(Arrays.asList(words).subList(1, words.length));
 
     if (args.isEmpty()) {

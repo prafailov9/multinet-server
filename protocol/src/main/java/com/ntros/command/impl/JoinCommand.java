@@ -26,7 +26,6 @@ public class JoinCommand extends AbstractCommand {
     WorldConnector world = resolveWorld(message);
     CommandResult commandResult = world.add(new JoinRequest(playerName));
 
-    // return server command
     return Optional.of(handleServerResponse(commandResult, protocolContext));
   }
 

@@ -21,14 +21,13 @@ public class RequestClientMessageProcessor implements ClientMessageProcessor {
   }
 
   @Override
-  public Optional<String> process(String rawMessage, ProtocolContext protocolContext) {
+  public String process(String rawMessage, ProtocolContext protocolContext) {
     Message message = messageParser.parse(rawMessage);
     log.info("Message received: {}", message);
 
     ServerResponse serverResponse = dispatcher.dispatch(message, protocolContext)
         .orElseThrow(() -> new NoResponseFromServerException("Server returned empty response"));
 
-    String serverMessageString = serverResponse.serverMessage().toString();
-    return Optional.of(serverMessageString);
+    return serverResponse.serverMessage().toString();
   }
 }

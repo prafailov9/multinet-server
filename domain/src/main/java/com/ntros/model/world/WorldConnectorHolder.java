@@ -26,6 +26,13 @@ public final class WorldConnectorHolder {
     WORLDS.put("arena-y",
         new GridWorldConnector(new GridWorldState("arena-y", 9, 9), new GridWorldEngine()));
 
+    WORLDS.put("gol-x",
+        new GridWorldConnector(new GridWorldState("gol-x", 9, 9), new GridWorldEngine()));
+    WORLDS.put("gol-y",
+        new GridWorldConnector(new GridWorldState("gol-y", 9, 9), new GridWorldEngine()));
+    WORLDS.put("gol-z",
+        new GridWorldConnector(new GridWorldState("gol-z", 9, 9), new GridWorldEngine()));
+
   }
 
   private WorldConnectorHolder() {

@@ -5,6 +5,6 @@ import java.util.Optional;
 
 public interface ClientMessageProcessor {
 
-  Optional<String> process(String rawMessage, ProtocolContext protocolContext);
+  String process(String rawMessage, ProtocolContext protocolContext);
 
 }

@@ -52,8 +52,7 @@ public class ClientSession implements Session {
           continue;
         }
         try {
-          String serverResponse = clientMessageProcessor.process(rawMessage, protocolContext)
-              .orElseThrow(() -> new RuntimeException("[ClientSession]: no response from server."));
+          String serverResponse = clientMessageProcessor.process(rawMessage, protocolContext);
 
           serverMessageProcessor.processResponse(serverResponse, this);
 

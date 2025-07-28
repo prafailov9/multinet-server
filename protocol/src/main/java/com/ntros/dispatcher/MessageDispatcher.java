@@ -16,7 +16,7 @@ public class MessageDispatcher implements Dispatcher {
   @Override
   public Optional<ServerResponse> dispatch(Message message, ProtocolContext protocolContext) {
     log.info("received message: {}", message);
-    Command command = getCommand(message.command().name());
+    Command command = getCommand(message.commandType().name());
 
     return command.execute(message, protocolContext);
   }
