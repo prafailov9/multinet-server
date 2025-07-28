@@ -46,6 +46,11 @@ public class JoinCommand extends AbstractCommand {
 
     if (args.size() >= 2) {
       String worldName = args.get(1);
+
+      if (worldName.startsWith("gol")) {
+        // TODO: create new instance for GOL
+      }
+
       WorldConnector world = WorldConnectorHolder.getWorld(worldName);
       if (world != null) {
         return world;

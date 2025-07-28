@@ -1,9 +1,10 @@
 package com.ntros.server.scheduler;
 
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
+
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.TimeUnit;
 
 public class ServerTickScheduler implements TickScheduler {
 
@@ -24,12 +25,7 @@ public class ServerTickScheduler implements TickScheduler {
     long interval = 1000 / tickRate;
 
     // init the task
-    tickTask = scheduler.scheduleAtFixedRate(task, 0, interval, TimeUnit.MILLISECONDS);
-  }
-
-  @Override
-  public void tick() {
-
+    tickTask = scheduler.scheduleAtFixedRate(task, 0, interval, MILLISECONDS);
   }
 
   @Override

@@ -53,9 +53,9 @@ public class ClientSession implements Session {
         }
         try {
           String serverResponse = clientMessageProcessor.process(rawMessage, protocolContext);
+          log.info("SESSION: Received response from server: {}", serverResponse);
 
           serverMessageProcessor.processResponse(serverResponse, this);
-
         } catch (Exception ex) {
           log.error("Error: {}", protocolContext.getSessionId(), ex);
           SessionEventBus.get().publish(sessionFailed(this, ex.getMessage()));

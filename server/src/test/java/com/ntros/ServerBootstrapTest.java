@@ -23,7 +23,6 @@ import com.ntros.model.world.state.solid.GridWorldState;
 import com.ntros.server.TcpServer;
 import com.ntros.server.scheduler.ServerTickScheduler;
 import com.ntros.server.scheduler.TickScheduler;
-import com.ntros.server.scheduler.WorldTickScheduler;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -47,7 +46,6 @@ public class ServerBootstrapTest {
   private final TickScheduler serverTickScheduler = new ServerTickScheduler(TICK_RATE);
   private final Instance instance = new WorldInstance(DEFAULT_WORLD, sessionManager,
       serverTickScheduler);
-  private final WorldTickScheduler worldTickScheduler = new WorldTickScheduler(TICK_RATE);
   private final ExecutorService serverExecutor = Executors.newSingleThreadExecutor();
   private TcpServer server;
   private SessionEventListener instanceSessionEventListener;

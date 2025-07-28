@@ -12,7 +12,6 @@ import com.ntros.model.world.connector.WorldConnector;
 import com.ntros.server.Server;
 import com.ntros.server.TcpServer;
 import com.ntros.server.scheduler.ServerTickScheduler;
-import com.ntros.server.scheduler.WorldTickScheduler;
 import java.io.IOException;
 import lombok.extern.slf4j.Slf4j;
 
@@ -26,7 +25,6 @@ public class ServerBootstrap {
     log.info("Starting server on port {}", PORT);
     // create tick scheduler
     // TODO: try refactor scheduler per world instance
-    WorldTickScheduler scheduler = new WorldTickScheduler(TICK_RATE);
 
     initWorld("world-1", new ServerTickScheduler(TICK_RATE));
     initWorld("world-2", new ServerTickScheduler(TICK_RATE));

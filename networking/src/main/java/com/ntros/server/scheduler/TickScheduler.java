@@ -4,9 +4,7 @@ public interface TickScheduler {
 
   void tick(Runnable task);
 
-  void tick();
-
-  // signals to shutdown
+  // signals to shut down
   void stop();
 
   void shutdown();
