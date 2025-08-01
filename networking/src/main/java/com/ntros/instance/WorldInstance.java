@@ -13,7 +13,6 @@ import lombok.extern.slf4j.Slf4j;
  * manager.
  */
 
-// TODO: Explore Idea to Refactor for Instance to Be the Ticker
 @Slf4j
 public class WorldInstance implements Instance {
 
