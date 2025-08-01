@@ -11,7 +11,7 @@ import com.ntros.model.world.state.WorldState;
  */
 public interface WorldEngine {
 
-  void tick(WorldState worldState);
+  void applyIntent(WorldState worldState);
 
   CommandResult storeMoveIntent(MoveRequest move, WorldState worldState);
 

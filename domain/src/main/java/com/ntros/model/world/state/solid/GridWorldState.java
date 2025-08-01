@@ -10,7 +10,6 @@ import com.ntros.model.world.state.dimension.Dimension2D;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.concurrent.locks.ReentrantLock;
 import lombok.extern.slf4j.Slf4j;
 
 
@@ -27,9 +26,6 @@ public class GridWorldState implements WorldState {
   private final Map<String, Direction> moveIntentMap;
   private final Map<Position, TileType> terrainMap;
 
-  // locks
-  private final ReentrantLock terrainMapLock;
-
   public GridWorldState(String worldName, int width, int height) {
     this.worldName = worldName;
     this.width = width;
@@ -42,7 +38,6 @@ public class GridWorldState implements WorldState {
     moveIntentMap = new HashMap<>();
     terrainMap = new HashMap<>();
 
-    terrainMapLock = new ReentrantLock();
     generateTerrain();
 
   }

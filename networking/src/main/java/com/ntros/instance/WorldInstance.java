@@ -4,6 +4,7 @@ import com.ntros.event.listener.SessionManager;
 import com.ntros.model.world.connector.WorldConnector;
 import com.ntros.session.Session;
 import com.ntros.ticker.Ticker;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import lombok.extern.slf4j.Slf4j;
 
@@ -74,6 +75,26 @@ public class WorldInstance implements Instance {
   @Override
   public boolean isRunning() {
     return tickerRunning.get();
+  }
+
+  @Override
+  public void pause() {
+
+  }
+
+  @Override
+  public void resume() {
+
+  }
+
+  @Override
+  public void updateTickRate(int ticksPerSecond) {
+
+  }
+
+  @Override
+  public void updateWorldState(Map<Boolean, Boolean> worldStateUpdates) {
+
   }
 
 

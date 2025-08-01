@@ -152,6 +152,7 @@ public class WorldTicker implements Ticker {
       }
 
       currentTask.run();
+
       long duration = System.nanoTime() - start;
       if (listener != null) {
         listener.onTickEnd(currentTick, duration);

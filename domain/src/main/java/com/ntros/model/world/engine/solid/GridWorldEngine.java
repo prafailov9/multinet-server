@@ -26,7 +26,7 @@ public class GridWorldEngine implements WorldEngine {
 
 
   @Override
-  public void tick(WorldState state) {
+  public void applyIntent(WorldState state) {
     for (Map.Entry<String, Direction> intent : state.moveIntents().entrySet()) {
       Entity entity = state.entities().get(intent.getKey());
 
@@ -64,11 +64,11 @@ public class GridWorldEngine implements WorldEngine {
     long id = IdSequenceGenerator.getInstance().getNextSessionId();
     Position freePosition = findRandomFreePosition(worldState);
     if (freePosition == null) {
-      return new CommandResult(false, joinRequest.getPlayerName(), worldState.worldName(),
+      return new CommandResult(false, joinRequest.playerName(), worldState.worldName(),
           "could not find free position in world.", GRID);
     }
     // register player in world
-    Player player = new Player(freePosition, joinRequest.getPlayerName(), id, 100);
+    Player player = new Player(freePosition, joinRequest.playerName(), id, 100);
     addEntity(player, worldState);
 
     // create commandResult

@@ -21,7 +21,7 @@ public class GridWorldConnector implements WorldConnector {
 
   @Override
   public void update() {
-    gridWorldEngine.tick(gridWorldState);
+    gridWorldEngine.applyIntent(gridWorldState);
   }
 
   @Override
