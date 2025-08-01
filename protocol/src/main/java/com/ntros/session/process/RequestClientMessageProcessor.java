@@ -6,7 +6,6 @@ import com.ntros.message.ProtocolContext;
 import com.ntros.model.world.protocol.Message;
 import com.ntros.model.world.protocol.ServerResponse;
 import com.ntros.parser.MessageParser;
-import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j

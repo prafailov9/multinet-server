@@ -48,7 +48,6 @@
   <modules>
     <module>server</module>
     <module>domain</module>
-    <module>networking</module>
     <module>protocol</module>
   </modules>
   <packaging>pom</packaging>
