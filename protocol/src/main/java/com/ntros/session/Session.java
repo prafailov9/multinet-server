@@ -7,17 +7,22 @@ import com.ntros.message.ProtocolContext;
  */
 public interface Session {
 
-  ProtocolContext getProtocolContext();
+    ProtocolContext getProtocolContext();
 
-  // sends client request to server
-  void run();
+    /**
+     * Start processing client data stream
+     */
+    void start();
 
-  // sends server response to client
-  void respond(String serverResponse);
+    /**
+     * Sends server response to client
+     * @param serverResponse - the generated server response from
+     */
+    void response(String serverResponse);
 
-  // flags session for termination
-  void stop(boolean notifyOnTerminate);
+    // flags session for termination
+    void stop();
 
-  // ends session
-  void terminate();
+    // ends session
+    void terminate();
 }

@@ -1,5 +1,7 @@
 package com.ntros;
 
+import java.io.IOException;
+
 import com.ntros.event.bus.SessionEventBus;
 import com.ntros.event.listener.ClientSessionManager;
 import com.ntros.event.listener.InstanceSessionEventListener;
@@ -12,7 +14,6 @@ import com.ntros.model.world.connector.WorldConnector;
 import com.ntros.server.Server;
 import com.ntros.server.TcpServer;
 import com.ntros.ticker.WorldTicker;
-import java.io.IOException;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -32,10 +33,10 @@ public class ServerBootstrap {
     initWorld("arena-y", new WorldTicker(TICK_RATE));
     initWorld("arena-z", new WorldTicker(TICK_RATE));
 
-    Server server = new TcpServer();
+    Server server = new TcpServer(PORT);
 
     try {
-      server.start(PORT);
+      server.start();
     } catch (IOException ex) {
       log.error("Server failed: {}", ex.getMessage());
 

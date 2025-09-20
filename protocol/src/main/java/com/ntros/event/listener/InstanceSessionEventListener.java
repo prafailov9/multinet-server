@@ -34,7 +34,7 @@ public class InstanceSessionEventListener implements SessionEventListener {
     // indicates a successful JOIN command
     instance.registerSession(session);
     // send welcome response to client to trigger UI changes
-    session.respond(serverWelcomeMessage);
+    session.response(serverWelcomeMessage);
     if (instance.getActiveSessionsCount() > 0 && !instance.isRunning()) {
       instance.run();
     }

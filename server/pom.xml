@@ -4,17 +4,6 @@
   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <artifactId>server</artifactId>
   <dependencies>
-    <dependency>
-      <artifactId>domain</artifactId>
-      <groupId>com.ntros</groupId>
-      <version>1.0-SNAPSHOT</version>
-    </dependency>
-    <dependency>
-      <artifactId>networking</artifactId>
-      <groupId>com.ntros</groupId>
-      <version>1.0-SNAPSHOT</version>
-    </dependency>
-
 
     <dependency>
       <artifactId>junit-jupiter-params</artifactId>
@@ -28,6 +17,11 @@
       <groupId>org.awaitility</groupId>
       <scope>test</scope>
       <version>4.3.0</version>
+    </dependency>
+    <dependency>
+      <groupId>com.ntros</groupId>
+      <artifactId>protocol</artifactId>
+      <version>1.0-SNAPSHOT</version>
     </dependency>
   </dependencies>
 

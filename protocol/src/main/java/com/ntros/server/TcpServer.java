@@ -17,16 +17,18 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class TcpServer implements Server {
 
+  private final int port;
+
   private ServerSocket serverSocket;
   private volatile boolean running = true;
 
 
-  public TcpServer() {
-
+  public TcpServer(int port) {
+    this.port = port;
   }
 
   @Override
-  public void start(int port) throws IOException {
+  public void start() throws IOException {
     serverSocket = new ServerSocket(port);
     log.info("Accepting connections...");
 
@@ -67,7 +69,7 @@ public class TcpServer implements Server {
     try {
       Session session = new ClientSession(new SocketConnection(socket));
 
-      session.run();
+      session.start();
     } catch (Exception ex) {
       log.error("Error occurred during connection handling:", ex);
     }

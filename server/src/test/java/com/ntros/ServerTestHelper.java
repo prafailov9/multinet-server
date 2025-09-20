@@ -23,7 +23,7 @@ public class ServerTestHelper {
   public static void startServer(Server server, ExecutorService serverExecutor, int port) {
     serverExecutor.submit(() -> {
       try {
-        server.start(port);
+        server.start();
       } catch (IOException e) {
         System.out.println("Could not start the server: " + e.getMessage());
       }
