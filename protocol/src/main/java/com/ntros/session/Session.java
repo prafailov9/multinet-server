@@ -16,6 +16,7 @@ public interface Session {
 
     /**
      * Sends server response to client
+     *
      * @param serverResponse - the generated server response from
      */
     void response(String serverResponse);

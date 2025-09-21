@@ -43,6 +43,9 @@ public class ClientSession implements Session {
         this.serverMessageProcessor = new ResponseServerMessageProcessor();
     }
 
+    /**
+     * Starts a new session for a single user(protocol context).
+     */
     @Override
     public void start() {
         try {
