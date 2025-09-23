@@ -6,6 +6,7 @@ import com.ntros.message.ProtocolContext;
 import com.ntros.model.world.protocol.Message;
 import com.ntros.model.world.protocol.ServerResponse;
 import com.ntros.parser.MessageParser;
+import com.ntros.session.Session;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -21,11 +22,11 @@ public class RequestClientMessageProcessor implements ClientMessageProcessor {
 
     /** Processing the raw network message from the client */
     @Override
-    public String process(String rawMessage, ProtocolContext protocolContext) {
+    public String process(String rawMessage, Session session) {
         Message message = messageParser.parse(rawMessage);
         log.info("Message received: {}", message);
 
-        ServerResponse serverResponse = dispatcher.dispatch(message, protocolContext)
+        ServerResponse serverResponse = dispatcher.dispatch(message, session)
                 .orElseThrow(() -> new NoResponseFromServerException("Server returned empty response"));
 
         return serverResponse.serverMessage().toString();

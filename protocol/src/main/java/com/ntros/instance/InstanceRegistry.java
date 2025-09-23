@@ -1,5 +1,7 @@
 package com.ntros.instance;
 
+import com.ntros.session.Session;
+
 import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -14,6 +16,11 @@ public class InstanceRegistry {
 
   public static Collection<Instance> getAll() {
     return INSTANCES.values();
+  }
+
+  public static Session getActiveSession(String worldName, Long sessionId) {
+    Instance instance = INSTANCES.get(worldName);
+    return instance.getSession(sessionId);
   }
 
   public static void clear() {

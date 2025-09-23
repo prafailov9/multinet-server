@@ -9,6 +9,7 @@ import com.ntros.model.world.connector.WorldConnector;
 import com.ntros.model.world.protocol.MoveRequest;
 import com.ntros.model.world.protocol.CommandResult;
 import com.ntros.model.world.protocol.ServerResponse;
+import com.ntros.session.Session;
 import java.util.List;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
@@ -17,7 +18,8 @@ import lombok.extern.slf4j.Slf4j;
 public class MoveCommand extends AbstractCommand {
 
   @Override
-  public Optional<ServerResponse> execute(Message message, ProtocolContext protocolContext) {
+  public Optional<ServerResponse> execute(Message message, Session session) {
+    ProtocolContext protocolContext = session.getProtocolContext();
     validateContext(protocolContext);
 
     WorldConnector world = WorldConnectorHolder.getWorld(protocolContext.getWorldId());

@@ -1,9 +1,9 @@
 package com.ntros.session.process;
 
-import com.ntros.message.ProtocolContext;
+import com.ntros.session.Session;
 
 public interface ClientMessageProcessor {
 
-  String process(String rawMessage, ProtocolContext protocolContext);
+  String process(String rawMessage, Session session);
 
 }

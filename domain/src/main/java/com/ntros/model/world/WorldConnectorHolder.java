@@ -38,8 +38,8 @@ public final class WorldConnectorHolder {
   private WorldConnectorHolder() {
   }
 
-  public static void register(WorldConnector context) {
-    WORLDS.put(context.worldName(), context);
+  public static void register(WorldConnector worldConnector) {
+    WORLDS.put(worldConnector.worldName(), worldConnector);
   }
 
   public static void remove(String id) {

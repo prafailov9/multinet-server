@@ -11,17 +11,23 @@ import com.ntros.model.world.protocol.CommandResult;
 import com.ntros.model.world.protocol.JoinRequest;
 import com.ntros.model.world.protocol.Message;
 import com.ntros.model.world.protocol.ServerResponse;
+import com.ntros.session.Session;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 
+/**
+ * Class to enable user to join a multiplayer world.
+ */
 @Slf4j
 public class JoinCommand extends AbstractCommand {
 
   @Override
-  public Optional<ServerResponse> execute(Message message, ProtocolContext protocolContext) {
+  public Optional<ServerResponse> execute(Message message, Session session) {
+    ProtocolContext protocolContext = session.getProtocolContext();
+
     String playerName = resolvePlayer(message);
     WorldConnector world = resolveWorld(message);
     CommandResult commandResult = world.add(new JoinRequest(playerName));
@@ -46,10 +52,6 @@ public class JoinCommand extends AbstractCommand {
 
     if (args.size() >= 2) {
       String worldName = args.get(1);
-
-      if (worldName.startsWith("gol")) {
-        // TODO: create new instance for GOL
-      }
 
       WorldConnector world = WorldConnectorHolder.getWorld(worldName);
       if (world != null) {

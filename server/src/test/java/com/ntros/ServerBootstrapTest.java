@@ -1,10 +1,6 @@
 package com.ntros;
 
 
-import static com.ntros.ServerTestHelper.stopServerWhen;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
 import com.ntros.event.bus.SessionEventBus;
 import com.ntros.event.listener.ClientSessionManager;
 import com.ntros.event.listener.InstanceSessionEventListener;
@@ -12,7 +8,7 @@ import com.ntros.event.listener.SessionEventListener;
 import com.ntros.event.listener.SessionManager;
 import com.ntros.instance.Instance;
 import com.ntros.instance.InstanceRegistry;
-import com.ntros.instance.WorldInstance;
+import com.ntros.instance.MultiSessionInstance;
 import com.ntros.model.entity.Entity;
 import com.ntros.model.entity.sequence.IdSequenceGenerator;
 import com.ntros.model.world.WorldConnectorHolder;
@@ -21,8 +17,12 @@ import com.ntros.model.world.connector.WorldConnector;
 import com.ntros.model.world.engine.solid.GridWorldEngine;
 import com.ntros.model.world.state.solid.GridWorldState;
 import com.ntros.server.TcpServer;
-import com.ntros.ticker.WorldTicker;
 import com.ntros.ticker.Ticker;
+import com.ntros.ticker.WorldTicker;
+import lombok.extern.slf4j.Slf4j;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -30,10 +30,9 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-import lombok.extern.slf4j.Slf4j;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import static com.ntros.ServerTestHelper.stopServerWhen;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @Slf4j
 public class ServerBootstrapTest {
@@ -46,7 +45,7 @@ public class ServerBootstrapTest {
                     new GridWorldEngine());
     private final SessionManager sessionManager = new ClientSessionManager();
     private final Ticker serverTicker = new WorldTicker(TICK_RATE);
-    private final Instance instance = new WorldInstance(DEFAULT_WORLD, sessionManager,
+    private final Instance instance = new MultiSessionInstance(DEFAULT_WORLD, sessionManager,
             serverTicker);
     private final ExecutorService serverExecutor = Executors.newSingleThreadExecutor();
     private TcpServer server;
@@ -237,7 +236,7 @@ public class ServerBootstrapTest {
     }
 
     private Instance createInstance(WorldConnector worldConnector, int tickRate) {
-        return new WorldInstance(worldConnector, new ClientSessionManager(),
+        return new MultiSessionInstance(worldConnector, new ClientSessionManager(),
                 new WorldTicker(tickRate));
     }
 }

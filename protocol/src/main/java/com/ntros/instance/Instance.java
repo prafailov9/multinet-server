@@ -10,9 +10,12 @@ public interface Instance {
   String worldName();
 
   void reset();
+
   void registerSession(Session session);
 
   void removeSession(Session session);
+
+  Session getSession(Long sessionId);
 
   int getActiveSessionsCount();
 

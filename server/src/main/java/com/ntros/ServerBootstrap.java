@@ -8,7 +8,7 @@ import com.ntros.event.listener.InstanceSessionEventListener;
 import com.ntros.event.listener.SessionEventListener;
 import com.ntros.event.listener.SessionManager;
 import com.ntros.instance.InstanceRegistry;
-import com.ntros.instance.WorldInstance;
+import com.ntros.instance.MultiSessionInstance;
 import com.ntros.model.world.WorldConnectorHolder;
 import com.ntros.model.world.connector.WorldConnector;
 import com.ntros.server.Server;
@@ -19,12 +19,16 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class ServerBootstrap {
 
+  // Default port
   private static final int PORT = 5555;
-  private static final int TICK_RATE = 120; // 120 ticks per second
+
+  // 120 ticks per second
+  private static final int TICK_RATE = 120;
 
   public static void startServer() {
     log.info("Starting server on port {}", PORT);
 
+    // init default worlds
     initWorld("world-1", new WorldTicker(TICK_RATE));
     initWorld("world-2", new WorldTicker(TICK_RATE));
     initWorld("arena-x", new WorldTicker(TICK_RATE));
@@ -46,7 +50,7 @@ public class ServerBootstrap {
     WorldConnector world = WorldConnectorHolder.getWorld(name);
     SessionManager sessionManager = new ClientSessionManager();
 
-    WorldInstance instance = new WorldInstance(world, sessionManager, scheduler);
+    MultiSessionInstance instance = new MultiSessionInstance(world, sessionManager, scheduler);
     InstanceRegistry.register(instance);
 
     // Register the per-world listener

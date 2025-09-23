@@ -16,15 +16,14 @@ import lombok.extern.slf4j.Slf4j;
  */
 
 @Slf4j
-public class WorldInstance implements Instance {
+public class MultiSessionInstance implements Instance {
 
-    private final WorldConnector worldConnector;
     private final SessionManager sessionManager;
+    private final WorldConnector worldConnector;
     private final Ticker ticker;
     private final AtomicBoolean tickerRunning = new AtomicBoolean(false);
 
-    public WorldInstance(WorldConnector worldConnector, SessionManager sessionManager,
-                         Ticker ticker) {
+    public MultiSessionInstance(WorldConnector worldConnector, SessionManager sessionManager, Ticker ticker) {
         this.worldConnector = worldConnector;
         this.sessionManager = sessionManager;
         this.ticker = ticker;
@@ -66,6 +65,15 @@ public class WorldInstance implements Instance {
     @Override
     public void removeSession(Session session) {
         sessionManager.remove(session);
+    }
+
+    @Override
+    public Session getSession(Long sessionId) {
+        return sessionManager.getActiveSessions()
+                .stream()
+                .filter(session -> session.getProtocolContext().getSessionId().equals(sessionId))
+                .findFirst()
+                .orElseThrow(() -> new IllegalArgumentException(String.format("Session with ID:[%s] does not exist", sessionId)));
     }
 
     @Override

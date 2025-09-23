@@ -2,6 +2,6 @@ package com.ntros.model.world.protocol;
 
 public enum WorldType {
 
-  GRID, GAME_OF_LIFE, OPEN
+  UNKNOWN, GRID, GAME_OF_LIFE, OPEN, TRAFFIC_SIM
 
 }
