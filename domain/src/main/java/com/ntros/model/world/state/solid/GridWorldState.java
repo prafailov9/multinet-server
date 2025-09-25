@@ -49,6 +49,11 @@ public class GridWorldState implements WorldState {
   }
 
   @Override
+  public String worldType() {
+    return "GRID";
+  }
+
+  @Override
   public Dimension dimension() {
     return dimension;
   }

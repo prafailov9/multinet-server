@@ -1,5 +1,6 @@
 package com.ntros;
 
+import com.ntros.event.broadcaster.BroadcastToAll;
 import java.io.IOException;
 
 import com.ntros.event.bus.SessionEventBus;
@@ -8,7 +9,7 @@ import com.ntros.event.listener.InstanceSessionEventListener;
 import com.ntros.event.listener.SessionEventListener;
 import com.ntros.event.listener.SessionManager;
 import com.ntros.instance.InstanceRegistry;
-import com.ntros.instance.MultiSessionInstance;
+import com.ntros.instance.WorldInstance;
 import com.ntros.model.world.WorldConnectorHolder;
 import com.ntros.model.world.connector.WorldConnector;
 import com.ntros.server.Server;
@@ -50,7 +51,8 @@ public class ServerBootstrap {
     WorldConnector world = WorldConnectorHolder.getWorld(name);
     SessionManager sessionManager = new ClientSessionManager();
 
-    MultiSessionInstance instance = new MultiSessionInstance(world, sessionManager, scheduler);
+    WorldInstance instance = new WorldInstance(world, sessionManager, scheduler,
+        new BroadcastToAll());
     InstanceRegistry.register(instance);
 
     // Register the per-world listener

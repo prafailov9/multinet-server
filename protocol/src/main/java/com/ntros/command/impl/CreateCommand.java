@@ -1,9 +1,9 @@
 package com.ntros.command.impl;
 
-import com.ntros.instance.Instance;
+import com.ntros.instance.ins.Instance;
 import com.ntros.instance.InstanceFactory;
 import com.ntros.instance.InstanceRegistry;
-import com.ntros.message.ProtocolContext;
+import com.ntros.message.ClientProfile;
 import com.ntros.model.world.WorldConnectorHolder;
 import com.ntros.model.world.connector.GridWorldConnector;
 import com.ntros.model.world.connector.WorldConnector;
@@ -29,32 +29,38 @@ public class CreateCommand extends AbstractCommand {
 
   @Override
   public Optional<ServerResponse> execute(Message message, Session session) {
-    ProtocolContext protocolContext = session.getProtocolContext();
+    ClientProfile clientProfile = session.getProtocolContext();
 
-    if (!protocolContext.isAuthenticated()) {
+    if (!clientProfile.isAuthenticated()) {
       return Optional.of(ServerResponse.ofError(message, "User not authenticated"));
     }
 
+    ServerResponse serverResponse;
     try {
+      // Create a world and instance and register them in their in-memory caches.
       WorldConnector worldConnector = createWorld(message);
       WorldConnectorHolder.register(worldConnector);
 
       boolean isShared = parseSharedFlag(message);
-      Instance instance = InstanceFactory.createWorld(session, isShared, worldConnector);
+      Instance instance = InstanceFactory.createInstance(session, isShared, worldConnector);
       InstanceRegistry.register(instance);
+
+      serverResponse = ServerResponse.ofSuccess(
+          String.valueOf(clientProfile.getSessionId()),
+          worldConnector.worldName(), "World Created");
     } catch (IllegalArgumentException ex) {
       log.error("Command failed. Could not create world", ex);
-      return Optional.of(ServerResponse.ofError(message, ex.getMessage()));
+      serverResponse = ServerResponse.ofError(message, ex.getMessage());
     }
 
-    return Optional.empty();
+    return Optional.of(serverResponse);
   }
 
   private WorldConnector createWorld(Message message) {
     // COMMAND: CREATE;
     // ARGS: type, name, isMultiplayer, width, height
     String worldType = Optional.ofNullable(message.args().getFirst())
-        .orElseThrow(() -> new IllegalArgumentException("No world type provided."))
+        .orElseThrow(() -> new IllegalArgumentException("No world type provided"))
         .trim().toUpperCase();
 
     if (!worldType.equals(WorldType.GRID.name())) {

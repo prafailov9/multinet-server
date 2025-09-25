@@ -1,13 +1,13 @@
 package com.ntros.session;
 
-import com.ntros.message.ProtocolContext;
+import com.ntros.message.ClientProfile;
 
 /**
  * Represents an active connection between a client and the server.
  */
 public interface Session {
 
-    ProtocolContext getProtocolContext();
+    ClientProfile getProtocolContext();
 
     /**
      * Start processing client data stream

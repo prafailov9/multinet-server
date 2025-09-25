@@ -1,6 +1,6 @@
 package com.ntros.command.impl;
 
-import com.ntros.message.ProtocolContext;
+import com.ntros.message.ClientProfile;
 import com.ntros.model.entity.Direction;
 import com.ntros.model.world.protocol.CommandType;
 import com.ntros.model.world.protocol.Message;
@@ -19,13 +19,13 @@ public class MoveCommand extends AbstractCommand {
 
   @Override
   public Optional<ServerResponse> execute(Message message, Session session) {
-    ProtocolContext protocolContext = session.getProtocolContext();
-    validateContext(protocolContext);
+    ClientProfile clientProfile = session.getProtocolContext();
+    validateContext(clientProfile);
 
-    WorldConnector world = WorldConnectorHolder.getWorld(protocolContext.getWorldId());
+    WorldConnector world = WorldConnectorHolder.getWorld(clientProfile.getWorldId());
     Direction direction = resolveMoveIntent(message);
     CommandResult commandResult = world.storeMoveIntent(
-        new MoveRequest(protocolContext.getPlayerId(), direction));
+        new MoveRequest(clientProfile.getEntityId(), direction));
 
     return Optional.of(handleResult(commandResult, direction.name()));
   }

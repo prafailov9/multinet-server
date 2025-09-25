@@ -7,7 +7,7 @@ public class Npc extends AbstractMovableEntity {
 
   public Npc(Position position) {
     super(position);
-    id = IdSequenceGenerator.getInstance().getNextNpcId();
+    id = IdSequenceGenerator.getInstance().nextNpcEntityId();
     name = "npc-" + id;
   }
 

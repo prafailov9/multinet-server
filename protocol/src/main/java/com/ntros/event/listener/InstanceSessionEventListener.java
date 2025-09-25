@@ -1,8 +1,8 @@
 package com.ntros.event.listener;
 
 import com.ntros.event.SessionEvent;
-import com.ntros.instance.Instance;
-import com.ntros.message.ProtocolContext;
+import com.ntros.instance.ins.Instance;
+import com.ntros.message.ClientProfile;
 import com.ntros.model.world.WorldConnectorHolder;
 import com.ntros.model.world.connector.WorldConnector;
 import com.ntros.session.Session;
@@ -63,18 +63,18 @@ public class InstanceSessionEventListener implements SessionEventListener {
     }
   }
 
-  private void removeSessionEntityFromWorld(ProtocolContext context) {
+  private void removeSessionEntityFromWorld(ClientProfile context) {
     if (context == null || !context.isAuthenticated()) {
       log.warn("IN EVENT_LISTENER- removeEntity from World: sessionContext is invalid: {}. ",
           context);
       return;
     }
-    if (context.getSessionId() != null && context.getWorldId() != null && !context.getWorldId()
+    if (context.getSessionId() >= 0 && context.getWorldId() != null && !context.getWorldId()
         .isEmpty()) {
       WorldConnector worldConnector = WorldConnectorHolder.getWorld(context.getWorldId());
       log.info("IN EVENT_LISTENER: Removing entity {} from world {}. ", context,
           worldConnector.worldName());
-      worldConnector.remove(context.getPlayerId());
+      worldConnector.remove(context.getUserId());
     }
   }
 }

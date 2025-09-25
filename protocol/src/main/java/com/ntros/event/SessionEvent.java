@@ -79,7 +79,9 @@ public class SessionEvent {
   public static SessionEvent sessionRestarted(Long sessionId, String reason) {
     return new SessionEvent(SessionEventType.SESSION_RESTARTED, sessionId, reason);
   }
-
+/// Make a spreadsheet for feature flags in prod.
+/// After enabling trawler ID -> create a new node and use it to call Boomi with a feature flag
+/// UAT testing on BoltOn EI API - high priority
   public static SessionEvent sessionShutdownAll(String reason) {
     return new SessionEvent(SessionEventType.SESSION_SHUTDOWN_ALL, reason);
   }

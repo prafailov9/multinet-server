@@ -1,9 +1,10 @@
 package com.ntros.session.process;
 
+import com.ntros.model.world.protocol.ServerResponse;
 import com.ntros.session.Session;
 
 public interface ServerMessageProcessor {
 
-    void processResponse(String serverResponse, Session session);
+    void processResponse(ServerResponse serverResponse, Session session);
 
 }

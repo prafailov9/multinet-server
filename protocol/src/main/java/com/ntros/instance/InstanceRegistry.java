@@ -1,5 +1,6 @@
 package com.ntros.instance;
 
+import com.ntros.instance.ins.Instance;
 import com.ntros.session.Session;
 
 import java.util.Collection;

@@ -24,6 +24,8 @@ public interface WorldConnector {
 
   String worldName();
 
+  String worldType();
+
   List<Entity> getCurrentEntities();
 
   void reset();

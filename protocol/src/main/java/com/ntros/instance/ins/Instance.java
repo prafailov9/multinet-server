@@ -1,11 +1,14 @@
-package com.ntros.instance;
+package com.ntros.instance.ins;
 
+import com.ntros.model.entity.config.access.WorldConfig;
 import com.ntros.session.Session;
 import java.util.Map;
 
 public interface Instance {
 
   void run();
+
+  WorldConfig getWorldPolicy();
 
   String worldName();
 

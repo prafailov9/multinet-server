@@ -18,6 +18,8 @@ public enum CommandType {
   START,
 
   ///  SERVER COMMANDS ///
+ // Auth success
+  AUTH_SUCCESS,
   // Server broadcasts it's current world STATE
   STATE,
   // Server sends WELCOME message in response to client's success JOIN command

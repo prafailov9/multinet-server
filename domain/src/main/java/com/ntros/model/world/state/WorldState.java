@@ -13,6 +13,7 @@ import java.util.Map;
 public interface WorldState {
 
   String worldName();
+  String worldType();
 
   Dimension dimension();
 

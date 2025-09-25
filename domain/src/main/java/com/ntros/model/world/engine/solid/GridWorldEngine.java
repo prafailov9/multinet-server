@@ -1,8 +1,6 @@
 package com.ntros.model.world.engine.solid;
 
 import static com.ntros.model.entity.DirectionUtil.createPosition;
-import static com.ntros.model.entity.sequence.IdSequenceGenerator.RNG;
-import static com.ntros.model.world.protocol.WorldType.GRID;
 
 import com.ntros.model.entity.Direction;
 import com.ntros.model.entity.Entity;
@@ -16,6 +14,7 @@ import com.ntros.model.world.protocol.MoveRequest;
 import com.ntros.model.world.protocol.CommandResult;
 import com.ntros.model.world.state.WorldState;
 import java.util.Map;
+import java.util.concurrent.ThreadLocalRandom;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -51,21 +50,21 @@ public class GridWorldEngine implements WorldEngine {
     if (state.isWithinBounds(position)) { // allow all moves if within bounds
       state.moveIntents().put(moveRequest.playerId(), moveRequest.direction());
       log.info("Added move intent: {}", moveRequest);
-      return new CommandResult(true, entity.getName(), state.worldName(), null, GRID);
+      return new CommandResult(true, entity.getName(), state.worldName(), null);
     }
     String msg = String.format("[%s]: invalid move: %s. Out of bounds.", state.worldName(),
         position);
     log.info(msg);
-    return new CommandResult(false, entity.getName(), state.worldName(), msg, GRID);
+    return new CommandResult(false, entity.getName(), state.worldName(), msg);
   }
 
   @Override
   public CommandResult add(JoinRequest joinRequest, WorldState worldState) {
-    long id = IdSequenceGenerator.getInstance().getNextSessionId();
+    long id = IdSequenceGenerator.getInstance().nextPlayerEntityId();
     Position freePosition = findRandomFreePosition(worldState);
     if (freePosition == null) {
       return new CommandResult(false, joinRequest.playerName(), worldState.worldName(),
-          "could not find free position in world.", GRID);
+          "could not find free position in world.");
     }
     // register player in world
     Player player = new Player(freePosition, joinRequest.playerName(), id, 100);
@@ -73,7 +72,7 @@ public class GridWorldEngine implements WorldEngine {
 
     // create commandResult
     CommandResult commandResult = new CommandResult(true, player.getName(),
-        worldState.worldName(), null, GRID);
+        worldState.worldName(), null);
     System.out.printf("[GridWorld]: player: %s joined World %s on position %s%n", player.getName(),
         worldState.worldName(), player.getPosition());
     return commandResult;
@@ -184,8 +183,8 @@ public class GridWorldEngine implements WorldEngine {
     int height = state.dimension().getHeight();
     int maxAttempts = width * height; // avoid infinite loops
     while (maxAttempts-- > 0) {
-      int x = RNG.nextInt(0, width - 1);
-      int y = RNG.nextInt(0, height - 1);
+      int x = ThreadLocalRandom.current().nextInt(width);  // 0..width-1
+      int y = ThreadLocalRandom.current().nextInt(height); // 0..height-1
       Position candidate = Position.of(x, y);
 
       if (!state.takenPositions().containsKey(candidate)) {

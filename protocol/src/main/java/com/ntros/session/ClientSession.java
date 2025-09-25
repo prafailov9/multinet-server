@@ -6,7 +6,9 @@ import static com.ntros.event.SessionEvent.sessionFailed;
 
 import com.ntros.connection.Connection;
 import com.ntros.event.bus.SessionEventBus;
-import com.ntros.message.ProtocolContext;
+import com.ntros.message.ClientProfile;
+import com.ntros.model.entity.sequence.IdSequenceGenerator;
+import com.ntros.model.world.protocol.ServerResponse;
 import com.ntros.session.process.ClientMessageProcessor;
 import com.ntros.session.process.RequestClientMessageProcessor;
 import com.ntros.session.process.ResponseServerMessageProcessor;
@@ -26,7 +28,7 @@ public class ClientSession implements Session {
   private static final String TIMEOUT_ERROR_MESSAGE = "_TIMEOUT_";
 
   private final Connection connection;
-  private final ProtocolContext protocolContext;
+  private final ClientProfile clientProfile;
   private final ClientMessageProcessor clientMessageProcessor;
   private final ServerMessageProcessor serverMessageProcessor;
 
@@ -38,7 +40,7 @@ public class ClientSession implements Session {
 
   public ClientSession(Connection connection) {
     this.connection = connection;
-    this.protocolContext = new ProtocolContext();
+    this.clientProfile = new ClientProfile(IdSequenceGenerator.getInstance().nextSessionId());
     this.clientMessageProcessor = new RequestClientMessageProcessor();
     this.serverMessageProcessor = new ResponseServerMessageProcessor();
   }
@@ -61,17 +63,17 @@ public class ClientSession implements Session {
           continue;
         }
         try {
-          String serverResponse = clientMessageProcessor.process(rawMessage, this);
+          ServerResponse serverResponse = clientMessageProcessor.process(rawMessage, this);
           log.info("SESSION: Received response from server: {}", serverResponse);
 
           serverMessageProcessor.processResponse(serverResponse, this);
         } catch (Exception ex) {
-          log.error("Error: {}", protocolContext.getSessionId(), ex);
+          log.error("Error: {}", clientProfile.getSessionId(), ex);
           SessionEventBus.get().publish(sessionFailed(this, ex.getMessage()));
         }
       }
     } finally {
-      log.info("ClientSession {} calling terminate()...", protocolContext.getSessionId());
+      log.info("ClientSession {} calling terminate()...", clientProfile.getSessionId());
       terminate();
     }
   }
@@ -94,8 +96,8 @@ public class ClientSession implements Session {
   }
 
   @Override
-  public ProtocolContext getProtocolContext() {
-    return protocolContext;
+  public ClientProfile getProtocolContext() {
+    return clientProfile;
   }
 
   @Override
@@ -109,7 +111,7 @@ public class ClientSession implements Session {
     connection.close();
 
     if (notifyOnTerminate.get()) {
-      String serverMessage = String.format("Closing session %s...", protocolContext.getSessionId());
+      String serverMessage = String.format("Closing session %s...", clientProfile.getSessionId());
       log.info("publishing SESSION_CLOSED Event...{}", serverMessage);
       SessionEventBus.get().publish(sessionClosed(this, serverMessage));
     }

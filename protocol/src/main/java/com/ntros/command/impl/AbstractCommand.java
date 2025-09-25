@@ -1,20 +1,20 @@
 package com.ntros.command.impl;
 
-import com.ntros.message.ProtocolContext;
+import com.ntros.message.ClientProfile;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public abstract class AbstractCommand implements Command {
 
-  protected void validateContext(ProtocolContext context) {
+  protected void validateContext(ClientProfile context) {
     log.info("Validating client info...");
     if (!context.isAuthenticated()) {
       logAndThrow("User not authenticated.");
     }
-    if (context.getSessionId() == null) {
+    if (context.getSessionId() <= 0) {
       logAndThrow("No session exists for caller.");
     }
-    if (context.getPlayerId() == null || context.getPlayerId().isEmpty()) {
+    if (context.getEntityId() == null || context.getEntityId().isEmpty()) {
       logAndThrow("No playerId associated with caller.");
     }
 
