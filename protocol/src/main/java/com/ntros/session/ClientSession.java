@@ -29,7 +29,6 @@ public class ClientSession implements Session {
   private final ServerMessageProcessor serverMessageProcessor;
 
   private final AtomicBoolean terminated = new AtomicBoolean(false);
-  private final AtomicBoolean notifyOnTerminate = new AtomicBoolean(false);
 
   private volatile boolean running = true;
 
@@ -66,7 +65,6 @@ public class ClientSession implements Session {
         } catch (Exception ex) {
           log.error("Error: {}", sessionContext.getSessionId(), ex);
           ServerResponse failedResponse = clientMessageProcessor.process("SESSION_FAILED", this);
-//          SessionEventBus.get().publish(sessionFailed(this, ex.getMessage()));
           log.error("Processed session_failed response: {}", failedResponse);
         }
       }
@@ -90,7 +88,6 @@ public class ClientSession implements Session {
   @Override
   public void stop() {
     running = false;
-    this.notifyOnTerminate.set(false);
   }
 
   @Override

@@ -79,19 +79,24 @@ public class WorldInstance implements Instance {
     log.info("[IN WORLD INSTANCE]: Updating {} state...", getWorldName());
     ticker.tick(() -> {
       try {
-        connector.update();                // mutate on ticker thread
+        // mutate and get world state on ticker thread
+        connector.update();
 
-        final String worldState = connector.serialize(); // snapshot on ticker thread
+        String protocolFormatSnapshot = getWorldSnapshot(true);
 
-        // Optional: avoid megaspam logs / huge payload logs
-        log.debug("[{}] broadcasting state ({} bytes)", getWorldName(), worldState.length());
-
-        broadcaster.publish(worldState, sessionManager);
+        // broadcast to clients
+        broadcaster.publish(protocolFormatSnapshot, sessionManager);
       } catch (Throwable t) {
         log.error("[{}] tick failed: {}", getWorldName(), t);
       }
     });
     tickerRunning.set(true);
+  }
+
+  private String getWorldSnapshot(boolean oneLine) {
+    return oneLine
+        ? String.format("STATE %s", connector.snapshot(true))
+        : String.format("STATE \n%s\n", connector.snapshot(false));
   }
 
   @Override

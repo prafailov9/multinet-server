@@ -18,10 +18,9 @@ import lombok.extern.slf4j.Slf4j;
 public class TcpServer implements Server {
 
   private final int port;
+  private volatile boolean serverRunning = true;
 
   private ServerSocket serverSocket;
-  private volatile boolean running = true;
-
 
   public TcpServer(int port) {
     this.port = port;
@@ -30,9 +29,9 @@ public class TcpServer implements Server {
   @Override
   public void start() throws IOException {
     serverSocket = new ServerSocket(port);
-    log.info("[Server.start()]:Accepting connections...");
+    log.info("Server accepting connections...");
 
-    while (running) {
+    while (serverRunning) {
       try {
         // blocks main thread until connection is received
         Socket socket = serverSocket.accept();
@@ -41,7 +40,7 @@ public class TcpServer implements Server {
         // process client input in separate thread, unblocks server loop
         Thread.startVirtualThread(() -> startSession(socket));
       } catch (SocketException ex) {
-        if (!running) {
+        if (!serverRunning) {
           log.info("Server socket closed, exiting accept() loop.");
           break;
         } else {
@@ -54,13 +53,16 @@ public class TcpServer implements Server {
 
   @Override
   public void stop() throws IOException {
-    log.info("[SERVER.stop():]Shutting down server...");
-    running = false;
+    log.info("Shutting down server...");
+    if (serverSocket == null || serverSocket.isClosed()) {
+      log.info("Server socket is already closed. Exiting...");
+      return;
+    }
 
+    serverRunning = false;
     for (Instance instance : InstanceRegistry.getAll()) {
       instance.reset();
     }
-
     if (serverSocket != null && !serverSocket.isClosed()) {
       try {
         serverSocket.close();
@@ -73,11 +75,9 @@ public class TcpServer implements Server {
     }
   }
 
-
   private void startSession(Socket socket) {
     try {
       Session session = new ClientSession(new SocketConnection(socket));
-
       session.start();
     } catch (Exception ex) {
       log.error("Error occurred during connection handling:", ex);

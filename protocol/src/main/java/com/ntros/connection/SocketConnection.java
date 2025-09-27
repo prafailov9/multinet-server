@@ -8,12 +8,10 @@ import java.net.Socket;
 import java.net.SocketTimeoutException;
 import java.nio.charset.StandardCharsets;
 import java.util.Queue;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
-
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -29,7 +27,6 @@ public class SocketConnection implements Connection {
   private final OutputStream output;
   private final Queue<String> sendQueue = new ConcurrentLinkedQueue<>();
   private final AtomicBoolean sending = new AtomicBoolean(false);
-
 
   private final ExecutorService sendExecutor =
       Executors.newSingleThreadExecutor(r -> {
@@ -117,6 +114,16 @@ public class SocketConnection implements Connection {
   }
 
   @Override
+  public void sendFrame(String headerLine, byte[] body) {
+
+  }
+
+  @Override
+  public byte[] receiveBytesExactly(int length) throws IOException {
+    return new byte[0];
+  }
+
+  @Override
   public void close() {
     try {
       if (isOpen()) {
@@ -166,7 +173,7 @@ public class SocketConnection implements Connection {
       try {
 
         // write all queued messages to client buffer until queue is empty.
-          while (!sendQueue.isEmpty()) {
+        while (!sendQueue.isEmpty()) {
           String msg = sendQueue.poll();
           if (msg != null) {
             output.write((msg + "\n").getBytes(StandardCharsets.UTF_8));
@@ -186,21 +193,6 @@ public class SocketConnection implements Connection {
         }
       }
     });
-  }
-
-  // Deprecated version of the send() method
-  private void sendV1(String data) {
-    try {
-      String message = data + "\n"; // always use newline to mark end-of-line
-      synchronized (output) {
-        output.write(message.getBytes(StandardCharsets.UTF_8)); // store message in internal buffer.
-        output.flush(); // immediately send the buffer to the socket connection.
-      }
-    } catch (IOException ex) {
-      log.error("[SocketConnection]: Failed to write to socket ({}): {}", getRemoteAddress(),
-          ex.getMessage());
-      close();
-    }
   }
 
 }

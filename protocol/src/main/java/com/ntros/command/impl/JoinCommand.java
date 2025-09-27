@@ -13,14 +13,12 @@ import com.ntros.model.entity.config.access.Visibility;
 import com.ntros.model.world.WorldConnectorHolder;
 import com.ntros.model.world.connector.WorldConnector;
 import com.ntros.model.world.protocol.CommandResult;
-import com.ntros.model.world.protocol.CommandType;
 import com.ntros.model.world.protocol.JoinRequest;
 import com.ntros.model.world.protocol.Message;
 import com.ntros.model.world.protocol.ServerResponse;
 import com.ntros.session.Session;
 import java.time.OffsetDateTime;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
@@ -33,8 +31,6 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class JoinCommand extends AbstractCommand {
 
-  private static final int WORLD_NAME_INDEX = 1;
-
   /**
    * Expected Message: JOIN client_name world_name
    *
@@ -42,86 +38,6 @@ public class JoinCommand extends AbstractCommand {
    * @param session
    * @return
    */
-//  @Override
-//  public Optional<ServerResponse> execute(Message message, Session session) {
-//    SessionContext sessionContext = session.getSessionContext();
-//    String playerName = resolvePlayer(message);
-//    WorldConnector connector = resolveWorld(message);
-//
-//    InstanceConfig config = InstanceRegistry.getInstanceConfigForWorld(connector.getWorldName());
-//    if (config == null) {
-//      return Optional.of(new ServerResponse(
-//          new Message(ERROR, List.of("WORLD_NOT_FOUND")),
-//          CommandResult.failed(playerName, connector.getWorldName(), "world not found")
-//      ));
-//    }
-//
-//    Instance instance = InstanceRegistry.getInstance(connector.getWorldName());
-//    if (instance == null) {
-//      return Optional.of(new ServerResponse(
-//          new Message(ERROR, List.of("WORLD_NOT_FOUND")),
-//          CommandResult.failed(playerName, null, "world not found")
-//      ));
-//    }
-//
-//    // Visibility / capacity checks
-//    InstanceConfig cfg = instance.getConfig();
-//    if (cfg.visibility() == Visibility.PRIVATE) {
-//      var owner = WorldRegistry.ownerOf(instance.getWorldName()).orElse(null);
-//      if (owner != null && !owner.equals(sessionContext.getUserId())) {
-//        return Optional.of(new ServerResponse(
-//            new Message(ERROR, List.of("WORLD_PRIVATE")),
-//            CommandResult.failed(playerName, instance.getWorldName(), "private")
-//        ));
-//      }
-//    }
-//    if (cfg.maxPlayers() == 1 && instance.getActiveSessionsCount() >= 1) {
-//      return Optional.of(new ServerResponse(
-//          new Message(ERROR, List.of("WORLD_BUSY")),
-//          CommandResult.failed(playerName, instance.getWorldName(), "busy")
-//      ));
-//    }
-//
-//    // Execute command
-//    // Enqueue join and wait briefly so it's atomic
-//    CompletableFuture<CommandResult> fut = connector.joinPlayerAsynch(new JoinRequest(playerName));
-//    CommandResult commandResult = null;
-//
-//    try {
-//      commandResult = fut.get(750, TimeUnit.SECONDS);
-//
-//    } catch (Exception ex) {
-//      log.error("Error occurred: {}", ex.getMessage(), ex);
-//    }
-//
-//    if (commandResult == null) {
-//      return Optional.of(new ServerResponse(
-//          new Message(ERROR, List.of("Connector did not produce result")),
-//          CommandResult.failed(playerName, instance.getWorldName(),
-//              "Connector did not produce result")
-//      ));
-//    }
-//
-//    if (commandResult.success()) {
-//      sessionContext.setEntityId(commandResult.playerName());
-//      sessionContext.setWorldId(commandResult.worldName());
-//      sessionContext.setJoinedAt(OffsetDateTime.now());
-//      sessionContext.setAuthenticated(true);
-//
-////      instance.registerSession(session);
-//
-//      log.info("[JOIN Command]: success. Sending WELCOME response to client: {}", sessionContext);
-//      return Optional.of(
-//          new ServerResponse(new Message(WELCOME, List.of(commandResult.playerName())),
-//              commandResult));
-//    }
-//    sessionContext.setAuthenticated(false);
-//    String err = String.format("%s %s\n", ERROR.name(), commandResult.reason());
-//    log.error("[JOIN Command]: failure. Sending ERROR response: {}", err);
-//
-//    return Optional.of(new ServerResponse(new Message(ERROR, List.of(
-//        commandResult.reason())), commandResult));
-//  }
   @Override
   public Optional<ServerResponse> execute(Message message, Session session) {
     SessionContext ctx = session.getSessionContext();
@@ -183,36 +99,6 @@ public class JoinCommand extends AbstractCommand {
 
     return playerName;
   }
-
-  protected WorldConnector resolveWorld(Message message) {
-    log.info("[JOIN COMMAND]: Resolving world for message: {}", message);
-    List<String> args = message.args();
-
-    if (args.size() >= 2) {
-      String worldName = args.get(1);
-
-      WorldConnector world = WorldConnectorHolder.getWorld(worldName);
-      if (world != null) {
-        return world;
-      }
-      log.warn("[JOIN COMMAND]: Unknown world '{}', falling back to default", worldName);
-    }
-
-    return WorldConnectorHolder.getDefaultWorld();
-  }
-
-//  private Instance resolveWorldInstance(Message message) {
-//    log.info("[JOIN COMMAND]: Resolving world instance for message: {}", message);
-//    var args = message.args();
-//    /// JOIN Message example with worldName: JOIN player_name world_name
-//    /// JOIN without worldName: JOIN player_name -> will select default world
-//
-//    return args.stream()
-//        .map(InstanceRegistry::getInstance)
-//        .filter(Objects::nonNull).findFirst()
-//        .orElseThrow(() -> new IllegalArgumentException(
-//            String.format("No instance found for Message: %s", message)));
-//  }
 
   private Instance resolveInstance(Message message) {
     String worldName = message.args().size() >= 2 ? message.args().get(1) : null;

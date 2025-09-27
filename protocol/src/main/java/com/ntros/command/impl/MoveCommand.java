@@ -23,15 +23,6 @@ public class MoveCommand extends AbstractCommand {
 
   @Override
   public Optional<ServerResponse> execute(Message message, Session session) {
-//    SessionContext sessionContext = session.getSessionContext();
-//    validateContext(sessionContext);
-//
-//    WorldConnector world = WorldConnectorHolder.getWorld(sessionContext.getWorldName());
-//    Direction direction = resolveMoveIntent(message);
-//    CommandResult commandResult = world.storeMoveIntent(
-//        new MoveRequest(sessionContext.getEntityId(), direction));
-//
-//    return Optional.of(handleResult(commandResult, direction.name()))
     SessionContext ctx = session.getSessionContext();
     validateContext(ctx);
 

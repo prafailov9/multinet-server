@@ -8,6 +8,10 @@ import com.ntros.connection.SocketConnection;
 import java.io.Closeable;
 import java.io.IOException;
 import java.net.Socket;
+import java.util.Arrays;
+import java.util.EnumSet;
+import java.util.List;
+import java.util.Set;
 
 /**
  * Test-side client for sending commands and receiving responses using the real SocketConnection
@@ -28,72 +32,71 @@ public class TestClient implements Closeable {
     this.connection = new SocketConnection(socket, true);
   }
 
-//  public String join(String clientName, String worldName, int timeoutSeconds) {
-//    connection.send(String.format(JOIN_COMMAND_TEMPLATE, clientName, worldName));
-//    return timeoutSeconds <= 0 ? connection.receive() : awaitResponse(timeoutSeconds);
-//  }
-
-  public String join(String clientName, String worldName, int timeoutSeconds) {
-    connection.send(String.format(JOIN_COMMAND_TEMPLATE, clientName, worldName));
-    return readUntilPrefix("WELCOME ", timeoutSeconds);
+  public ServerMessage join(String clientName, String worldName, int timeoutSeconds) {
+    connection.send("JOIN " + clientName + " " + worldName);
+    return readUntilTypes(timeoutSeconds, ServerCmd.WELCOME, ServerCmd.ERROR);
   }
 
-  private String readUntilPrefix(String prefix, int timeoutSeconds) {
-    final String[] holder = new String[1];
+  public ServerMessage move(String clientName, String direction, int timeoutSeconds) {
+    connection.send("MOVE " + direction + " " + clientName);
+    return readUntilTypes(timeoutSeconds, ServerCmd.STATE, ServerCmd.ERROR);
+  }
+
+  private ServerMessage readUntilTypes(int timeoutSeconds, ServerCmd... wanted) {
+    Set<ServerCmd> targets = EnumSet.noneOf(ServerCmd.class);
+    targets.addAll(Arrays.asList(wanted));
+    final ServerMessage[] holder = new ServerMessage[1];
+
     await()
         .atMost(timeoutSeconds, SECONDS)
-        .pollInterval(50, MILLISECONDS)
+        .pollInterval(25, MILLISECONDS)
         .ignoreExceptions()
         .until(() -> {
           String line = connection.receive();
-          if (line == null || line.isBlank() || "_TIMEOUT_".equals(line)) {
-            return false;
-          }
-          if (line.startsWith(prefix)) {
-            holder[0] = line;
-            return true;
-          }
-          // otherwise ignore (e.g., STATE, ACK) and keep polling
-          return false;
+          if (line == null || line.isBlank() || "_TIMEOUT_".equals(line)) return false;
+          ServerMessage msg = ServerMessage.parse(line);
+          if (targets.contains(msg.type())) { holder[0] = msg; return true; }
+          return false; // ignore other lines (ACK/STATE while waiting for WELCOME, etc.)
         });
+
     return holder[0];
-  }
-
-  public String move(String clientName, String direction, int timeoutSeconds) {
-    connection.send(String.format(MOVE_COMMAND_TEMPLATE, direction, clientName));
-    return timeoutSeconds <= 0 ? connection.receive() : awaitResponse(timeoutSeconds);
-  }
-
-  public String awaitResponse(int timeoutSeconds) {
-    final String[] responseHolder = new String[1];
-
-    await()
-        .atMost(timeoutSeconds, SECONDS)
-        .pollInterval(50, MILLISECONDS)
-        .ignoreExceptions()
-        .until(() -> {
-          String response = connection.receive();
-          // wait for a valid server response
-          if (response != null && !response.isBlank()) {
-            responseHolder[0] = response;
-            return true;
-          }
-          return false;
-        });
-
-    return responseHolder[0];
-  }
-
-  public String readBlocking() {
-    return connection.receive();
-  }
-
-  public boolean isConnected() {
-    return connection.isOpen();
   }
 
   @Override
   public void close() {
     connection.close();
   }
+
+  ///  --- Test Helper Structures
+
+  // test-only model
+  enum ServerCmd {WELCOME, ERROR, STATE, ACK, UNKNOWN}
+
+  record ServerMessage(ServerCmd type, List<String> args, String raw) {
+
+    static ServerMessage parse(String line) {
+      if (line == null || line.isBlank()) {
+        return new ServerMessage(ServerCmd.UNKNOWN, List.of(), "");
+      }
+      String trimmed = line.strip();
+      int sp = trimmed.indexOf(' ');
+      String head = sp < 0 ? trimmed : trimmed.substring(0, sp);
+      String tail = sp < 0 ? "" : trimmed.substring(sp + 1);
+
+      ServerCmd cmd = switch (head) {
+        case "WELCOME" -> ServerCmd.WELCOME;
+        case "ERROR" -> ServerCmd.ERROR;
+        case "STATE" -> ServerCmd.STATE;
+        case "ACK" -> ServerCmd.ACK;
+        default -> ServerCmd.UNKNOWN;
+      };
+
+      List<String> args = (cmd == ServerCmd.STATE)
+          ? List.of(tail)                          // keep JSON blob intact
+          : (tail.isBlank() ? List.of() : List.of(tail.split("\\s+")));
+
+      return new ServerMessage(cmd, args, trimmed);
+    }
+  }
+
 }

@@ -81,6 +81,7 @@ public class GridWorldConnector implements WorldConnector {
       }
     };
   }
+
   // --- Write commands to the world ---
   @Override
   public CommandResult storeMoveIntent(MoveRequest move) {
@@ -106,9 +107,10 @@ public class GridWorldConnector implements WorldConnector {
   }
 
   @Override
-  public String serialize() {
+  public String snapshot(boolean oneLine) {
     // SAFE: called on the ticker thread right after update() in your instance
-    return engine.serialize(state);
+    return oneLine ? engine.serializeOneLine(state)
+        : engine.serialize(state);
   }
 
   @Override

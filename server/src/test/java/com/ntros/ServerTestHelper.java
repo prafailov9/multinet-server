@@ -62,7 +62,8 @@ public class ServerTestHelper {
         }).until(() -> {
           int sessions = instances.stream().mapToInt(Instance::getActiveSessionsCount).sum();
           int entities = instances.stream().mapToInt(Instance::getEntityCount).sum();
-          return sessions == 0 && entities == 0;
+          boolean allStopped = instances.stream().allMatch(i -> !i.isRunning());
+          return sessions == 0 && entities == 0 && allStopped;
         });
 
     serverExecutor.shutdownNow();

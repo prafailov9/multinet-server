@@ -24,7 +24,7 @@ public interface WorldConnector {
 
   void removePlayer(String entityId);
 
-  String serialize();
+  String snapshot(boolean oneLine);
 
   String getWorldName();
 
