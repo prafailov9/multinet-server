@@ -1,6 +1,6 @@
 package com.ntros.instance.ins;
 
-import com.ntros.event.listener.SessionManager;
+import com.ntros.event.sessionmanager.SessionManager;
 import com.ntros.instance.runner.InstanceRunner;
 import com.ntros.model.world.connector.WorldConnector;
 

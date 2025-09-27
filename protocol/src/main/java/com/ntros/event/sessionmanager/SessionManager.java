@@ -1,4 +1,4 @@
-package com.ntros.event.listener;
+package com.ntros.event.sessionmanager;
 
 import com.ntros.session.Session;
 import java.util.List;

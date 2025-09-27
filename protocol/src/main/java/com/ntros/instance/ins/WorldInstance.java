@@ -1,7 +1,7 @@
 package com.ntros.instance.ins;
 
 import com.ntros.event.broadcaster.Broadcaster;
-import com.ntros.event.listener.SessionManager;
+import com.ntros.event.sessionmanager.SessionManager;
 import com.ntros.model.entity.config.access.InstanceConfig;
 import com.ntros.model.world.connector.WorldConnector;
 import com.ntros.model.world.protocol.CommandResult;

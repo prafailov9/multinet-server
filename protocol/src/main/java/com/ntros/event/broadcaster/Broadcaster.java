@@ -1,6 +1,6 @@
 package com.ntros.event.broadcaster;
 
-import com.ntros.event.listener.SessionManager;
+import com.ntros.event.sessionmanager.SessionManager;
 
 public interface Broadcaster {
 

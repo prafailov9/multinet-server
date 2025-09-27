@@ -2,7 +2,7 @@ package com.ntros.instance;
 
 import com.ntros.event.broadcaster.BroadcastToAll;
 import com.ntros.event.broadcaster.BroadcastToOwnerOnly;
-import com.ntros.event.listener.SessionManager;
+import com.ntros.event.sessionmanager.SessionManager;
 import com.ntros.instance.ins.WorldInstance;
 import com.ntros.model.entity.config.WorldCapabilities;
 import com.ntros.model.entity.config.access.Visibility;

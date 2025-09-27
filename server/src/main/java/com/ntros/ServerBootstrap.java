@@ -5,8 +5,8 @@ import com.ntros.model.entity.config.access.Visibility;
 import com.ntros.model.entity.config.access.InstanceConfig;
 import java.io.IOException;
 
-import com.ntros.event.listener.ClientSessionManager;
-import com.ntros.event.listener.SessionManager;
+import com.ntros.event.sessionmanager.ClientSessionManager;
+import com.ntros.event.sessionmanager.SessionManager;
 import com.ntros.instance.InstanceRegistry;
 import com.ntros.instance.ins.WorldInstance;
 import com.ntros.model.world.WorldConnectorHolder;

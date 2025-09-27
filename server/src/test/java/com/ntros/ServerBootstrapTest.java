@@ -7,8 +7,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.ntros.event.broadcaster.BroadcastToAll;
 import com.ntros.event.broadcaster.Broadcaster;
-import com.ntros.event.listener.ClientSessionManager;
-import com.ntros.event.listener.SessionManager;
+import com.ntros.event.sessionmanager.ClientSessionManager;
+import com.ntros.event.sessionmanager.SessionManager;
 import com.ntros.instance.InstanceRegistry;
 import com.ntros.instance.ins.Instance;
 import com.ntros.instance.ins.WorldInstance;
@@ -17,7 +17,6 @@ import com.ntros.model.entity.config.WorldCapabilities;
 import com.ntros.model.entity.config.access.InstanceConfig;
 import com.ntros.model.entity.config.access.Visibility;
 import com.ntros.model.entity.sequence.IdSequenceGenerator;
-import com.ntros.model.world.WorldConnectorHolder;
 import com.ntros.model.world.connector.GridWorldConnector;
 import com.ntros.model.world.connector.WorldConnector;
 import com.ntros.model.world.engine.solid.GridWorldEngine;
