@@ -11,6 +11,7 @@ import java.io.IOException;
 import java.net.Socket;
 import java.time.Duration;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 
 import java.util.concurrent.TimeUnit;
@@ -56,14 +57,17 @@ public class ServerTestHelper {
       throws IOException {
     server.stop();
 
-    // ensure all leave/remove tasks hit the actor before we assert
-    instances.forEach(i -> {
-      try {
-        i.drainControl().get(500, TimeUnit.MILLISECONDS);
-      } catch (Exception ignore) {
-      }
-    });
+    // run marker tasks to clean up the actor thread
+    List<CompletableFuture<Void>> drains = instances.stream()
+        .map(Instance::drainControl)
+        .toList();
 
+    // wait until all actor tasks are done for all instances
+    await()
+        .ignoreExceptions()
+        .until(() -> drains.stream().allMatch(CompletableFuture::isDone));
+
+    // assert world empty
     await()
         .pollDelay(Duration.ofMillis(100))
         .pollInterval(Duration.ofMillis(50))
