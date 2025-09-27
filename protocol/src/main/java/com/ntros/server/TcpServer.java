@@ -30,7 +30,7 @@ public class TcpServer implements Server {
   @Override
   public void start() throws IOException {
     serverSocket = new ServerSocket(port);
-    log.info("Accepting connections...");
+    log.info("[Server.start()]:Accepting connections...");
 
     while (running) {
       try {
@@ -54,7 +54,7 @@ public class TcpServer implements Server {
 
   @Override
   public void stop() throws IOException {
-    log.info("Shutting down server...");
+    log.info("[SERVER.stop():]Shutting down server...");
     running = false;
 
     for (Instance instance : InstanceRegistry.getAll()) {

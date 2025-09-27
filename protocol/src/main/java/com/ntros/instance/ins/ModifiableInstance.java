@@ -4,8 +4,12 @@ import com.ntros.event.listener.SessionManager;
 import com.ntros.instance.runner.InstanceRunner;
 import com.ntros.model.entity.config.access.InstanceConfig;
 import com.ntros.model.world.connector.WorldConnector;
+import com.ntros.model.world.protocol.CommandResult;
+import com.ntros.model.world.protocol.JoinRequest;
+import com.ntros.model.world.protocol.MoveRequest;
 import com.ntros.session.Session;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class ModifiableInstance extends AbstractInstance {
@@ -16,6 +20,31 @@ public class ModifiableInstance extends AbstractInstance {
       InstanceRunner instanceRunner,
       SessionManager sessionManager) {
     super(worldConnector, instanceRunner, sessionManager);
+  }
+
+  @Override
+  public void startIfNeededForJoin() {
+
+  }
+
+  @Override
+  public CompletableFuture<CommandResult> joinAsync(JoinRequest req) {
+    return null;
+  }
+
+  @Override
+  public CommandResult move(MoveRequest req) {
+    return null;
+  }
+
+  @Override
+  public void removeEntity(String entityId) {
+
+  }
+
+  @Override
+  public void onWelcomeSent(Session session) {
+
   }
 
   @Override
@@ -42,7 +71,7 @@ public class ModifiableInstance extends AbstractInstance {
 
   @Override
   public String getWorldName() {
-    return worldConnector.worldName();
+    return worldConnector.getWorldName();
   }
 
   @Override
@@ -67,6 +96,11 @@ public class ModifiableInstance extends AbstractInstance {
 
   @Override
   public int getActiveSessionsCount() {
+    return 0;
+  }
+
+  @Override
+  public int getEntityCount() {
     return 0;
   }
 

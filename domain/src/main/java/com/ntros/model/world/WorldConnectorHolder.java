@@ -48,7 +48,7 @@ public final class WorldConnectorHolder {
   }
 
   public static void register(WorldConnector worldConnector) {
-    WORLDS.put(worldConnector.worldName(), worldConnector);
+    WORLDS.put(worldConnector.getWorldName(), worldConnector);
   }
 
   public static void remove(String id) {

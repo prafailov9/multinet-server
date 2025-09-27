@@ -12,43 +12,35 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class MessageParser implements Parser {
 
-    private static final String DELIMITER = "\\s+";
-    private static final int MIN_WORD_COUNT = 2;
+  private static final String DELIMITER = "\\s+";
+  private static final int MIN_WORD_COUNT = 2;
 
-    /**
-     * Parsing the raw network message to a Client Command that the server can process.
-     */
-    @Override
-    public Message parse(String rawMessage) {
-        log.info("received data: {}", rawMessage);
-        String[] words = rawMessage.split(DELIMITER);
-        if (words.length < MIN_WORD_COUNT) {
-            String err = "[Parser]: Invalid message - word count less than 2.";
-            log.error(err);
-            throw new MessageParsingException(err);
-        }
-
-        // the first word of the message is expected to be the command.
-        // Attempts to convert the word to an existing server-side Client command, otherwise throw exception
-        CommandType command = CommandType.valueOf(
-                words[0]); // throws IllegalArgument if command doesn't exist
-        List<String> args = new ArrayList<>(Arrays.asList(words).subList(1, words.length));
-
-        if (args.isEmpty()) {
-            String err = "[Parser]: No arguments received.";
-            log.error(err);
-            throw new MessageParsingException(err);
-        }
-        return new Message(command, args);
+  /**
+   * Parsing the raw network message to a Client Command that the server can process.
+   */
+  @Override
+  public Message parse(String rawMessage) {
+    log.info("received data: {}", rawMessage);
+    String[] words = rawMessage.split(DELIMITER);
+    if (words.length < MIN_WORD_COUNT) {
+      String err = "[Parser]: Invalid message - word count less than 2.";
+      log.error(err);
+      throw new MessageParsingException(err);
     }
 
-    private void validateArgs(List<String> args) {
-        args.forEach(arg -> {
-            if (arg.length() < 2 && !Character.isLetter(arg.charAt(0))) {
-                throw new MessageParsingException("Invalid argument: " + arg);
-            }
-        });
-    }
+    // the first word of the message is expected to be the command.
+    // Attempts to convert the word to an existing server-side Client command, otherwise throw exception
+    CommandType command = CommandType.valueOf(
+        words[0]); // throws IllegalArgument if command doesn't exist
 
+    List<String> args = new ArrayList<>(Arrays.asList(words).subList(1, words.length));
+
+    if (args.isEmpty()) {
+      String err = "[Parser]: No arguments received.";
+      log.error(err);
+      throw new MessageParsingException(err);
+    }
+    return new Message(command, args);
+  }
 
 }

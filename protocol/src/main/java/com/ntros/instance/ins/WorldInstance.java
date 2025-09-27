@@ -4,9 +4,13 @@ import com.ntros.event.broadcaster.Broadcaster;
 import com.ntros.event.listener.SessionManager;
 import com.ntros.model.entity.config.access.InstanceConfig;
 import com.ntros.model.world.connector.WorldConnector;
+import com.ntros.model.world.protocol.CommandResult;
+import com.ntros.model.world.protocol.JoinRequest;
+import com.ntros.model.world.protocol.MoveRequest;
 import com.ntros.session.Session;
 import com.ntros.ticker.Ticker;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 import lombok.extern.slf4j.Slf4j;
 
@@ -19,15 +23,15 @@ import lombok.extern.slf4j.Slf4j;
 public class WorldInstance implements Instance {
 
   private final SessionManager sessionManager;
-  private final WorldConnector world;
+  private final WorldConnector connector;
   private final Ticker ticker;
   private final Broadcaster broadcaster;
   private final InstanceConfig config;
   private final AtomicBoolean tickerRunning;
 
-  public WorldInstance(WorldConnector world, SessionManager sessionManager,
+  public WorldInstance(WorldConnector connector, SessionManager sessionManager,
       Ticker ticker, Broadcaster broadcaster, InstanceConfig config) {
-    this.world = world;
+    this.connector = connector;
     this.sessionManager = sessionManager;
     this.ticker = ticker;
     this.broadcaster = broadcaster;
@@ -35,6 +39,36 @@ public class WorldInstance implements Instance {
     this.tickerRunning = new AtomicBoolean(false);
   }
 
+
+  @Override
+  public void startIfNeededForJoin() {
+    if (config.autoStartOnPlayerJoin() && !isRunning()) {
+      run();
+    }
+  }
+
+
+  @Override
+  public CompletableFuture<CommandResult> joinAsync(JoinRequest req) {
+    return connector.joinPlayerAsynch(req);
+  }
+
+  @Override
+  public CommandResult move(MoveRequest req) {
+    return connector.storeMoveIntent(req);
+  }
+
+  @Override
+  public void removeEntity(String entityId) {
+    connector.removePlayer(entityId);
+  }
+
+  @Override
+  public void onWelcomeSent(Session session) {
+    // Register AFTER we’ve written WELCOME to the socket,
+    // so this session doesn’t receive STATE before WELCOME.
+    registerSession(session);
+  }
 
   @Override
   public void run() {
@@ -45,14 +79,14 @@ public class WorldInstance implements Instance {
     log.info("[IN WORLD INSTANCE]: Updating {} state...", getWorldName());
     ticker.tick(() -> {
       try {
-        world.update();                // mutate on ticker thread
+        connector.update();                // mutate on ticker thread
 
-        final String serialized = world.serialize(); // snapshot on ticker thread
+        final String worldState = connector.serialize(); // snapshot on ticker thread
 
         // Optional: avoid megaspam logs / huge payload logs
-        log.debug("[{}] broadcasting state ({} bytes)", getWorldName(), serialized.length());
+        log.debug("[{}] broadcasting state ({} bytes)", getWorldName(), worldState.length());
 
-        broadcaster.publish(serialized, sessionManager);
+        broadcaster.publish(worldState, sessionManager);
       } catch (Throwable t) {
         log.error("[{}] tick failed: {}", getWorldName(), t);
       }
@@ -71,7 +105,7 @@ public class WorldInstance implements Instance {
     } finally {
       tickerRunning.set(false);
       sessionManager.shutdownAll();
-      world.reset();
+      connector.reset();
     }
   }
 
@@ -95,7 +129,7 @@ public class WorldInstance implements Instance {
 
   @Override
   public String getWorldName() {
-    return world.worldName();
+    return connector.getWorldName();
   }
 
   @Override
@@ -105,7 +139,7 @@ public class WorldInstance implements Instance {
 
   @Override
   public WorldConnector getWorldConnector() {
-    return world;
+    return connector;
   }
 
   @Override
@@ -121,6 +155,11 @@ public class WorldInstance implements Instance {
   @Override
   public int getActiveSessionsCount() {
     return sessionManager.activeSessionsCount();
+  }
+
+  @Override
+  public int getEntityCount() {
+    return connector.getCurrentEntities().size();
   }
 
   @Override

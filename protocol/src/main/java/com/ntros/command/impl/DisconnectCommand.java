@@ -27,11 +27,11 @@ public final class DisconnectCommand extends AbstractCommand {
           CommandResult.succeeded(ctx.getUserId(), null, "user disconnected")));
     }
 
-    Instance inst = InstanceRegistry.get(worldId);
+    Instance inst = InstanceRegistry.getInstance(worldId);
     if (inst != null) {
       WorldConnector world = WorldConnectorHolder.getWorld(worldId);
       if (world != null && ctx.getEntityId() != null) {
-        world.remove(ctx.getEntityId());
+        world.removePlayer(ctx.getEntityId());
       }
       inst.removeSession(session);
     }

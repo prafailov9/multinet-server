@@ -15,7 +15,7 @@ public class MessageDispatcher implements Dispatcher {
 
   @Override
   public Optional<ServerResponse> dispatch(Message message, Session session) {
-    log.info("received message: {}", message);
+    log.info("Received parsed message: {}", message);
     Command command = getCommand(message.commandType().name());
 
     return command.execute(message, session);

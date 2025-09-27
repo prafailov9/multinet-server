@@ -6,6 +6,7 @@ import com.ntros.model.world.protocol.JoinRequest;
 import com.ntros.model.world.protocol.MoveRequest;
 import com.ntros.model.world.protocol.CommandResult;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * Layer, connecting clients to the actual game world. Exposes minimal contract for client
@@ -17,15 +18,17 @@ public interface WorldConnector {
 
   CommandResult storeMoveIntent(MoveRequest move);
 
-  CommandResult add(JoinRequest joinRequest);
+  CommandResult joinPlayer(JoinRequest joinRequest);
 
-  void remove(String entityId);
+  CompletableFuture<CommandResult> joinPlayerAsynch(JoinRequest joinRequest);
+
+  void removePlayer(String entityId);
 
   String serialize();
 
-  String worldName();
+  String getWorldName();
 
-  String worldType();
+  String getWorldType();
 
   List<Entity> getCurrentEntities();
 

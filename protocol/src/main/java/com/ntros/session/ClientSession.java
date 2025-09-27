@@ -1,25 +1,17 @@
 package com.ntros.session;
 
 
-import static com.ntros.event.SessionEvent.sessionClosed;
-import static com.ntros.event.SessionEvent.sessionFailed;
-
 import com.ntros.connection.Connection;
-import com.ntros.event.bus.SessionEventBus;
 import com.ntros.instance.InstanceRegistry;
-import com.ntros.instance.ins.Instance;
 import com.ntros.message.SessionContext;
 import com.ntros.model.entity.sequence.IdSequenceGenerator;
 import com.ntros.model.world.WorldConnectorHolder;
-import com.ntros.model.world.connector.WorldConnector;
 import com.ntros.model.world.protocol.ServerResponse;
 import com.ntros.session.process.ClientMessageProcessor;
 import com.ntros.session.process.RequestClientMessageProcessor;
 import com.ntros.session.process.ResponseServerMessageProcessor;
 import com.ntros.session.process.ServerMessageProcessor;
-
 import java.util.concurrent.atomic.AtomicBoolean;
-
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -73,7 +65,9 @@ public class ClientSession implements Session {
           serverMessageProcessor.processResponse(serverResponse, this);
         } catch (Exception ex) {
           log.error("Error: {}", sessionContext.getSessionId(), ex);
-          SessionEventBus.get().publish(sessionFailed(this, ex.getMessage()));
+          ServerResponse failedResponse = clientMessageProcessor.process("SESSION_FAILED", this);
+//          SessionEventBus.get().publish(sessionFailed(this, ex.getMessage()));
+          log.error("Processed session_failed response: {}", failedResponse);
         }
       }
     } finally {
@@ -104,6 +98,34 @@ public class ClientSession implements Session {
     return sessionContext;
   }
 
+  @Override
+  public void terminate() {
+    if (!terminated.compareAndSet(false, true)) {
+      return;
+    }
+
+    running = false;
+    connection.close();
+
+    // Don’t touch a connector field. Use context and guard.
+    SessionContext ctx = sessionContext; // or getSessionContext()
+    if (ctx != null && ctx.isAuthenticated() && ctx.getWorldName() != null) {
+      try {
+        var instance = InstanceRegistry.getInstance(ctx.getWorldName());
+        if (instance != null) {
+          instance.removeSession(this);
+          // Optionally remove the entity from the world via connector/remove op
+          var world = WorldConnectorHolder.getWorld(ctx.getWorldName());
+          if (world != null && ctx.getEntityId() != null) {
+            world.removePlayer(ctx.getEntityId());
+          }
+        }
+      } catch (Throwable t) {
+        log.warn("terminate(): cleanup error: {}", t.toString());
+      }
+    }
+  }
+
 //  @Override
 //  public void terminate() {
 //    if (!terminated.compareAndSet(false, true)) {
@@ -121,36 +143,36 @@ public class ClientSession implements Session {
 //    }
 //  }
 
-  @Override
-  public void terminate() {
-    if (!terminated.compareAndSet(false, true)) {
-      return;
-    }
-
-    running = false;
-    connection.close();
-
-    // Inline leave logic
-    try {
-      SessionContext ctx = sessionContext;
-      if (ctx != null && ctx.isAuthenticated()) {
-        String worldId = ctx.getWorldName();
-        if (worldId != null && !worldId.isEmpty()) {
-          Instance inst = InstanceRegistry.get(worldId);
-          if (inst != null) {
-            // remove entity from the world
-            WorldConnector world = WorldConnectorHolder.getWorld(worldId);
-            if (world != null && ctx.getEntityId() != null) {
-              world.remove(ctx.getEntityId());   // IMPORTANT: entityId, not userId
-            }
-            // deregister session (may auto-stop if last session and config.autostart)
-            inst.removeSession(this);
-          }
-        }
-      }
-    } catch (Throwable t) {
-      log.warn("Terminate cleanup failed for session {}", sessionContext.getSessionId(), t);
-    }
-  }
+//  @Override
+//  public void terminate() {
+//    if (!terminated.compareAndSet(false, true)) {
+//      return;
+//    }
+//
+//    running = false;
+//    connection.close();
+//
+//    // Inline leave logic
+//    try {
+//      SessionContext ctx = sessionContext;
+//      if (ctx != null && ctx.isAuthenticated()) {
+//        String worldId = ctx.getWorldName();
+//        if (worldId != null && !worldId.isEmpty()) {
+//          Instance inst = InstanceRegistry.getInstance(worldId);
+//          if (inst != null) {
+//            // remove entity from the world
+//            WorldConnector world = WorldConnectorHolder.getWorld(worldId);
+//            if (world != null && ctx.getEntityId() != null) {
+//              world.removePlayer(ctx.getEntityId());   // IMPORTANT: entityId, not userId
+//            }
+//            // deregister session (may auto-stop if last session and config.autostart)
+//            inst.removeSession(this);
+//          }
+//        }
+//      }
+//    } catch (Throwable t) {
+//      log.warn("Terminate cleanup failed for session {}", sessionContext.getSessionId(), t);
+//    }
+//  }
 
 }

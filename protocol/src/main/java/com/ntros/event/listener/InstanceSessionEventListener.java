@@ -73,8 +73,8 @@ public class InstanceSessionEventListener implements SessionEventListener {
         .isEmpty()) {
       WorldConnector worldConnector = WorldConnectorHolder.getWorld(context.getWorldName());
       log.info("IN EVENT_LISTENER: Removing entity {} from world {}. ", context,
-          worldConnector.worldName());
-      worldConnector.remove(context.getUserId());
+          worldConnector.getWorldName());
+      worldConnector.removePlayer(context.getUserId());
     }
   }
 }

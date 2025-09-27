@@ -1,5 +1,6 @@
 package com.ntros.session.process;
 
+import com.ntros.instance.InstanceRegistry;
 import com.ntros.model.world.protocol.CommandResult;
 import com.ntros.model.world.protocol.Message;
 import com.ntros.model.world.protocol.ServerResponse;
@@ -12,60 +13,23 @@ public class ResponseServerMessageProcessor implements ServerMessageProcessor {
   @Override
   public void processResponse(ServerResponse response, Session session) {
     Message msg = response.serverMessage();
-    CommandResult result = response.commandResult();
 
-    // ✅ send the server reply line immediately
-    session.response(msg.toString());
-
-    // optional: structured logging by type
     switch (msg.commandType()) {
-      case WELCOME ->
-          log.info("WELCOME sent to session {}", session.getSessionContext().getSessionId());
-      case ACK -> log.info("ACK: {}", msg);
-      case ERROR ->
-          log.warn("ERROR (player={}, world={}): {}", result.playerName(), result.worldName(),
-              result.reason());
+      case WELCOME -> {
+        // 1) Send WELCOME to the socket first (guarantee ordering).
+        session.response(msg.toString());
+
+        // 2) Then attach the session to the instance so it starts receiving STATE.
+        var ctx = session.getSessionContext();
+        var instance = InstanceRegistry.getInstance(ctx.getWorldName());
+        if (instance != null) {
+          instance.onWelcomeSent(session);  // <-- call here
+        }
+      }
+
+      case ACK, ERROR -> session.response(msg.toString());
       default -> log.debug("Server message: {}", msg);
     }
   }
-
-//  @Override
-//  public void processResponse(ServerResponse response, Session session) {
-//    boolean isAuth = session.getSessionContext().isAuthenticated();
-//
-//    if (!isAuth) {
-//      log.info("Client not authenticated: {}. Sending failed session event to Bus",
-//          session.getSessionContext());
-//      SessionEventBus.get()
-//          .publish(sessionFailed(session, response.commandResult().reason()));
-//    }
-//
-//    Message msg = response.serverMessage();
-//    CommandResult result = response.commandResult();
-//
-//    switch (msg.commandType()) {
-//      case WELCOME -> {
-//        log.info("Sending start session event. Sharing world state with user: {}",
-//            session.getSessionContext().getSessionId());
-//        SessionEventBus.get().publish(
-//            sessionStarted(session, "Starting client session...", msg.toString())
-//        );
-//      }
-//      case AUTH_SUCCESS -> {
-//        // successful authentication. Client can access/create worlds.
-//      }
-//      case ACK -> // Server already ticking the state; just log
-//          log.info("ACK from server (player={}, world={}): {}",
-//              result.playerName(), result.worldName(), result.reason());
-//
-//      case ERROR -> {
-//        log.warn("Server error (player={}, world={}): {}",
-//            result.playerName(), result.worldName(), result.reason());
-//        SessionEventBus.get().publish(sessionFailed(session, result.reason()));
-//      }
-//
-//      default -> log.warn("Unhandled command type {} with args: {}", msg.commandType(), msg.args());
-//    }
-//  }
 
 }

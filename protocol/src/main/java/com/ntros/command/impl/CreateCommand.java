@@ -44,11 +44,11 @@ public class CreateCommand extends AbstractCommand {
 
       boolean isShared = parseSharedFlag(message);
       Instance instance = InstanceFactory.createInstance(session, isShared, worldConnector);
-      InstanceRegistry.register(instance);
+      InstanceRegistry.registerInstance(instance);
 
       serverResponse = ServerResponse.ofSuccess(
           String.valueOf(sessionContext.getSessionId()),
-          worldConnector.worldName(), "World Created");
+          worldConnector.getWorldName(), "World Created");
     } catch (IllegalArgumentException ex) {
       log.error("Command failed. Could not create world", ex);
       serverResponse = ServerResponse.ofError(message, ex.getMessage());

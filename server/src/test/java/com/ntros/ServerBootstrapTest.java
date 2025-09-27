@@ -1,103 +1,99 @@
 package com.ntros;
 
 
+import static com.ntros.ServerTestHelper.stopServerWhen;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import com.ntros.event.broadcaster.BroadcastToAll;
+import com.ntros.event.broadcaster.Broadcaster;
 import com.ntros.event.listener.ClientSessionManager;
-//import com.ntros.event.listener.InstanceSessionEventListener;
-import com.ntros.event.listener.SessionEventListener;
 import com.ntros.event.listener.SessionManager;
-import com.ntros.instance.ins.Instance;
 import com.ntros.instance.InstanceRegistry;
+import com.ntros.instance.ins.Instance;
 import com.ntros.instance.ins.WorldInstance;
 import com.ntros.model.entity.Entity;
 import com.ntros.model.entity.config.WorldCapabilities;
-import com.ntros.model.entity.config.access.Visibility;
 import com.ntros.model.entity.config.access.InstanceConfig;
+import com.ntros.model.entity.config.access.Visibility;
 import com.ntros.model.entity.sequence.IdSequenceGenerator;
 import com.ntros.model.world.WorldConnectorHolder;
 import com.ntros.model.world.connector.GridWorldConnector;
+import com.ntros.model.world.connector.WorldConnector;
 import com.ntros.model.world.engine.solid.GridWorldEngine;
 import com.ntros.model.world.state.solid.GridWorldState;
 import com.ntros.server.TcpServer;
 import com.ntros.ticker.Ticker;
 import com.ntros.ticker.WorldTicker;
-import lombok.extern.slf4j.Slf4j;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-
 import java.io.IOException;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-
-import static com.ntros.ServerTestHelper.stopServerWhen;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import lombok.extern.slf4j.Slf4j;
+import org.awaitility.Awaitility;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 @Slf4j
 public class ServerBootstrapTest {
 
   private static final int PORT = 5555;
   private static final int TICK_RATE = 100;
-  private final GridWorldConnector DEFAULT_WORLD =
-      new GridWorldConnector(new GridWorldState("arena-x", 3, 3),
-          new GridWorldEngine(),
-          new WorldCapabilities(true, true,
-              false, true));
   private final SessionManager sessionManager = new ClientSessionManager();
+
+  private final GridWorldConnector DEFAULT_WORLD = createWorldConnector("arena-x", 3, 3);
   private final Ticker serverTicker = new WorldTicker(TICK_RATE);
-  private final Instance instance = new WorldInstance(DEFAULT_WORLD, sessionManager,
-      serverTicker, new BroadcastToAll(), new InstanceConfig(100, false, Visibility.PUBLIC, true));
+  private final InstanceConfig instanceConfig = createInstanceConfig(
+      100, false, Visibility.PUBLIC, true);
+  private final Instance instance = createInstance(DEFAULT_WORLD, sessionManager, serverTicker,
+      new BroadcastToAll(), instanceConfig);
+
   private final ExecutorService serverExecutor = Executors.newSingleThreadExecutor();
   private TcpServer server;
-  private SessionEventListener instanceSessionEventListener;
+
+  @BeforeAll
+  static void awaitDefaults() {
+    Awaitility.setDefaultPollInterval(Duration.ofMillis(25));
+    Awaitility.setDefaultTimeout(Duration.ofSeconds(2));
+  }
 
   @BeforeEach
   void setUp() {
-
-//    instanceSessionEventListener = new InstanceSessionEventListener(instance);
-    WorldConnectorHolder.register(DEFAULT_WORLD);
     // register the world instance(state + engine) with the tick server
-    InstanceRegistry.register(instance);
-//    SessionEventBus.get().register(instanceSessionEventListener);
+    InstanceRegistry.registerInstance(instance);
+
     server = new TcpServer(PORT);
     // Start the server in a background thread.
     ServerTestHelper.startServer(server, serverExecutor, PORT);
   }
 
   @AfterEach
-  public void tearDown() {
-    WorldConnectorHolder.remove(DEFAULT_WORLD.worldName());
-    DEFAULT_WORLD.reset();
-    // Clear all active listeners from prev tests
-//    SessionEventBus.get().removeAll();
+  public void tearDown() throws IOException {
+    instance.reset();
     IdSequenceGenerator.getInstance().resetAll();
-//    instanceSessionEventListener = null;
+    server.stop();
   }
 
   @Test
-  void singleConnection_sendJoinCommand_joinServerSuccess() throws Exception {
-    TestClient testClient = null;
-    try {
-      testClient = new TestClient("localhost", PORT);
+  void singleConnection_sendJoinCommand_immediateJoinSuccess() throws Exception {
+    // autoStartOnPlayerJoin = true -> server will immediately start ticking
+    try (TestClient testClient = new TestClient("localhost", PORT)) {
       String clientName = "client-1";
 
       // join server
-      String actualJoinResponse = testClient.join(clientName, DEFAULT_WORLD.worldName(), 100);
+      String actualJoinResponse = testClient.join(clientName, DEFAULT_WORLD.getWorldName(), 2);
       String expectedJoinResponse = "WELCOME " + clientName;
       // Verify success join
       log.info("[TEST]: Received JOIN response from server: {}", actualJoinResponse);
       assertEquals(expectedJoinResponse, actualJoinResponse,
           "Unexpected response from server for " + clientName);
-    } finally {
-      assert testClient != null;
-      testClient.close();
     }
-
     // stop server
-    stopServerWhen(sessionManager, server, serverExecutor);
+    stopServerWhen(instance, server, serverExecutor);
 
     List<Entity> entities = DEFAULT_WORLD.getCurrentEntities();
     log.info("Entities in world: {}", entities);
@@ -110,30 +106,28 @@ public class ServerBootstrapTest {
       String clientName = "client-1";
 
       // join server
-      String actualJoinResponse = testClient.join(clientName, DEFAULT_WORLD.worldName(), 100);
+      String actualJoinResponse = testClient.join(clientName, DEFAULT_WORLD.getWorldName(), 2);
       String expectedJoinResponse = "WELCOME " + clientName;
       // Verify success join
-      log.info("[TEST]: Received JOIN response from server: {}", actualJoinResponse);
+      log.info("[SingleCon_MoveCommand]: Received JOIN response from server: {}",
+          actualJoinResponse);
       assertEquals(expectedJoinResponse, actualJoinResponse,
           "Unexpected response from server for " + clientName);
 
       // send move command to server
-      log.info("[TEST]: Sending MOVE request to server...");
+      log.info("[SingleCon_MoveCommand]: Sending MOVE request to server...");
 
-//            String expectedMoveResponse = "STATE " + DEFAULT_WORLD.serialize();
-//            String expectedMoveResponse = "\"entities\": {\t\"client-1\": {\t\t\"x\": 0,\t\t\"y\": 1\t}}}";
-      String actualMoveResponse = testClient.move(clientName, "UP", 100);
+      String actualMoveResponse = testClient.move(clientName, "UP", 2);
       // ticker will constantly stream the state, ack command is never sent or is lost between state broadcasts
-      log.info("[TEST]: Received MOVE response from server: {}", actualMoveResponse);
-//            log.info("[TEST]: Expect MOVE response to contain: {}", expectedMoveResponse);
+      log.info("[SingleCon_MoveCommand]: Received MOVE response from server: {}",
+          actualMoveResponse);
       assertTrue(actualMoveResponse.contains("STATE {"));
-//            assertEquals(expectedMoveResponse, actualMoveResponse, "Unexpected response from server for " + clientName);
     }
     // stop server
-    stopServerWhen(sessionManager, server, serverExecutor);
+    stopServerWhen(instance, server, serverExecutor);
 
     List<Entity> entities = DEFAULT_WORLD.getCurrentEntities();
-    log.info("Entities in world: {}", entities);
+    log.info("[SingleCon_MoveCommand]: Entities in world: {}", entities);
     assertEquals(0, entities.size());
   }
 
@@ -146,7 +140,7 @@ public class ServerBootstrapTest {
         String clientName = "client-" + i;
         TestClient client = new TestClient("localhost", PORT);
         clients.add(client);
-        String actualJoinResponse = client.join(clientName, DEFAULT_WORLD.worldName(), 100);
+        String actualJoinResponse = client.join(clientName, DEFAULT_WORLD.getWorldName(), 2);
         String expectedJoinResponse = "WELCOME " + clientName;
         assertEquals(expectedJoinResponse, actualJoinResponse);
       }
@@ -157,16 +151,11 @@ public class ServerBootstrapTest {
       }
     }
     // stop server
-    stopServerWhen(sessionManager, server, serverExecutor);
+    stopServerWhen(instance, server, serverExecutor);
 
     List<Entity> entities = DEFAULT_WORLD.getCurrentEntities();
-    log.info("Entities in world: {}", entities);
+    log.info("[MultiConn_JoinCommand]: Entities in world: {}", entities);
     assertEquals(0, entities.size());
-  }
-
-  private GridWorldConnector createWorld(String worldName, int width, int height) {
-    return new GridWorldConnector(new GridWorldState(worldName, width, height),
-        new GridWorldEngine(), new WorldCapabilities(true, true, false, true));
   }
 
   @Test
@@ -178,15 +167,16 @@ public class ServerBootstrapTest {
         String clientName = "client-" + i;
         TestClient client = new TestClient("localhost", PORT);
         clients.add(client);
-        String actualJoinResponse = client.join(clientName, DEFAULT_WORLD.worldName(), 100);
+        String actualJoinResponse = client.join(clientName, DEFAULT_WORLD.getWorldName(), 100);
         String expectedJoinResponse = "WELCOME " + clientName;
         assertEquals(expectedJoinResponse, actualJoinResponse);
 
         // send move command to server
-        log.info("[TEST]: Sending MOVE request to server...");
-        String actualMoveResponse = client.move(clientName, "UP", 100);
+        log.info("[MultiConn_MoveCommand]: Sending MOVE request to server...");
+        String actualMoveResponse = client.move(clientName, "UP", 5);
         String expectedMoveResponse = "STATE {";
-        log.info("[TEST]: Received MOVE response from server: {}", actualMoveResponse);
+        log.info("[MultiConn_MoveCommand]: Received MOVE response from server: {}",
+            actualMoveResponse);
         assertTrue(actualMoveResponse.contains(expectedMoveResponse));
       }
     } finally {
@@ -196,37 +186,60 @@ public class ServerBootstrapTest {
       }
     }
     // stop server
-    stopServerWhen(sessionManager, server, serverExecutor);
+    stopServerWhen(instance, server, serverExecutor);
 
     List<Entity> entities = DEFAULT_WORLD.getCurrentEntities();
-    log.info("Entities in world: {}", entities);
+    log.info("[MultiConn_MoveCommand]: Entities in world: {}", entities);
     assertEquals(0, entities.size());
   }
 
   @Test
-  public void multipleClients_joinDifferentWorlds_welcomeMessageResponse() throws IOException {
+  void multipleClients_joinDifferentWorlds_welcomeMessageResponse() throws Exception {
+    // register second world
+    var secondWorld = createWorldConnector("arena-y", 3, 3);
 
-    TestClient testClient = null;
-    try {
-      testClient = new TestClient("localhost", PORT);
-      String firstClient = "client-1";
-      String secondClient = "client-2";
-      String actualFirstClientJoinResponse = testClient.join(firstClient, DEFAULT_WORLD.worldName(),
-          100);
-      String actualSecondClientJoinResponse = testClient.join(firstClient, "arena-x", 100);
-      String expectedFirstClientJoinResponse = "WELCOME " + firstClient;
-      log.info("[TEST]: Received JOIN response from server: {}", actualFirstClientJoinResponse);
-      assertEquals(expectedFirstClientJoinResponse, actualFirstClientJoinResponse,
-          "Unexpected response from server for " + firstClient);
-    } finally {
-      assert testClient != null;
-      testClient.close();
+    var secondInstance = createMultiplayerInstance(secondWorld,
+        new InstanceConfig(100, false, Visibility.PUBLIC, true));
+    InstanceRegistry.registerInstance(secondInstance);
+
+    try (TestClient c1 = new TestClient("localhost", PORT);
+        TestClient c2 = new TestClient("localhost", PORT)) {
+
+      String w1 = DEFAULT_WORLD.getWorldName(); // e.g., "arena-x"
+      String w2 = "arena-y";                    // make sure you registered a second world
+
+      String r1 = c1.join("client-1", w1, 2); // 2s is plenty now
+      String r2 = c2.join("client-2", w2, 2);
+
+      assertEquals("WELCOME client-1", r1);
+      assertEquals("WELCOME client-2", r2);
     }
 
-    stopServerWhen(sessionManager, server, serverExecutor);
-
-    List<Entity> entities = DEFAULT_WORLD.getCurrentEntities();
-    log.info("Entities in world: {}", entities);
-    assertEquals(0, entities.size());
+    stopServerWhen(List.of(instance, secondInstance), server, serverExecutor);
+    assertEquals(0, DEFAULT_WORLD.getCurrentEntities().size());
   }
+
+  private GridWorldConnector createWorldConnector(String worldName, int width, int height) {
+    return new GridWorldConnector(new GridWorldState(worldName, width, height),
+        new GridWorldEngine(),
+        new WorldCapabilities(true, true,
+            false, true));
+  }
+
+  private WorldInstance createInstance(WorldConnector worldConnector, SessionManager sessionManager,
+      Ticker ticker, Broadcaster broadcaster, InstanceConfig config) {
+    return new WorldInstance(worldConnector, sessionManager, ticker, broadcaster, config);
+  }
+
+  private WorldInstance createMultiplayerInstance(WorldConnector worldConnector,
+      InstanceConfig config) {
+    return new WorldInstance(worldConnector, new ClientSessionManager(), new WorldTicker(TICK_RATE),
+        new BroadcastToAll(), config);
+  }
+
+  private InstanceConfig createInstanceConfig(int maxPlayers, boolean requiresOrchestrator,
+      Visibility visibility, boolean autoStartOnPlayerJoin) {
+    return new InstanceConfig(maxPlayers, requiresOrchestrator, visibility, autoStartOnPlayerJoin);
+  }
+
 }

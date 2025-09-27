@@ -1,5 +1,9 @@
 package com.ntros.command.impl;
 
+import static com.ntros.model.world.protocol.CommandType.ACK;
+
+import com.ntros.instance.InstanceRegistry;
+import com.ntros.instance.ins.Instance;
 import com.ntros.message.SessionContext;
 import com.ntros.model.entity.Direction;
 import com.ntros.model.world.protocol.CommandType;
@@ -19,22 +23,32 @@ public class MoveCommand extends AbstractCommand {
 
   @Override
   public Optional<ServerResponse> execute(Message message, Session session) {
-    SessionContext sessionContext = session.getSessionContext();
-    validateContext(sessionContext);
+//    SessionContext sessionContext = session.getSessionContext();
+//    validateContext(sessionContext);
+//
+//    WorldConnector world = WorldConnectorHolder.getWorld(sessionContext.getWorldName());
+//    Direction direction = resolveMoveIntent(message);
+//    CommandResult commandResult = world.storeMoveIntent(
+//        new MoveRequest(sessionContext.getEntityId(), direction));
+//
+//    return Optional.of(handleResult(commandResult, direction.name()))
+    SessionContext ctx = session.getSessionContext();
+    validateContext(ctx);
 
-    WorldConnector world = WorldConnectorHolder.getWorld(sessionContext.getWorldName());
-    Direction direction = resolveMoveIntent(message);
-    CommandResult commandResult = world.storeMoveIntent(
-        new MoveRequest(sessionContext.getEntityId(), direction));
+    String dir = message.args().getFirst();
+    String player = ctx.getEntityId();
+    Instance instance = InstanceRegistry.getInstance(ctx.getWorldName());
 
-    return Optional.of(handleResult(commandResult, direction.name()));
+    CommandResult r = instance.move(new MoveRequest(player, Direction.valueOf(dir)));
+    return Optional.of(new ServerResponse(new Message(ACK, List.of(dir)), r));
   }
 
   private ServerResponse handleResult(CommandResult commandResult, String move) {
     log.info("Received commandResult from world: {}", commandResult);
     return commandResult.success()
-        ? new ServerResponse(new Message(CommandType.ACK, List.of(move)), commandResult)
-        : new ServerResponse(new Message(CommandType.ERROR, List.of(commandResult.reason())), commandResult);
+        ? new ServerResponse(new Message(ACK, List.of(move)), commandResult)
+        : new ServerResponse(new Message(CommandType.ERROR, List.of(commandResult.reason())),
+            commandResult);
 //    return commandResult.success() ? Optional.of(String.format("ACK %s\n", move))
 //        : Optional.of(String.format("ERROR %s\n", commandResult.reason()));
   }

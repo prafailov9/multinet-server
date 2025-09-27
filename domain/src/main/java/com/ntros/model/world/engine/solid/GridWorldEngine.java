@@ -8,10 +8,10 @@ import com.ntros.model.entity.Player;
 import com.ntros.model.entity.movement.Position;
 import com.ntros.model.entity.sequence.IdSequenceGenerator;
 import com.ntros.model.entity.solid.StaticEntity;
-import com.ntros.model.world.protocol.TileType;
+import com.ntros.model.world.protocol.CommandResult;
 import com.ntros.model.world.protocol.JoinRequest;
 import com.ntros.model.world.protocol.MoveRequest;
-import com.ntros.model.world.protocol.CommandResult;
+import com.ntros.model.world.protocol.TileType;
 import com.ntros.model.world.state.WorldState;
 import java.util.Map;
 import java.util.concurrent.ThreadLocalRandom;
@@ -23,9 +23,8 @@ public class GridWorldEngine implements WorldEngine {
   public GridWorldEngine() {
   }
 
-
   @Override
-  public void applyIntent(WorldState state) {
+  public void applyIntents(WorldState state) {
     for (Map.Entry<String, Direction> intent : state.moveIntents().entrySet()) {
       Entity entity = state.entities().get(intent.getKey());
 
@@ -50,36 +49,42 @@ public class GridWorldEngine implements WorldEngine {
     if (state.isWithinBounds(position)) { // allow all moves if within bounds
       state.moveIntents().put(moveRequest.playerId(), moveRequest.direction());
       log.info("Added move intent: {}", moveRequest);
-      return new CommandResult(true, entity.getName(), state.worldName(), null);
+      return CommandResult.succeeded(entity.getName(), state.worldName(), "intent added");
     }
     String msg = String.format("[%s]: invalid move: %s. Out of bounds.", state.worldName(),
         position);
     log.info(msg);
-    return new CommandResult(false, entity.getName(), state.worldName(), msg);
+    return CommandResult.failed(entity.getName(), state.worldName(), msg);
   }
 
   @Override
-  public CommandResult add(JoinRequest joinRequest, WorldState worldState) {
+  public CommandResult joinEntity(JoinRequest joinRequest, WorldState worldState) {
+    // if player exists, return failed result
+    if (worldState.entities().containsKey(joinRequest.playerName())) {
+      return CommandResult.failed(joinRequest.playerName(), worldState.worldName(),
+          String.format("Player with name %s already exists", joinRequest.playerName()));
+    }
     long id = IdSequenceGenerator.getInstance().nextPlayerEntityId();
     Position freePosition = findRandomFreePosition(worldState);
     if (freePosition == null) {
-      return new CommandResult(false, joinRequest.playerName(), worldState.worldName(),
-          "could not find free position in world.");
+      return CommandResult.failed(joinRequest.playerName(), worldState.worldName(),
+          "Could not find free position in world.");
     }
     // register player in world
     Player player = new Player(freePosition, joinRequest.playerName(), id, 100);
     addEntity(player, worldState);
 
     // create commandResult
-    CommandResult commandResult = new CommandResult(true, player.getName(),
-        worldState.worldName(), null);
-    System.out.printf("[GridWorld]: player: %s joined World %s on position %s%n", player.getName(),
-        worldState.worldName(), player.getPosition());
-    return commandResult;
+    String successMsg = String.format("Player %s successfully joined world %s with ID: %s",
+        player.getName(), worldState.worldName(), id);
+    log.info("[GridWorldEngine]: {}", successMsg);
+
+    return CommandResult.succeeded(player.getName(), worldState.worldName(),
+        successMsg);
   }
 
   @Override
-  public Entity remove(String entityId, WorldState worldState) {
+  public Entity removeEntity(String entityId, WorldState worldState) {
     Entity entity = worldState.entities().remove(entityId);
     worldState.takenPositions().remove(entity.getPosition());
     return entity;
