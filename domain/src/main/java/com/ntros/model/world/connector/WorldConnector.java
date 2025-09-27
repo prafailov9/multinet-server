@@ -2,11 +2,9 @@ package com.ntros.model.world.connector;
 
 import com.ntros.model.entity.Entity;
 import com.ntros.model.entity.config.WorldCapabilities;
-import com.ntros.model.world.protocol.JoinRequest;
-import com.ntros.model.world.protocol.MoveRequest;
-import com.ntros.model.world.protocol.CommandResult;
+import com.ntros.model.world.connector.ops.WorldOp;
+import com.ntros.model.world.protocol.response.CommandResult;
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
 
 /**
  * Layer, connecting clients to the actual game world. Exposes minimal contract for client
@@ -14,15 +12,10 @@ import java.util.concurrent.CompletableFuture;
  */
 public interface WorldConnector {
 
+  // Synchronous, immediate mutations:
+  CommandResult apply(WorldOp op);          // JoinOp, MoveOp, RemoveOp
+
   void update();
-
-  CommandResult storeMoveIntent(MoveRequest move);
-
-  CommandResult joinPlayer(JoinRequest joinRequest);
-
-  CompletableFuture<CommandResult> joinPlayerAsynch(JoinRequest joinRequest);
-
-  void removePlayer(String entityId);
 
   String snapshot(boolean oneLine);
 

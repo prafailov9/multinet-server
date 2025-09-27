@@ -1,9 +1,9 @@
 package com.ntros.model.world.engine.solid;
 
 import com.ntros.model.entity.Entity;
-import com.ntros.model.world.protocol.CommandResult;
-import com.ntros.model.world.protocol.JoinRequest;
-import com.ntros.model.world.protocol.MoveRequest;
+import com.ntros.model.world.protocol.response.CommandResult;
+import com.ntros.model.world.protocol.request.JoinRequest;
+import com.ntros.model.world.protocol.request.MoveRequest;
 import com.ntros.model.world.state.WorldState;
 
 /**

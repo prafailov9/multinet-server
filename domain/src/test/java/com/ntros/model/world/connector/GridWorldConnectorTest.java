@@ -2,11 +2,8 @@ package com.ntros.model.world.connector;
 
 import com.ntros.model.entity.config.WorldCapabilities;
 import com.ntros.model.world.engine.solid.GridWorldEngine;
-import com.ntros.model.world.protocol.CommandResult;
-import com.ntros.model.world.protocol.JoinRequest;
 import com.ntros.model.world.state.solid.GridWorldState;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
 
 class GridWorldConnectorTest {
 
@@ -27,11 +24,11 @@ class GridWorldConnectorTest {
         true, true, true));
   }
 
-  @Test
-  public void joinPlayerTest() {
-    JoinRequest request = new JoinRequest("cl1");
-    CommandResult result = connector.joinPlayer(request);
-  }
+//  @Test
+//  public void joinPlayerTest() {
+//    JoinRequest request = new JoinRequest("cl1");
+//    CommandResult result = connector.joinPlayer(request);
+//  }
 
 
   private GridWorldState createWorldState(String name, int width, int height) {

@@ -1,6 +1,8 @@
 package com.ntros.model.world.connector.ops;
 
-public record RemoveOp(String entityId) implements WorldOp {
+import com.ntros.model.world.protocol.request.RemoveRequest;
+
+public record RemoveOp(RemoveRequest removeRequest) implements WorldOp {
 
 }
 

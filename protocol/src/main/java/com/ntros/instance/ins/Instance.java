@@ -2,27 +2,36 @@ package com.ntros.instance.ins;
 
 import com.ntros.model.entity.config.access.InstanceConfig;
 import com.ntros.model.world.connector.WorldConnector;
-import com.ntros.model.world.protocol.CommandResult;
-import com.ntros.model.world.protocol.JoinRequest;
-import com.ntros.model.world.protocol.MoveRequest;
+import com.ntros.model.world.protocol.response.CommandResult;
+import com.ntros.model.world.protocol.request.JoinRequest;
+import com.ntros.model.world.protocol.request.MoveRequest;
 import com.ntros.session.Session;
-import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
 public interface Instance {
 
 
+  /**
+   * Marker task that makes sure all enqueued tasks before it are finished.
+   */
+  CompletableFuture<Void> drainControl(); // runs after all queued actor tasks
+
   void startIfNeededForJoin();   // safe to call anytime
+
+  CommandResult joinSync(JoinRequest req);
 
   // --- Domain actions exposed to commands ---
   CompletableFuture<CommandResult> joinAsync(JoinRequest req);
 
-  CommandResult move(MoveRequest req);        // immediate ACK
+  CompletableFuture<CommandResult> storeMoveAsync(MoveRequest req);
+
+  CompletableFuture<Void> leaveAsync(Session session);
+
+  CompletableFuture<CommandResult> removeEntityAsync(String entityId);
 
   void removeEntity(String entityId);         // fire-and-forget
 
   // --- Session lifecycle (called from response pipeline) ---
-  void onWelcomeSent(Session session);        // register AFTER WELCOME was sent
 
   void run();
 
@@ -51,8 +60,5 @@ public interface Instance {
   void resume();
 
   void updateTickRate(int ticksPerSecond);
-
-  // TODO: Refactor worldStateUpdates Map to store Generic world types.
-  void updateWorldState(Map<Boolean, Boolean> worldStateUpdates);
 
 }

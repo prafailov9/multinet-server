@@ -16,6 +16,8 @@ public interface SessionManager {
 
   List<Session> getActiveSessions();
 
+  Session getSession(String entityId);
+
   void shutdownAll();
 
 }

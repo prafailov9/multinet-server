@@ -1,10 +1,10 @@
 package com.ntros.command.impl;
 
 import com.ntros.message.SessionContext;
-import com.ntros.model.world.protocol.CommandResult;
+import com.ntros.model.world.protocol.response.CommandResult;
 import com.ntros.model.world.protocol.CommandType;
 import com.ntros.model.world.protocol.Message;
-import com.ntros.model.world.protocol.ServerResponse;
+import com.ntros.model.world.protocol.response.ServerResponse;
 import com.ntros.session.Session;
 import java.util.List;
 import java.util.Optional;

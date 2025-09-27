@@ -10,7 +10,7 @@ import com.ntros.model.world.connector.GridWorldConnector;
 import com.ntros.model.world.connector.WorldConnector;
 import com.ntros.model.world.engine.solid.GridWorldEngine;
 import com.ntros.model.world.protocol.Message;
-import com.ntros.model.world.protocol.ServerResponse;
+import com.ntros.model.world.protocol.response.ServerResponse;
 
 import com.ntros.model.world.protocol.WorldType;
 import com.ntros.model.world.state.WorldStateFactory;
@@ -43,6 +43,7 @@ public class CreateCommand extends AbstractCommand {
       WorldConnectorHolder.register(worldConnector);
 
       boolean isShared = parseSharedFlag(message);
+
       Instance instance = InstanceFactory.createInstance(session, isShared, worldConnector);
       InstanceRegistry.registerInstance(instance);
 

@@ -2,6 +2,7 @@ package com.ntros;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.awaitility.Awaitility.await;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.ntros.instance.ins.Instance;
 import com.ntros.server.Server;
@@ -12,6 +13,7 @@ import java.time.Duration;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 
+import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -50,24 +52,33 @@ public class ServerTestHelper {
     serverExecutor.shutdownNow();
   }
 
-  public static void stopServerWhen(List<Instance> instances, Server server,
-      ExecutorService serverExecutor) throws IOException {
+  public static void stopServerWhen(List<Instance> instances, Server server, ExecutorService exec)
+      throws IOException {
     server.stop();
-    await().pollDelay(Duration.ofMillis(100)) // Give some room for shutdown event handling
-        .pollInterval(Duration.ofMillis(50)).atMost(Duration.ofSeconds(5))
-        .conditionEvaluationListener(condition -> {
+
+    // ensure all leave/remove tasks hit the actor before we assert
+    instances.forEach(i -> {
+      try {
+        i.drainControl().get(500, TimeUnit.MILLISECONDS);
+      } catch (Exception ignore) {
+      }
+    });
+
+    await()
+        .pollDelay(Duration.ofMillis(100))
+        .pollInterval(Duration.ofMillis(50))
+        .atMost(Duration.ofSeconds(5))
+        .ignoreExceptions()
+        .untilAsserted(() -> {
           int sessions = instances.stream().mapToInt(Instance::getActiveSessionsCount).sum();
           int entities = instances.stream().mapToInt(Instance::getEntityCount).sum();
-          log.info("[Awaitility Poll multiple] Sessions: {}, Entities: {}", sessions, entities);
-        }).until(() -> {
-          int sessions = instances.stream().mapToInt(Instance::getActiveSessionsCount).sum();
-          int entities = instances.stream().mapToInt(Instance::getEntityCount).sum();
-          boolean allStopped = instances.stream().allMatch(i -> !i.isRunning());
-          return sessions == 0 && entities == 0 && allStopped;
+          assertEquals(0, sessions, "sessions not drained");
+          assertEquals(0, entities, "entities not cleared");
         });
 
-    serverExecutor.shutdownNow();
+    exec.shutdownNow();
   }
+
 
   public static void waitForPort(int port, long timeoutMillis) {
     await().atMost(timeoutMillis, MILLISECONDS).pollInterval(50, MILLISECONDS)

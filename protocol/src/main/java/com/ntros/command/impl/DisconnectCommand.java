@@ -5,43 +5,60 @@ import static com.ntros.model.world.protocol.CommandType.ACK;
 import com.ntros.instance.InstanceRegistry;
 import com.ntros.instance.ins.Instance;
 import com.ntros.message.SessionContext;
-import com.ntros.model.world.WorldConnectorHolder;
-import com.ntros.model.world.protocol.CommandResult;
-import com.ntros.model.world.connector.WorldConnector;
 import com.ntros.model.world.protocol.Message;
-import com.ntros.model.world.protocol.ServerResponse;
+import com.ntros.model.world.protocol.response.CommandResult;
+import com.ntros.model.world.protocol.response.ServerResponse;
 import com.ntros.session.Session;
 import java.util.List;
 import java.util.Optional;
+import lombok.extern.slf4j.Slf4j;
 
-// DISCONNECT client-name\n
-
+/**
+ * DISCONNECT client-name\n
+ */
+@Slf4j
 public final class DisconnectCommand extends AbstractCommand {
 
   @Override
   public Optional<ServerResponse> execute(Message msg, Session session) {
     SessionContext ctx = session.getSessionContext();
-    String worldId = ctx.getWorldName();
-    if (worldId == null) {
-      return Optional.of(new ServerResponse(new Message(ACK, List.of("DISCONNECT")),
-          CommandResult.succeeded(ctx.getUserId(), null, "user disconnected")));
-    }
+    String worldName = ctx.getWorldName();
 
-    Instance inst = InstanceRegistry.getInstance(worldId);
+    // Always ACK first
+    ServerResponse ack = new ServerResponse(new Message(ACK, List.of("DISCONNECT")),
+        CommandResult.succeeded(ctx.getUserId(), worldName, "user disconnecting"));
+
+    if (worldName == null) {
+      // Not in a world: just ACK
+      clearContext(ctx);
+      return Optional.of(ack);
+    }
+    Instance inst = InstanceRegistry.getInstance(worldName);
     if (inst != null) {
-      WorldConnector world = WorldConnectorHolder.getWorld(worldId);
-      if (world != null && ctx.getEntityId() != null) {
-        world.removePlayer(ctx.getEntityId());
+      // Remove entity on the actor thread (async)
+      String entityId = ctx.getEntityId();
+      if (entityId != null && !entityId.isBlank()) {
+        inst.leaveAsync(session).exceptionally(ex -> {
+          log.warn("leaveAsync failed: {}", ex.toString());
+          return null;
+        });
+        ;
       }
+      // Stop receiving STATE for this client
       inst.removeSession(session);
     }
 
-    // Clear world-related context (keep session alive if you want)
+    clearContext(ctx);
+    return Optional.of(ack);
+  }
+
+  /**
+   * disconnecting from world, not from server, client stays authenticated
+   */
+  private void clearContext(SessionContext ctx) {
     ctx.setWorldId(null);
     ctx.setEntityId(null);
     ctx.setRole(null);
-
-    return Optional.of(new ServerResponse(new Message(ACK, List.of("DISCONNECT")),
-        CommandResult.succeeded(ctx.getUserId(), worldId, "user disconnected")));
   }
+
 }

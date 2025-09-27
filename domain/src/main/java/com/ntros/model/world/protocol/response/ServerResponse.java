@@ -1,7 +1,7 @@
-package com.ntros.model.world.protocol;
+package com.ntros.model.world.protocol.response;
 
-import static com.ntros.model.world.protocol.WorldType.UNKNOWN;
-
+import com.ntros.model.world.protocol.CommandType;
+import com.ntros.model.world.protocol.Message;
 import java.util.List;
 
 public record ServerResponse(Message serverMessage, CommandResult commandResult) {

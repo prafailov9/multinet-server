@@ -13,58 +13,64 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class ClientSessionManager implements SessionManager {
 
-    private final Set<Session> sessions = ConcurrentHashMap.newKeySet();
-    private final Map<Long, Session> sessionMap = new ConcurrentHashMap<>();
+  private final Set<Session> sessions = ConcurrentHashMap.newKeySet();
+  private final Map<Long, Session> sessionMap = new ConcurrentHashMap<>();
 
-    @Override
-    public void broadcast(String serverMessage) {
-        for (Session session : sessions) {
-            session.response(serverMessage);
-        }
+  @Override
+  public void broadcast(String serverMessage) {
+    for (Session session : sessions) {
+      session.response(serverMessage);
     }
+  }
 
-    @Override
-    public void register(Session session) {
-        sessions.add(session);
-        sessionMap.put(session.getSessionContext().getSessionId(), session);
-        log.info("Registered session: {}", session.getSessionContext().getSessionId());
+  @Override
+  public void register(Session session) {
+    sessions.add(session);
+    sessionMap.put(session.getSessionContext().getSessionId(), session);
+    log.info("Registered session: {}", session.getSessionContext().getSessionId());
+  }
+
+  @Override
+  public void remove(Session session) {
+    sessions.remove(session);
+    sessionMap.remove(session.getSessionContext().getSessionId());
+    log.info("Removed session: {}", session.getSessionContext().getSessionId());
+  }
+
+  @Override
+  public int activeSessionsCount() {
+    return sessions.size();
+  }
+
+  @Override
+  public List<Session> getActiveSessions() {
+    return new ArrayList<>(sessionMap.values());
+  }
+
+  @Override
+  public Session getSession(String entityId) {
+    return sessions.stream().filter(s -> s.getSessionContext().getEntityId().equals(entityId))
+        .findFirst().orElse(null);
+  }
+
+
+  @Override
+  public void shutdownAll() {
+    log.info("SessionManger: current active sessions count: {}", sessions.size());
+    if (sessions.isEmpty()) {
+      log.info("SessionManager: no active sessions, nothing to shut down.");
+      return;
     }
-
-    @Override
-    public void remove(Session session) {
-        sessions.remove(session);
-        sessionMap.remove(session.getSessionContext().getSessionId());
-        log.info("Removed session: {}", session.getSessionContext().getSessionId());
+    for (Session session : sessions) {
+      try {
+        log.info("SessionManager: Sending stop signal for session {}",
+            session.getSessionContext());
+        session.stop();
+      } catch (Exception ex) {
+        log.error("Failed to close session: {}", session.getSessionContext().getSessionId());
+      }
     }
-
-    @Override
-    public int activeSessionsCount() {
-        return sessions.size();
-    }
-
-    @Override
-    public List<Session> getActiveSessions() {
-        return new ArrayList<>(sessionMap.values());
-    }
-
-
-    @Override
-    public void shutdownAll() {
-        log.info("SessionManger: current active sessions count: {}", sessions.size());
-        if (sessions.isEmpty()) {
-            log.info("SessionManager: no active sessions, nothing to shut down.");
-            return;
-        }
-        for (Session session : sessions) {
-            try {
-                log.info("SessionManager: Sending stop signal for session {}",
-                        session.getSessionContext());
-                session.stop();
-            } catch (Exception ex) {
-                log.error("Failed to close session: {}", session.getSessionContext().getSessionId());
-            }
-        }
-        sessions.clear();
-        log.info("All sessions shut down.");
-    }
+    sessions.clear();
+    log.info("All sessions shut down.");
+  }
 }

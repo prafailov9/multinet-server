@@ -2,14 +2,17 @@ package com.ntros.instance.ins;
 
 import com.ntros.event.broadcaster.Broadcaster;
 import com.ntros.event.sessionmanager.SessionManager;
+import com.ntros.instance.actor.InstanceActor;
+import com.ntros.instance.actor.WorldInstanceActor;
 import com.ntros.model.entity.config.access.InstanceConfig;
 import com.ntros.model.world.connector.WorldConnector;
-import com.ntros.model.world.protocol.CommandResult;
-import com.ntros.model.world.protocol.JoinRequest;
-import com.ntros.model.world.protocol.MoveRequest;
+import com.ntros.model.world.connector.ops.JoinOp;
+import com.ntros.model.world.protocol.request.RemoveRequest;
+import com.ntros.model.world.protocol.response.CommandResult;
+import com.ntros.model.world.protocol.request.JoinRequest;
+import com.ntros.model.world.protocol.request.MoveRequest;
 import com.ntros.session.Session;
 import com.ntros.ticker.Ticker;
-import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 import lombok.extern.slf4j.Slf4j;
@@ -22,12 +25,15 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class WorldInstance implements Instance {
 
+  private static final Boolean SERIALIZE_ONE_LINE = Boolean.TRUE;
+
   private final SessionManager sessionManager;
   private final WorldConnector connector;
   private final Ticker ticker;
   private final Broadcaster broadcaster;
   private final InstanceConfig config;
   private final AtomicBoolean tickerRunning;
+  private final InstanceActor actor;
 
   public WorldInstance(WorldConnector connector, SessionManager sessionManager,
       Ticker ticker, Broadcaster broadcaster, InstanceConfig config) {
@@ -36,9 +42,21 @@ public class WorldInstance implements Instance {
     this.ticker = ticker;
     this.broadcaster = broadcaster;
     this.config = config;
+
+    this.actor = new WorldInstanceActor(true, connector.getWorldName());
     this.tickerRunning = new AtomicBoolean(false);
   }
 
+
+  /**
+   * Schedules a no-op on the actor so the returned future completes after all previously queued
+   * tasks (join/move/remove/leave)
+   */
+  @Override
+  public CompletableFuture<Void> drainControl() {
+    return actor.execute(() -> { /* no-op */ });
+
+  }
 
   @Override
   public void startIfNeededForJoin() {
@@ -47,27 +65,35 @@ public class WorldInstance implements Instance {
     }
   }
 
+  @Override
+  public CommandResult joinSync(JoinRequest req) {
+    return connector.apply(new JoinOp(req));
+  }
+
 
   @Override
   public CompletableFuture<CommandResult> joinAsync(JoinRequest req) {
-    return connector.joinPlayerAsynch(req);
+    return actor.join(connector, req);
   }
 
   @Override
-  public CommandResult move(MoveRequest req) {
-    return connector.storeMoveIntent(req);
+  public CompletableFuture<CommandResult> storeMoveAsync(MoveRequest req) {
+    return actor.move(connector, req);
+  }
+
+  @Override
+  public CompletableFuture<Void> leaveAsync(Session session) {
+    return actor.leave(connector, sessionManager, session);
+  }
+
+  @Override
+  public CompletableFuture<CommandResult> removeEntityAsync(String entityId) {
+    return actor.remove(connector, new RemoveRequest(entityId));
   }
 
   @Override
   public void removeEntity(String entityId) {
-    connector.removePlayer(entityId);
-  }
-
-  @Override
-  public void onWelcomeSent(Session session) {
-    // Register AFTER we’ve written WELCOME to the socket,
-    // so this session doesn’t receive STATE before WELCOME.
-    registerSession(session);
+    actor.remove(connector, new RemoveRequest(entityId));
   }
 
   @Override
@@ -81,8 +107,7 @@ public class WorldInstance implements Instance {
       try {
         // mutate and get world state on ticker thread
         connector.update();
-
-        String protocolFormatSnapshot = getWorldSnapshot(true);
+        String protocolFormatSnapshot = getWorldSnapshot();
 
         // broadcast to clients
         broadcaster.publish(protocolFormatSnapshot, sessionManager);
@@ -93,24 +118,25 @@ public class WorldInstance implements Instance {
     tickerRunning.set(true);
   }
 
-  private String getWorldSnapshot(boolean oneLine) {
-    return oneLine
-        ? String.format("STATE %s", connector.snapshot(true))
-        : String.format("STATE \n%s\n", connector.snapshot(false));
-  }
-
   @Override
   public void reset() {
-    if (!tickerRunning.get()) {
-      return;
-    }
     log.info("[{}] resetting…", getWorldName());
     try {
+      // Stop ticking first so no new STATE gets scheduled
       ticker.shutdown();
     } finally {
       tickerRunning.set(false);
-      sessionManager.shutdownAll();
-      connector.reset();
+      try {
+        // Drop all sessions (no further STATE will be sent)
+        sessionManager.shutdownAll();
+      } finally {
+        try {
+          connector.reset();
+        } finally {
+          // IMPORTANT: stop actor thread last so any pending leave/remove tasks can run
+          actor.stopActor();
+        }
+      }
     }
   }
 
@@ -187,9 +213,10 @@ public class WorldInstance implements Instance {
     ticker.updateTickRate(tps);
   }
 
-  @Override
-  public void updateWorldState(Map<Boolean, Boolean> worldStateUpdates) {
-
+  private String getWorldSnapshot() {
+    return SERIALIZE_ONE_LINE
+        ? String.format("STATE %s", connector.snapshot(true))
+        : String.format("STATE \n%s\n", connector.snapshot(false));
   }
 
 }
