@@ -1,6 +1,7 @@
 package com.ntros.model.world.connector;
 
 import com.ntros.model.entity.Entity;
+import com.ntros.model.entity.config.WorldCapabilities;
 import com.ntros.model.world.protocol.JoinRequest;
 import com.ntros.model.world.protocol.MoveRequest;
 import com.ntros.model.world.protocol.CommandResult;
@@ -27,6 +28,8 @@ public interface WorldConnector {
   String worldType();
 
   List<Entity> getCurrentEntities();
+
+  WorldCapabilities getCapabilities();
 
   void reset();
 }

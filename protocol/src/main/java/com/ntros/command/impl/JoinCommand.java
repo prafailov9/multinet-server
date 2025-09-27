@@ -3,7 +3,12 @@ package com.ntros.command.impl;
 import static com.ntros.model.world.protocol.CommandType.ERROR;
 import static com.ntros.model.world.protocol.CommandType.WELCOME;
 
-import com.ntros.message.ClientProfile;
+import com.ntros.instance.InstanceRegistry;
+import com.ntros.instance.WorldRegistry;
+import com.ntros.instance.ins.Instance;
+import com.ntros.message.SessionContext;
+import com.ntros.model.entity.config.access.InstanceConfig;
+import com.ntros.model.entity.config.access.Visibility;
 import com.ntros.model.world.WorldConnectorHolder;
 import com.ntros.model.world.connector.WorldConnector;
 import com.ntros.model.world.protocol.CommandResult;
@@ -25,22 +30,61 @@ public class JoinCommand extends AbstractCommand {
 
   @Override
   public Optional<ServerResponse> execute(Message message, Session session) {
-    ClientProfile ctx = session.getProtocolContext();
+    SessionContext sessionContext = session.getSessionContext();
     String playerName = resolvePlayer(message);
     WorldConnector world = resolveWorld(message);
 
-    // Decide policy/visibility yourself (as before) — omitted for brevity.
+    Instance instance = InstanceRegistry.get(world.worldName());
+    if (instance == null) {
+      return Optional.of(new ServerResponse(
+          new Message(ERROR, List.of("WORLD_NOT_FOUND")),
+          CommandResult.failed(playerName, null, "world not found")
+      ));
+    }
 
-    // enqueue the add(); choose ACK immediately or wait:
-    // Option A (immediate): world.add(...) enqueues and returns success ACK
-    CommandResult res = world.add(new JoinRequest(playerName));
+    // Visibility / capacity checks
+    InstanceConfig cfg = instance.getConfig();
+    if (cfg.visibility() == Visibility.PRIVATE) {
+      var owner = WorldRegistry.ownerOf(instance.getWorldName()).orElse(null);
+      if (owner != null && !owner.equals(sessionContext.getUserId())) {
+        return Optional.of(new ServerResponse(
+            new Message(ERROR, List.of("WORLD_PRIVATE")),
+            CommandResult.failed(playerName, instance.getWorldName(), "private")
+        ));
+      }
+    }
+    if (cfg.maxPlayers() == 1 && instance.getActiveSessionsCount() >= 1) {
+      return Optional.of(new ServerResponse(
+          new Message(ERROR, List.of("WORLD_BUSY")),
+          CommandResult.failed(playerName, instance.getWorldName(), "busy")
+      ));
+    }
 
-    // set context, register session, etc. (as you do now)
-    ctx.setEntityId(res.playerName());
-    ctx.setWorldId(res.worldName());
-    ctx.setAuthenticated(true);
-    return Optional.of(handleServerResponse(res, ctx));
-//    return Optional.of(new ServerResponse(new Message(WELCOME, List.of(res.playerName())), res));
+    // Execute command
+    CommandResult commandResult = world.add(new JoinRequest(playerName));
+
+//    return Optional.of(handleServerResponse(result, ctx));
+
+    if (commandResult.success()) {
+      sessionContext.setEntityId(commandResult.playerName());
+      sessionContext.setWorldId(commandResult.worldName());
+      sessionContext.setJoinedAt(OffsetDateTime.now());
+      sessionContext.setAuthenticated(true);
+
+      instance.registerSession(session);
+
+      log.info("[JOIN Command]: success. Sending WELCOME response to client: {}", sessionContext);
+      return Optional.of(
+          new ServerResponse(new Message(WELCOME, List.of(commandResult.playerName())),
+              commandResult));
+    }
+    sessionContext.setAuthenticated(false);
+    String err = String.format("%s %s\n", ERROR.name(), commandResult.reason());
+    log.error("[JOIN Command]: failure. Sending ERROR response: {}", err);
+
+    return Optional.of(new ServerResponse(new Message(ERROR, List.of(
+        commandResult.reason())), commandResult));
+
   }
 
   protected String resolvePlayer(Message message) {
@@ -70,24 +114,25 @@ public class JoinCommand extends AbstractCommand {
 
     return WorldConnectorHolder.getDefaultWorld();
   }
-
-  private ServerResponse handleServerResponse(CommandResult commandResult,
-      ClientProfile clientProfile) {
-    if (commandResult.success()) {
-      clientProfile.setEntityId(commandResult.playerName());
-      clientProfile.setWorldId(commandResult.worldName());
-      clientProfile.setJoinedAt(OffsetDateTime.now());
-      clientProfile.setAuthenticated(true);
-      log.info("[JOIN Command]: success. Sending WELCOME response to client: {}", clientProfile);
-      return new ServerResponse(new Message(WELCOME, List.of(commandResult.playerName())),
-          commandResult);
-    }
-    clientProfile.setAuthenticated(false);
-    String err = String.format("%s %s\n", ERROR.name(), commandResult.reason());
-    log.error("[JOIN Command]: failure. Sending ERROR response: {}", err);
-
-    return new ServerResponse(new Message(ERROR, List.of(
-        commandResult.reason())), commandResult);
-  }
+//
+//  private ServerResponse handleServerResponse(CommandResult commandResult,
+//      SessionContext sessionContext) {
+//    if (commandResult.success()) {
+//      sessionContext.setEntityId(commandResult.playerName());
+//      sessionContext.setWorldId(commandResult.worldName());
+//      sessionContext.setJoinedAt(OffsetDateTime.now());
+//      sessionContext.setAuthenticated(true);
+//
+//      log.info("[JOIN Command]: success. Sending WELCOME response to client: {}", sessionContext);
+//      return new ServerResponse(new Message(WELCOME, List.of(commandResult.playerName())),
+//          commandResult);
+//    }
+//    sessionContext.setAuthenticated(false);
+//    String err = String.format("%s %s\n", ERROR.name(), commandResult.reason());
+//    log.error("[JOIN Command]: failure. Sending ERROR response: {}", err);
+//
+//    return new ServerResponse(new Message(ERROR, List.of(
+//        commandResult.reason())), commandResult);
+//  }
 
 }

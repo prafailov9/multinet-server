@@ -1,9 +1,8 @@
-package com.ntros.instance;
+package com.ntros.instance.ins;
 
 import com.ntros.event.broadcaster.Broadcaster;
 import com.ntros.event.listener.SessionManager;
-import com.ntros.instance.ins.Instance;
-import com.ntros.model.entity.config.access.WorldConfig;
+import com.ntros.model.entity.config.access.InstanceConfig;
 import com.ntros.model.world.connector.WorldConnector;
 import com.ntros.session.Session;
 import com.ntros.ticker.Ticker;
@@ -20,48 +19,45 @@ import lombok.extern.slf4j.Slf4j;
 public class WorldInstance implements Instance {
 
   private final SessionManager sessionManager;
-  private final WorldConnector worldConnector;
+  private final WorldConnector world;
   private final Ticker ticker;
   private final Broadcaster broadcaster;
+  private final InstanceConfig config;
   private final AtomicBoolean tickerRunning;
 
-  public WorldInstance(WorldConnector worldConnector, SessionManager sessionManager,
-      Ticker ticker, Broadcaster broadcaster) {
-    this.worldConnector = worldConnector;
+  public WorldInstance(WorldConnector world, SessionManager sessionManager,
+      Ticker ticker, Broadcaster broadcaster, InstanceConfig config) {
+    this.world = world;
     this.sessionManager = sessionManager;
     this.ticker = ticker;
     this.broadcaster = broadcaster;
+    this.config = config;
     this.tickerRunning = new AtomicBoolean(false);
   }
 
-  @Override
-  public String worldName() {
-    return worldConnector.worldName();
-  }
 
   @Override
   public void run() {
-    log.info("[IN WORLD INSTANCE]: Updating {} state...", worldName());
+    if (!tickerRunning.compareAndSet(false, true)) {
+      return;
+    }
+
+    log.info("[IN WORLD INSTANCE]: Updating {} state...", getWorldName());
     ticker.tick(() -> {
       try {
-        worldConnector.update();                // mutate on ticker thread
+        world.update();                // mutate on ticker thread
 
-        final String serialized = worldConnector.serialize(); // snapshot on ticker thread
+        final String serialized = world.serialize(); // snapshot on ticker thread
 
         // Optional: avoid megaspam logs / huge payload logs
-        log.debug("[{}] broadcasting state ({} bytes)", worldName(), serialized.length());
+        log.debug("[{}] broadcasting state ({} bytes)", getWorldName(), serialized.length());
 
         broadcaster.publish(serialized, sessionManager);
       } catch (Throwable t) {
-        log.error("[{}] tick failed: {}", worldName(), t.toString(), t);
+        log.error("[{}] tick failed: {}", getWorldName(), t);
       }
     });
     tickerRunning.set(true);
-  }
-
-  @Override
-  public WorldConfig getWorldPolicy() {
-    return null;
   }
 
   @Override
@@ -69,32 +65,54 @@ public class WorldInstance implements Instance {
     if (!tickerRunning.get()) {
       return;
     }
-    log.info("Resetting World {}...", worldName());
-    ticker.shutdown();
-    tickerRunning.set(false);
+    log.info("[{}] resetting…", getWorldName());
     try {
-      sessionManager.shutdownAll();
+      ticker.shutdown();
     } finally {
-      worldConnector.reset();
+      tickerRunning.set(false);
+      sessionManager.shutdownAll();
+      world.reset();
     }
   }
-
 
   @Override
   public void registerSession(Session session) {
     sessionManager.register(session);
+    // Auto-start only when configured to do so
+    if (config.autoStartOnPlayerJoin() && !isRunning() && getActiveSessionsCount() > 0) {
+      run();
+    }
   }
 
   @Override
   public void removeSession(Session session) {
     sessionManager.remove(session);
+    // Auto-stop when last leaves (only for worlds that autostart on join)
+    if (config.autoStartOnPlayerJoin() && isRunning() && getActiveSessionsCount() == 0) {
+      reset();
+    }
+  }
+
+  @Override
+  public String getWorldName() {
+    return world.worldName();
+  }
+
+  @Override
+  public InstanceConfig getConfig() {
+    return config;
+  }
+
+  @Override
+  public WorldConnector getWorldConnector() {
+    return world;
   }
 
   @Override
   public Session getSession(Long sessionId) {
     return sessionManager.getActiveSessions()
         .stream()
-        .filter(session -> session.getProtocolContext().getSessionId() == sessionId)
+        .filter(session -> session.getSessionContext().getSessionId() == sessionId)
         .findFirst()
         .orElseThrow(() -> new IllegalArgumentException(
             String.format("Session with ID:[%s] does not exist", sessionId)));

@@ -1,6 +1,6 @@
 package com.ntros.model.entity.config.access;
 
-public record WorldConfig(
+public record InstanceConfig(
     int maxPlayers,
     boolean requiresOrchestrator,
     Visibility visibility,

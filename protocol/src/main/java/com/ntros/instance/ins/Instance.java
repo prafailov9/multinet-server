@@ -1,6 +1,7 @@
 package com.ntros.instance.ins;
 
-import com.ntros.model.entity.config.access.WorldConfig;
+import com.ntros.model.entity.config.access.InstanceConfig;
+import com.ntros.model.world.connector.WorldConnector;
 import com.ntros.session.Session;
 import java.util.Map;
 
@@ -8,9 +9,11 @@ public interface Instance {
 
   void run();
 
-  WorldConfig getWorldPolicy();
+  InstanceConfig getConfig();
 
-  String worldName();
+  WorldConnector getWorldConnector();
+
+  String getWorldName();
 
   void reset();
 
@@ -25,7 +28,9 @@ public interface Instance {
   boolean isRunning();
 
   void pause();
+
   void resume();
+
   void updateTickRate(int ticksPerSecond);
 
   // TODO: Refactor worldStateUpdates Map to store Generic world types.

@@ -1,6 +1,6 @@
 package com.ntros.command.impl;
 
-import com.ntros.message.ClientProfile;
+import com.ntros.message.SessionContext;
 import com.ntros.model.world.protocol.CommandResult;
 import com.ntros.model.world.protocol.CommandType;
 import com.ntros.model.world.protocol.Message;
@@ -19,22 +19,22 @@ public class AuthCommand extends AbstractCommand {
 
   @Override
   public Optional<ServerResponse> execute(Message message, Session session) {
-    ClientProfile clientProfile = session.getProtocolContext();
-    if (clientProfile.isAuthenticated()) {
+    SessionContext sessionContext = session.getSessionContext();
+    if (sessionContext.isAuthenticated()) {
       return Optional.of(ServerResponse.ofError(message, "User already authenticated"));
     }
 
-    clientProfile.setAuthenticated(true);
+    sessionContext.setAuthenticated(true);
     // TODO: create Constants class for these markers
     // marker for clients that are authenticated into the server, but are not in a world.
-    if ((clientProfile.getWorldId() == null || clientProfile.getWorldId().isBlank()) && (
-        clientProfile.getEntityId() == null || clientProfile.getEntityId().isBlank())) {
-      clientProfile.setEntityId(CLIENT_AUTHENTICATED);
-      clientProfile.setWorldId(NOT_IN_WORLD);
+    if ((sessionContext.getWorldName() == null || sessionContext.getWorldName().isBlank()) && (
+        sessionContext.getEntityId() == null || sessionContext.getEntityId().isBlank())) {
+      sessionContext.setEntityId(CLIENT_AUTHENTICATED);
+      sessionContext.setWorldId(NOT_IN_WORLD);
     }
     return Optional.of(
         ServerResponse.ofSuccess(new Message(CommandType.AUTH_SUCCESS, List.of()),
-            new CommandResult(true, clientProfile.getEntityId(),
-                clientProfile.getWorldId(), "User successfully authenticated")));
+            new CommandResult(true, sessionContext.getEntityId(),
+                sessionContext.getWorldName(), "User successfully authenticated")));
   }
 }

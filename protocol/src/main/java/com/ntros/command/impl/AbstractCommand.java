@@ -1,12 +1,12 @@
 package com.ntros.command.impl;
 
-import com.ntros.message.ClientProfile;
+import com.ntros.message.SessionContext;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public abstract class AbstractCommand implements Command {
 
-  protected void validateContext(ClientProfile context) {
+  protected void validateContext(SessionContext context) {
     log.info("Validating client info...");
     if (!context.isAuthenticated()) {
       logAndThrow("User not authenticated.");
@@ -18,7 +18,7 @@ public abstract class AbstractCommand implements Command {
       logAndThrow("No playerId associated with caller.");
     }
 
-    if (context.getWorldId() == null || context.getWorldId().isEmpty()) {
+    if (context.getWorldName() == null || context.getWorldName().isEmpty()) {
       logAndThrow("No world assigned.");
     }
   }

@@ -16,6 +16,7 @@ public enum CommandType {
   CLEAR,
   // START ticking the world
   START,
+  ORCHESTRATE,
 
   ///  SERVER COMMANDS ///
  // Auth success

@@ -1,6 +1,7 @@
 package com.ntros.model.world.connector;
 
 import com.ntros.model.entity.Entity;
+import com.ntros.model.entity.config.WorldCapabilities;
 import com.ntros.model.world.engine.solid.GridWorldEngine;
 import com.ntros.model.world.protocol.CommandResult;
 import com.ntros.model.world.protocol.JoinRequest;
@@ -13,6 +14,7 @@ public class GridWorldConnector implements WorldConnector {
 
   private final GridWorldState gridWorldState;
   private final GridWorldEngine gridWorldEngine;
+  private final WorldCapabilities worldCapabilities;
 
   // NEW: mailbox (ops are produced by session threads, consumed by ticker thread)
   private static final class QueuedOp {
@@ -29,16 +31,17 @@ public class GridWorldConnector implements WorldConnector {
   private final java.util.concurrent.ConcurrentLinkedQueue<QueuedOp> mailbox =
       new java.util.concurrent.ConcurrentLinkedQueue<>();
 
-  public GridWorldConnector(GridWorldState gridWorldState, GridWorldEngine gridWorldEngine) {
+  public GridWorldConnector(GridWorldState gridWorldState, GridWorldEngine gridWorldEngine,
+      WorldCapabilities worldCapabilities) {
     this.gridWorldState = gridWorldState;
     this.gridWorldEngine = gridWorldEngine;
+    this.worldCapabilities = worldCapabilities;
   }
 
   // helper: enqueue operation
-  private CompletableFuture<CommandResult> submit(WorldOp op) {
+  private void submit(WorldOp op) {
     QueuedOp q = new QueuedOp(op);
     mailbox.offer(q);
-    return q.promise;
   }
 
   // ==== WorldConnector impl ====
@@ -111,6 +114,11 @@ public class GridWorldConnector implements WorldConnector {
   public List<Entity> getCurrentEntities() {
     // Read access: if you want strict single-threading, call this only from ticker.
     return gridWorldState.entities().values().stream().toList();
+  }
+
+  @Override
+  public WorldCapabilities getCapabilities() {
+    return null;
   }
 
   @Override

@@ -2,7 +2,7 @@ package com.ntros.event.listener;
 
 import com.ntros.event.SessionEvent;
 import com.ntros.instance.ins.Instance;
-import com.ntros.message.ClientProfile;
+import com.ntros.message.SessionContext;
 import com.ntros.model.world.WorldConnectorHolder;
 import com.ntros.model.world.connector.WorldConnector;
 import com.ntros.session.Session;
@@ -42,13 +42,13 @@ public class InstanceSessionEventListener implements SessionEventListener {
 
   private void closed(Session session) {
     instance.removeSession(session);
-    removeSessionEntityFromWorld(session.getProtocolContext());
+    removeSessionEntityFromWorld(session.getSessionContext());
     closeAll();
   }
 
   private void failed(Session session) {
     instance.removeSession(session);
-    removeSessionEntityFromWorld(session.getProtocolContext());
+    removeSessionEntityFromWorld(session.getSessionContext());
     closeAll();
   }
 
@@ -63,15 +63,15 @@ public class InstanceSessionEventListener implements SessionEventListener {
     }
   }
 
-  private void removeSessionEntityFromWorld(ClientProfile context) {
+  private void removeSessionEntityFromWorld(SessionContext context) {
     if (context == null || !context.isAuthenticated()) {
       log.warn("IN EVENT_LISTENER- removeEntity from World: sessionContext is invalid: {}. ",
           context);
       return;
     }
-    if (context.getSessionId() >= 0 && context.getWorldId() != null && !context.getWorldId()
+    if (context.getSessionId() >= 0 && context.getWorldName() != null && !context.getWorldName()
         .isEmpty()) {
-      WorldConnector worldConnector = WorldConnectorHolder.getWorld(context.getWorldId());
+      WorldConnector worldConnector = WorldConnectorHolder.getWorld(context.getWorldName());
       log.info("IN EVENT_LISTENER: Removing entity {} from world {}. ", context,
           worldConnector.worldName());
       worldConnector.remove(context.getUserId());

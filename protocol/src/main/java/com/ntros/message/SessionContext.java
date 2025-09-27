@@ -5,7 +5,7 @@ import com.ntros.model.entity.config.access.Role;
 import java.time.OffsetDateTime;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-public class ClientProfile {
+public class SessionContext {
 
   // Transport/session-level
   private final long sessionId;            // immutable, set at session creation
@@ -18,7 +18,7 @@ public class ClientProfile {
   private Role role;                       // PLAYER, ORCHESTRATOR, OBSERVER
   private OffsetDateTime joinedAt;
 
-  public ClientProfile(long sessionId) {
+  public SessionContext(long sessionId) {
     this.sessionId = sessionId;
   }
 
@@ -44,7 +44,7 @@ public class ClientProfile {
     this.userId = userId;
   }
 
-  public String getWorldId() {
+  public String getWorldName() {
     return worldId;
   }
 

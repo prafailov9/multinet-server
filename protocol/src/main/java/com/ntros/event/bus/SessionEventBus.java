@@ -49,7 +49,7 @@ public class SessionEventBus implements EventBus {
   @Override
   public void publish(SessionEvent sessionEvent) {
     log.info("Publishing {} for session: {}", sessionEvent.getEventType(),
-        sessionEvent.getSession().getProtocolContext());
+        sessionEvent.getSession().getSessionContext());
     for (SessionEventListener listener : listeners) {
       log.info("Notifying listener {} with event {}", listener, sessionEvent);
       listener.onSessionEvent(sessionEvent);

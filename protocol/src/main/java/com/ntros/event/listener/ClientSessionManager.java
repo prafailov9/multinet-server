@@ -26,15 +26,15 @@ public class ClientSessionManager implements SessionManager {
     @Override
     public void register(Session session) {
         sessions.add(session);
-        sessionMap.put(session.getProtocolContext().getSessionId(), session);
-        log.info("Registered session: {}", session.getProtocolContext().getSessionId());
+        sessionMap.put(session.getSessionContext().getSessionId(), session);
+        log.info("Registered session: {}", session.getSessionContext().getSessionId());
     }
 
     @Override
     public void remove(Session session) {
         sessions.remove(session);
-        sessionMap.remove(session.getProtocolContext().getSessionId());
-        log.info("Removed session: {}", session.getProtocolContext().getSessionId());
+        sessionMap.remove(session.getSessionContext().getSessionId());
+        log.info("Removed session: {}", session.getSessionContext().getSessionId());
     }
 
     @Override
@@ -58,10 +58,10 @@ public class ClientSessionManager implements SessionManager {
         for (Session session : sessions) {
             try {
                 log.info("SessionManager: Sending stop signal for session {}",
-                        session.getProtocolContext());
+                        session.getSessionContext());
                 session.stop();
             } catch (Exception ex) {
-                log.error("Failed to close session: {}", session.getProtocolContext().getSessionId());
+                log.error("Failed to close session: {}", session.getSessionContext().getSessionId());
             }
         }
         sessions.clear();

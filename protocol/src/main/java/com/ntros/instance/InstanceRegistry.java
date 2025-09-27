@@ -9,10 +9,15 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class InstanceRegistry {
 
+  /// Keyed by WorldName
   private static final Map<String, Instance> INSTANCES = new ConcurrentHashMap<>();
 
   public static void register(Instance instance) {
-    INSTANCES.put(instance.worldName(), instance);
+    INSTANCES.put(instance.getWorldName(), instance);
+  }
+
+  public static Instance get(String worldName) {
+    return INSTANCES.get(worldName);
   }
 
   public static Collection<Instance> getAll() {

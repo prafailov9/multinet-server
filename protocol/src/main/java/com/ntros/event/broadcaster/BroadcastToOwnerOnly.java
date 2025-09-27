@@ -15,7 +15,7 @@ public final class BroadcastToOwnerOnly implements Broadcaster {
   public void publish(String serializedState, SessionManager sessions) {
     String msg = "STATE " + serializedState;
     sessions.getActiveSessions().stream()
-        .filter(s -> ownerUserId.equals(s.getProtocolContext().getEntityId()))
+        .filter(s -> ownerUserId.equals(s.getSessionContext().getEntityId()))
         .forEach(s -> s.response(msg));
   }
 }

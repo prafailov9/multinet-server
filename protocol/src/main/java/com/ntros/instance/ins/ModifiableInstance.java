@@ -2,7 +2,7 @@ package com.ntros.instance.ins;
 
 import com.ntros.event.listener.SessionManager;
 import com.ntros.instance.runner.InstanceRunner;
-import com.ntros.model.entity.config.access.WorldConfig;
+import com.ntros.model.entity.config.access.InstanceConfig;
 import com.ntros.model.world.connector.WorldConnector;
 import com.ntros.session.Session;
 import java.util.Map;
@@ -31,12 +31,17 @@ public class ModifiableInstance extends AbstractInstance {
   }
 
   @Override
-  public WorldConfig getWorldPolicy() {
+  public InstanceConfig getConfig() {
     return null;
   }
 
   @Override
-  public String worldName() {
+  public WorldConnector getWorldConnector() {
+    return null;
+  }
+
+  @Override
+  public String getWorldName() {
     return worldConnector.worldName();
   }
 

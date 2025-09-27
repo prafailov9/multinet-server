@@ -1,6 +1,8 @@
 package com.ntros;
 
 import com.ntros.event.broadcaster.BroadcastToAll;
+import com.ntros.model.entity.config.access.Visibility;
+import com.ntros.model.entity.config.access.InstanceConfig;
 import java.io.IOException;
 
 import com.ntros.event.bus.SessionEventBus;
@@ -9,7 +11,7 @@ import com.ntros.event.listener.InstanceSessionEventListener;
 import com.ntros.event.listener.SessionEventListener;
 import com.ntros.event.listener.SessionManager;
 import com.ntros.instance.InstanceRegistry;
-import com.ntros.instance.WorldInstance;
+import com.ntros.instance.ins.WorldInstance;
 import com.ntros.model.world.WorldConnectorHolder;
 import com.ntros.model.world.connector.WorldConnector;
 import com.ntros.server.Server;
@@ -52,12 +54,12 @@ public class ServerBootstrap {
     SessionManager sessionManager = new ClientSessionManager();
 
     WorldInstance instance = new WorldInstance(world, sessionManager, scheduler,
-        new BroadcastToAll());
+        new BroadcastToAll(), new InstanceConfig(100, false, Visibility.PUBLIC, true));
     InstanceRegistry.register(instance);
 
     // Register the per-world listener
-    SessionEventListener instanceListener = new InstanceSessionEventListener(instance);
-    SessionEventBus.get().register(instanceListener);
+//    SessionEventListener instanceListener = new InstanceSessionEventListener(instance);
+//    SessionEventBus.get().register(instanceListener);
   }
 
 }

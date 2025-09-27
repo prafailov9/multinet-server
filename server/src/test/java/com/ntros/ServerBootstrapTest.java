@@ -2,15 +2,17 @@ package com.ntros;
 
 
 import com.ntros.event.broadcaster.BroadcastToAll;
-import com.ntros.event.bus.SessionEventBus;
 import com.ntros.event.listener.ClientSessionManager;
-import com.ntros.event.listener.InstanceSessionEventListener;
+//import com.ntros.event.listener.InstanceSessionEventListener;
 import com.ntros.event.listener.SessionEventListener;
 import com.ntros.event.listener.SessionManager;
 import com.ntros.instance.ins.Instance;
 import com.ntros.instance.InstanceRegistry;
-import com.ntros.instance.WorldInstance;
+import com.ntros.instance.ins.WorldInstance;
 import com.ntros.model.entity.Entity;
+import com.ntros.model.entity.config.WorldCapabilities;
+import com.ntros.model.entity.config.access.Visibility;
+import com.ntros.model.entity.config.access.InstanceConfig;
 import com.ntros.model.entity.sequence.IdSequenceGenerator;
 import com.ntros.model.world.WorldConnectorHolder;
 import com.ntros.model.world.connector.GridWorldConnector;
@@ -37,30 +39,29 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @Slf4j
 public class ServerBootstrapTest {
 
-
   private static final int PORT = 5555;
   private static final int TICK_RATE = 100;
   private final GridWorldConnector DEFAULT_WORLD =
       new GridWorldConnector(new GridWorldState("arena-x", 3, 3),
-          new GridWorldEngine());
+          new GridWorldEngine(),
+          new WorldCapabilities(true, true,
+              false, true));
   private final SessionManager sessionManager = new ClientSessionManager();
   private final Ticker serverTicker = new WorldTicker(TICK_RATE);
   private final Instance instance = new WorldInstance(DEFAULT_WORLD, sessionManager,
-      serverTicker, new BroadcastToAll());
+      serverTicker, new BroadcastToAll(), new InstanceConfig(100, false, Visibility.PUBLIC, true));
   private final ExecutorService serverExecutor = Executors.newSingleThreadExecutor();
   private TcpServer server;
   private SessionEventListener instanceSessionEventListener;
 
   @BeforeEach
   void setUp() {
-//        WorldConnector worldConnector = createWorld("w-1", 3, 3);
-//        Instance ins = createInstance(worldConnector, 100);
 
-    instanceSessionEventListener = new InstanceSessionEventListener(instance);
+//    instanceSessionEventListener = new InstanceSessionEventListener(instance);
     WorldConnectorHolder.register(DEFAULT_WORLD);
     // register the world instance(state + engine) with the tick server
     InstanceRegistry.register(instance);
-    SessionEventBus.get().register(instanceSessionEventListener);
+//    SessionEventBus.get().register(instanceSessionEventListener);
     server = new TcpServer(PORT);
     // Start the server in a background thread.
     ServerTestHelper.startServer(server, serverExecutor, PORT);
@@ -71,9 +72,9 @@ public class ServerBootstrapTest {
     WorldConnectorHolder.remove(DEFAULT_WORLD.worldName());
     DEFAULT_WORLD.reset();
     // Clear all active listeners from prev tests
-    SessionEventBus.get().removeAll();
+//    SessionEventBus.get().removeAll();
     IdSequenceGenerator.getInstance().resetAll();
-    instanceSessionEventListener = null;
+//    instanceSessionEventListener = null;
   }
 
   @Test
@@ -165,7 +166,7 @@ public class ServerBootstrapTest {
 
   private GridWorldConnector createWorld(String worldName, int width, int height) {
     return new GridWorldConnector(new GridWorldState(worldName, width, height),
-        new GridWorldEngine());
+        new GridWorldEngine(), new WorldCapabilities(true, true, false, true));
   }
 
   @Test
@@ -185,13 +186,7 @@ public class ServerBootstrapTest {
         log.info("[TEST]: Sending MOVE request to server...");
         String actualMoveResponse = client.move(clientName, "UP", 100);
         String expectedMoveResponse = "STATE {";
-//                + DEFAULT_WORLD.serialize();
-//                String expectedMoveResponse = "STATE {\"tiles\": {\t\"1,0\": \"EMPTY\",\t\"2,1\": \"WALL\",\t\"0,0\":" +
-//                        " \"EMPTY\",\t\"1,1\": \"EMPTY\",\t\"2,2\": \"EMPTY\",\t\"0,1\": \"EMPTY\",\t\"1,2\": \"WALL\"," +
-//                        "\t\"0,2\": \"EMPTY\",\t\"2,0\": \"EMPTY\"}," +
-//                        "\"entities\": {\t\"client-0\": {\t\t\"x\": 1,\t\t\"y\": 0\t}}}";
         log.info("[TEST]: Received MOVE response from server: {}", actualMoveResponse);
-//                assertEquals(expectedMoveResponse, actualMoveResponse, "Unexpected response from server for " + clientName);
         assertTrue(actualMoveResponse.contains(expectedMoveResponse));
       }
     } finally {
@@ -234,5 +229,4 @@ public class ServerBootstrapTest {
     log.info("Entities in world: {}", entities);
     assertEquals(0, entities.size());
   }
-
 }

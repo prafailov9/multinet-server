@@ -50,7 +50,6 @@ public class TcpServer implements Server {
         }
       }
     }
-
   }
 
   @Override
@@ -62,8 +61,18 @@ public class TcpServer implements Server {
       instance.reset();
     }
 
-    serverSocket.close();
+    if (serverSocket != null && !serverSocket.isClosed()) {
+      try {
+        serverSocket.close();
+      } catch (IOException ex) {
+        log.warn("stop(): error closing serverSocket: {}", ex.getMessage(), ex);
+        throw ex;
+      }
+    } else {
+      log.warn("stop(): serverSocket was null or already closed");
+    }
   }
+
 
   private void startSession(Socket socket) {
     try {

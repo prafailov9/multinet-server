@@ -3,7 +3,8 @@ package com.ntros.command.impl;
 import com.ntros.instance.ins.Instance;
 import com.ntros.instance.InstanceFactory;
 import com.ntros.instance.InstanceRegistry;
-import com.ntros.message.ClientProfile;
+import com.ntros.message.SessionContext;
+import com.ntros.model.entity.config.WorldCapabilities;
 import com.ntros.model.world.WorldConnectorHolder;
 import com.ntros.model.world.connector.GridWorldConnector;
 import com.ntros.model.world.connector.WorldConnector;
@@ -29,9 +30,9 @@ public class CreateCommand extends AbstractCommand {
 
   @Override
   public Optional<ServerResponse> execute(Message message, Session session) {
-    ClientProfile clientProfile = session.getProtocolContext();
+    SessionContext sessionContext = session.getSessionContext();
 
-    if (!clientProfile.isAuthenticated()) {
+    if (!sessionContext.isAuthenticated()) {
       return Optional.of(ServerResponse.ofError(message, "User not authenticated"));
     }
 
@@ -46,7 +47,7 @@ public class CreateCommand extends AbstractCommand {
       InstanceRegistry.register(instance);
 
       serverResponse = ServerResponse.ofSuccess(
-          String.valueOf(clientProfile.getSessionId()),
+          String.valueOf(sessionContext.getSessionId()),
           worldConnector.worldName(), "World Created");
     } catch (IllegalArgumentException ex) {
       log.error("Command failed. Could not create world", ex);
@@ -72,7 +73,7 @@ public class CreateCommand extends AbstractCommand {
     int height = Integer.parseInt(message.args().getLast());
 
     return new GridWorldConnector(WorldStateFactory.createGridWorld(worldName, width, height),
-        new GridWorldEngine());
+        new GridWorldEngine(), new WorldCapabilities(true, true, false, true));
   }
 
   private boolean parseSharedFlag(Message message) {
