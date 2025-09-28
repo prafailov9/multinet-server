@@ -15,6 +15,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.function.Supplier;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -22,8 +23,14 @@ public final class CommandActor implements Actor {
 
   private final ExecutorService control;
 
-  // last-write-wins move coalescing
+  /**
+   * last-write-wins move coalescing
+   */
   private final ConcurrentHashMap<String, Direction> stagedMoves = new ConcurrentHashMap<>();
+
+  public CommandActor(String worldName) {
+    this(true, worldName);
+  }
 
   public CommandActor(boolean runInBackground, String worldName) {
     this.control = Executors.newSingleThreadExecutor(r -> {
@@ -33,56 +40,41 @@ public final class CommandActor implements Actor {
     });
   }
 
-  // one tick executed entirely on the actor
-  public CompletableFuture<Void> step(WorldConnector world,
-      Runnable onAfterUpdate) {
-    return execute(() -> {
-      // 1) flush staged moves into engine intents
+  /**
+   * one tick executed entirely on the actor
+   *
+   * @param world         - state to update
+   * @param onAfterUpdate - task to run after updating the state
+   * @return void future, signifying the task is completed
+   */
+  public CompletableFuture<Void> step(WorldConnector world, Runnable onAfterUpdate) {
+    // submit world update
+    return ask(() -> {
+      // flush staged moves to the engine
       if (!stagedMoves.isEmpty()) {
         for (var e : stagedMoves.entrySet()) {
           world.apply(new MoveOp(new MoveRequest(e.getKey(), e.getValue())));
         }
         stagedMoves.clear();
       }
-      // 2) advance world one step
+      // advance the world one step: applies flushed intents
       world.update();
 
-      // 3) allow caller to snapshot & broadcast (still on actor)
+      // allow caller to run task on actor thread(snapshot & broadcast)
       onAfterUpdate.run();
+      return null;
     });
   }
 
-  // Generic "run on actor" hook
-  @Override
-  public CompletableFuture<Void> execute(Runnable task) {
-    var p = new CompletableFuture<Void>();
-    control.execute(() -> {
-      try {
-        task.run();
-        p.complete(null);
-      } catch (Throwable t) {
-        p.completeExceptionally(t);
-      }
-    });
-    return p;
-  }
 
   @Override
   public CompletableFuture<CommandResult> join(WorldConnector world, JoinRequest join) {
-    var p = new CompletableFuture<CommandResult>();
-    control.execute(() -> {
-      try {
-        p.complete(world.apply(new JoinOp(join)));
-      } catch (Throwable t) {
-        p.completeExceptionally(t);
-      }
-    });
-    return p;
+    return ask(() -> world.apply(new JoinOp(join)));
   }
 
-  // CHANGE: coalesce move; do not mutate the world here
+  // coalesce move; do not mutate the world here
   @Override
-  public CompletableFuture<CommandResult> move(WorldConnector world, MoveRequest req) {
+  public CompletableFuture<CommandResult> stageMove(WorldConnector world, MoveRequest req) {
     stagedMoves.put(req.playerId(), req.direction()); // last-write-wins
     return CompletableFuture.completedFuture(
         CommandResult.succeeded(req.playerId(), world.getWorldName(), "queued"));
@@ -90,40 +82,57 @@ public final class CommandActor implements Actor {
 
   // Used by disconnect
   @Override
-  public CompletableFuture<Void> leave(WorldConnector world,
-      SessionManager manager,
+  public CompletableFuture<Void> leave(WorldConnector world, SessionManager manager,
       Session session) {
-    return execute(() -> {
-      // remove entity + deregister in actor order
+
+    return ask(() -> {
       var ctx = session.getSessionContext();
       if (ctx.getEntityId() != null) {
         world.apply(new RemoveOp(new RemoveRequest(ctx.getEntityId())));
         stagedMoves.remove(ctx.getEntityId()); // drop any staged move
       }
       manager.remove(session);
+      return null;
     });
   }
 
   @Override
   public CompletableFuture<CommandResult> remove(WorldConnector world, RemoveRequest req) {
-    var futureResult = new CompletableFuture<CommandResult>();
+    return ask(() -> world.apply(new RemoveOp(req)));
+  }
+
+  private <T> CompletableFuture<T> ask(Supplier<T> action) {
+    var promise = new CompletableFuture<T>();
     control.execute(() -> {
       try {
-        futureResult.complete(world.apply(new RemoveOp(req)));
+        promise.complete(action.get());
       } catch (Throwable t) {
-        futureResult.completeExceptionally(t);
+        if (t instanceof InterruptedException) {
+          Thread.currentThread().interrupt();
+        }
+
+        promise.completeExceptionally(t);
       }
     });
-    return futureResult;
+    return promise;
+  }
+
+  // Generic run-on-actor hook
+  @Override
+  public CompletableFuture<Void> tell(Runnable task) {
+    return ask(() -> {
+      task.run();
+      return null;
+    });
   }
 
   @Override
   public boolean isRunning() {
-    return control.isTerminated();
+    return !control.isShutdown() && !control.isTerminated();
   }
 
   @Override
-  public void stopActor() {
+  public void shutdown() {
     if (!isRunning()) {
       log.info("Actor already terminated");
       return;

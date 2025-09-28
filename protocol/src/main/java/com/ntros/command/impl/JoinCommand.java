@@ -49,7 +49,7 @@ public class JoinCommand extends AbstractCommand {
     }
 
     // Policy checks (visibility / capacity)
-    Settings cfg = instance.getConfig();
+    Settings cfg = instance.getSettings();
     if (cfg.visibility() == Visibility.PRIVATE) {
       var owner = InstanceFactory.ownerOf(instance.getWorldName()).orElse(null);
       if (owner != null && !owner.equals(ctx.getUserId())) {

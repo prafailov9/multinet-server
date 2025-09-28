@@ -26,6 +26,7 @@ import com.ntros.model.world.state.solid.GridWorldState;
 import com.ntros.server.TcpServer;
 import com.ntros.ticker.Clock;
 import com.ntros.ticker.FixedRateClock;
+import com.ntros.ticker.PacedRateClock;
 import java.io.IOException;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -67,7 +68,7 @@ public class ServerBootstrapTest {
 
     defaultWorld = createWorldConnector("arena-x", 3, 3);
     instance = createInstance(defaultWorld, new ClientSessionManager(),
-        new FixedRateClock(TICK_RATE), new BroadcastToAll(), Settings.multiplayer(BROADCAST_RATE)
+        new PacedRateClock(TICK_RATE), new BroadcastToAll(), Settings.multiplayer(BROADCAST_RATE)
     );
 
     Instances.registerInstance(instance);
@@ -270,7 +271,8 @@ public class ServerBootstrapTest {
 
   private ServerInstance createMultiplayerInstance(WorldConnector worldConnector,
       Settings policy) {
-    return new ServerInstance(worldConnector, new ClientSessionManager(), new FixedRateClock(TICK_RATE),
+    return new ServerInstance(worldConnector, new ClientSessionManager(),
+        new PacedRateClock(TICK_RATE),
         new BroadcastToAll(), policy);
   }
 

@@ -24,15 +24,13 @@ public interface Actor {
   CompletableFuture<CommandResult> join(WorldConnector world,
       JoinRequest joinRequest);
 
-  CompletableFuture<CommandResult> move(WorldConnector world,
+  CompletableFuture<CommandResult> stageMove(WorldConnector world,
       MoveRequest moveRequest);
 
   CompletableFuture<CommandResult> remove(WorldConnector world,
       RemoveRequest removeRequest);
 
-  boolean isRunning();
-
-  CompletableFuture<Void> execute(Runnable action);
+  CompletableFuture<Void> tell(Runnable action);
 
   /**
    * Remove entity (if any) and deregister session on the actor thread
@@ -40,6 +38,8 @@ public interface Actor {
   CompletableFuture<Void> leave(WorldConnector world, SessionManager manager,
       Session session);
 
-  void stopActor();
+  boolean isRunning();
+
+  void shutdown();
 
 }

@@ -15,7 +15,7 @@ public class Instances {
 
   public static void registerInstance(Instance instance) {
     INSTANCES.put(instance.getWorldName(), instance);
-    CONFIG_MAP.put(instance.getWorldName(), instance.getConfig());
+    CONFIG_MAP.put(instance.getWorldName(), instance.getSettings());
   }
 
   public static Instance getInstance(String worldName) {

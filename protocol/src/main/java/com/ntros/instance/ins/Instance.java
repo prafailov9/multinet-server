@@ -35,7 +35,7 @@ public interface Instance {
 
   void run();
 
-  Settings getConfig();
+  Settings getSettings();
 
   WorldConnector getWorldConnector();
 

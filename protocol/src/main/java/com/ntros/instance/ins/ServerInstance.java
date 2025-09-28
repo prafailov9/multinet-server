@@ -26,24 +26,28 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class ServerInstance implements Instance {
 
+  /// --- Constants
   private static final Boolean SERIALIZE_ONE_LINE = Boolean.TRUE;
   private static final int PROTOCOL_VERSION = 1;
 
-  // NEW: broadcast pacing + sequence
+  /// --- broadcast pacing + sequence
   private volatile long lastBroadcastNanos = 0L;
   private final long broadcastIntervalNanos; // derived from config.broadcastHz()
-  private final AtomicLong stateSeq = new AtomicLong(0);
 
+  ///  --- Atomic ops
+  private final AtomicLong stateSeq = new AtomicLong(0);
+  private final AtomicBoolean clockTicking;
+
+  /// --- State
   private final SessionManager sessionManager;
   private final WorldConnector connector;
   private final Clock clock;
   private final Broadcaster broadcaster;
-  private final Settings config;
-  private final AtomicBoolean tickerRunning;
+  private final Settings settings;
   private final Actor actor;
 
   public ServerInstance(WorldConnector connector, SessionManager sessionManager,
-      Clock clock, Broadcaster broadcaster, Settings config) {
+      Clock clock, Broadcaster broadcaster, Settings settings) {
     this.connector = connector;
     this.sessionManager = sessionManager;
     this.clock = clock;
@@ -51,21 +55,21 @@ public class ServerInstance implements Instance {
     configureTickerListener();
 
     this.broadcaster = broadcaster;
-    this.config = config;
+    this.settings = settings;
 
-    int hz = Math.max(1, config.broadcastHz()); // guard
+    int hz = Math.max(1, settings.broadcastHz()); // guard
     this.broadcastIntervalNanos = 1_000_000_000L / hz;
 
     this.actor = new CommandActor(true, connector.getWorldName());
-    this.tickerRunning = new AtomicBoolean(false);
+    this.clockTicking = new AtomicBoolean(false);
   }
 
   /**
-   * Clock wakes WorldThread N times per second; WorldThread advances the world and broadcasts.
+   * Clock wakes Actor N times per second; Actor advances the world and broadcasts.
    */
   @Override
   public void run() {
-    if (!tickerRunning.compareAndSet(false, true)) {
+    if (!clockTicking.compareAndSet(false, true)) {
       return;
     }
 
@@ -87,7 +91,7 @@ public class ServerInstance implements Instance {
       }
     });
 
-    tickerRunning.set(true);
+    clockTicking.set(true);
   }
 
   private String buildStateFrame() {
@@ -121,20 +125,20 @@ public class ServerInstance implements Instance {
 
   @Override
   public void reset() {
-    if (!tickerRunning.get()) {
+    if (!clockTicking.get()) {
       return;
     }
     log.info("[{}] resetting…", getWorldName());
     try {
       clock.shutdown();           // stop ticks first (no more STATE)
-      actor.execute(() -> {
+      actor.tell(() -> {
           }) // ensure control queue drained
           .join();
     } finally {
-      tickerRunning.set(false);
+      clockTicking.set(false);
       sessionManager.shutdownAll();
       connector.reset();
-      actor.stopActor();
+      actor.shutdown();
     }
   }
 
@@ -145,13 +149,13 @@ public class ServerInstance implements Instance {
    */
   @Override
   public CompletableFuture<Void> drainControl() {
-    return actor.execute(() -> { /* no-op */ });
+    return actor.tell(() -> { /* no-op */ });
 
   }
 
   @Override
   public void startIfNeededForJoin() {
-    if (config.autoStartOnPlayerJoin() && !isRunning()) {
+    if (settings.autoStartOnPlayerJoin() && !isRunning()) {
       run();
     }
   }
@@ -169,7 +173,7 @@ public class ServerInstance implements Instance {
 
   @Override
   public CompletableFuture<CommandResult> storeMoveAsync(MoveRequest req) {
-    return actor.move(connector, req);
+    return actor.stageMove(connector, req);
   }
 
   @Override
@@ -191,7 +195,7 @@ public class ServerInstance implements Instance {
   public void registerSession(Session session) {
     sessionManager.register(session);
     // Auto-start only when configured to do so
-    if (config.autoStartOnPlayerJoin() && !isRunning() && getActiveSessionsCount() > 0) {
+    if (settings.autoStartOnPlayerJoin() && !isRunning() && getActiveSessionsCount() > 0) {
       run();
     }
   }
@@ -200,7 +204,7 @@ public class ServerInstance implements Instance {
   public void removeSession(Session session) {
     sessionManager.remove(session);
     // Auto-stop when last leaves (only for worlds that autostart on join)
-    if (config.autoStartOnPlayerJoin() && isRunning() && getActiveSessionsCount() == 0) {
+    if (settings.autoStartOnPlayerJoin() && isRunning() && getActiveSessionsCount() == 0) {
       reset();
     }
   }
@@ -211,8 +215,8 @@ public class ServerInstance implements Instance {
   }
 
   @Override
-  public Settings getConfig() {
-    return config;
+  public Settings getSettings() {
+    return settings;
   }
 
   @Override
@@ -242,7 +246,7 @@ public class ServerInstance implements Instance {
 
   @Override
   public boolean isRunning() {
-    return tickerRunning.get();
+    return clockTicking.get();
   }
 
   @Override
