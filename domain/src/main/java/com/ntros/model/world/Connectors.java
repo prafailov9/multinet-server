@@ -9,7 +9,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
-public final class WorldConnectorHolder {
+public final class Connectors {
 
   private static final WorldConnector DEFAULT_WORLD = new GridWorldConnector(
       new GridWorldState("world-1", 10, 10), new GridWorldEngine(),
@@ -44,7 +44,7 @@ public final class WorldConnectorHolder {
 
   }
 
-  private WorldConnectorHolder() {
+  private Connectors() {
   }
 
   public static void register(WorldConnector worldConnector) {

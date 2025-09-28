@@ -1,6 +1,6 @@
 package com.ntros.instance.ins;
 
-import com.ntros.model.entity.config.access.InstanceConfig;
+import com.ntros.model.entity.config.access.Settings;
 import com.ntros.model.world.connector.WorldConnector;
 import com.ntros.model.world.protocol.response.CommandResult;
 import com.ntros.model.world.protocol.request.JoinRequest;
@@ -35,7 +35,7 @@ public interface Instance {
 
   void run();
 
-  InstanceConfig getConfig();
+  Settings getConfig();
 
   WorldConnector getWorldConnector();
 

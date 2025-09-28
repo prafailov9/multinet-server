@@ -46,7 +46,9 @@ public class GridWorldEngine implements WorldEngine {
   public CommandResult storeMoveIntent(MoveRequest moveRequest, WorldState state) {
     Entity entity = state.entities().get(moveRequest.playerId());
     Position position = createPosition(entity.getPosition(), moveRequest.direction());
-    if (state.isWithinBounds(position)) { // allow all moves if within bounds
+
+    // allow all moves if within bounds
+    if (state.isWithinBounds(position)) {
       state.moveIntents().put(moveRequest.playerId(), moveRequest.direction());
       log.info("Added move intent: {}", moveRequest);
       return CommandResult.succeeded(entity.getName(), state.worldName(), "intent added");

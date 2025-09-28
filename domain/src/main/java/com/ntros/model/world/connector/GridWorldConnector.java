@@ -1,5 +1,6 @@
 package com.ntros.model.world.connector;
 
+import com.ntros.model.entity.Direction;
 import com.ntros.model.entity.Entity;
 import com.ntros.model.entity.config.WorldCapabilities;
 import com.ntros.model.world.connector.ops.JoinOp;
@@ -10,7 +11,9 @@ import com.ntros.model.world.engine.solid.GridWorldEngine;
 import com.ntros.model.world.protocol.response.CommandResult;
 import com.ntros.model.world.state.solid.GridWorldState;
 import java.util.List;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 public class GridWorldConnector implements WorldConnector {
 
   private final GridWorldState state;

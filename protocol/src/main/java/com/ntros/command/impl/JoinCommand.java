@@ -3,14 +3,14 @@ package com.ntros.command.impl;
 import static com.ntros.model.world.protocol.CommandType.ERROR;
 import static com.ntros.model.world.protocol.CommandType.WELCOME;
 
-import com.ntros.instance.InstanceRegistry;
-import com.ntros.instance.WorldRegistry;
+import com.ntros.instance.Instances;
+import com.ntros.instance.InstanceFactory;
 import com.ntros.instance.ins.Instance;
-import com.ntros.instance.ins.WorldInstance;
+import com.ntros.instance.ins.ServerInstance;
 import com.ntros.message.SessionContext;
-import com.ntros.model.entity.config.access.InstanceConfig;
+import com.ntros.model.entity.config.access.Settings;
 import com.ntros.model.entity.config.access.Visibility;
-import com.ntros.model.world.WorldConnectorHolder;
+import com.ntros.model.world.Connectors;
 import com.ntros.model.world.protocol.response.CommandResult;
 import com.ntros.model.world.protocol.request.JoinRequest;
 import com.ntros.model.world.protocol.Message;
@@ -49,14 +49,14 @@ public class JoinCommand extends AbstractCommand {
     }
 
     // Policy checks (visibility / capacity)
-    InstanceConfig cfg = instance.getConfig();
+    Settings cfg = instance.getConfig();
     if (cfg.visibility() == Visibility.PRIVATE) {
-      var owner = WorldRegistry.ownerOf(instance.getWorldName()).orElse(null);
+      var owner = InstanceFactory.ownerOf(instance.getWorldName()).orElse(null);
       if (owner != null && !owner.equals(ctx.getUserId())) {
         return Optional.of(error("WORLD_PRIVATE", player, instance.getWorldName()));
       }
     }
-    if (cfg.maxPlayers() == 1 && instance.isRunning() && instance instanceof WorldInstance wi
+    if (cfg.maxPlayers() == 1 && instance.isRunning() && instance instanceof ServerInstance wi
         && wi.getActiveSessionsCount() >= 1) {
       return Optional.of(error("WORLD_BUSY", player, instance.getWorldName()));
     }
@@ -102,9 +102,9 @@ public class JoinCommand extends AbstractCommand {
   private Instance resolveInstance(Message message) {
     String worldName = message.args().size() >= 2 ? message.args().get(1) : null;
     if (worldName == null) {
-      worldName = WorldConnectorHolder.getDefaultWorld().getWorldName();
+      worldName = Connectors.getDefaultWorld().getWorldName();
     }
-    return InstanceRegistry.getInstance(worldName);
+    return Instances.getInstance(worldName);
   }
 
   private ServerResponse error(String code, String player, String world) {

@@ -1,6 +1,6 @@
 package com.ntros.ticker;
 
-public class ManualTicker implements Ticker {
+public class ManualClock implements Clock {
 
   @Override
   public void tick(Runnable task) {

@@ -2,7 +2,7 @@ package com.ntros.command.impl;
 
 import static com.ntros.model.world.protocol.CommandType.ACK;
 
-import com.ntros.instance.InstanceRegistry;
+import com.ntros.instance.Instances;
 import com.ntros.instance.ins.Instance;
 import com.ntros.message.SessionContext;
 import com.ntros.model.world.protocol.Message;
@@ -33,7 +33,7 @@ public final class DisconnectCommand extends AbstractCommand {
       clearContext(ctx);
       return Optional.of(ack);
     }
-    Instance inst = InstanceRegistry.getInstance(worldName);
+    Instance inst = Instances.getInstance(worldName);
     if (inst != null) {
       // Remove entity on the actor thread (async)
       String entityId = ctx.getEntityId();

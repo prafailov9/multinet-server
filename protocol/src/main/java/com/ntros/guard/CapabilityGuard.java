@@ -1,6 +1,6 @@
 package com.ntros.guard;
 
-import com.ntros.instance.WorldRegistry;
+import com.ntros.instance.InstanceFactory;
 import com.ntros.model.entity.config.access.Role;
 import com.ntros.model.world.protocol.Message;
 import com.ntros.session.Session;
@@ -12,7 +12,7 @@ public class CapabilityGuard implements CommandGuard {
     switch (msg.commandType()) {
       case MOVE -> {
         String world = currentWorld(msg, s);
-        var inst = WorldRegistry.get(world);
+        var inst = InstanceFactory.get(world);
         if (inst == null) {
           throw new IllegalArgumentException("WORLD_NOT_FOUND");
         }
@@ -26,7 +26,7 @@ public class CapabilityGuard implements CommandGuard {
           throw new IllegalStateException("NOT_ORCHESTRATOR");
         }
         String world = currentWorld(msg, s);
-        var inst = WorldRegistry.get(world);
+        var inst = InstanceFactory.get(world);
         if (!inst.getWorldConnector().getCapabilities().supportsOrchestrator()) {
           throw new IllegalStateException("WORLD_NO_ORCHESTRATOR");
         }

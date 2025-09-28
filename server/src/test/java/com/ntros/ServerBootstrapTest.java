@@ -12,25 +12,25 @@ import com.ntros.event.broadcaster.BroadcastToAll;
 import com.ntros.event.broadcaster.Broadcaster;
 import com.ntros.event.sessionmanager.ClientSessionManager;
 import com.ntros.event.sessionmanager.SessionManager;
-import com.ntros.instance.InstanceRegistry;
+import com.ntros.instance.Instances;
 import com.ntros.instance.ins.Instance;
-import com.ntros.instance.ins.WorldInstance;
+import com.ntros.instance.ins.ServerInstance;
 import com.ntros.model.entity.Entity;
 import com.ntros.model.entity.config.WorldCapabilities;
-import com.ntros.model.entity.config.access.InstanceConfig;
-import com.ntros.model.entity.config.access.Visibility;
+import com.ntros.model.entity.config.access.Settings;
 import com.ntros.model.entity.sequence.IdSequenceGenerator;
 import com.ntros.model.world.connector.GridWorldConnector;
 import com.ntros.model.world.connector.WorldConnector;
 import com.ntros.model.world.engine.solid.GridWorldEngine;
 import com.ntros.model.world.state.solid.GridWorldState;
 import com.ntros.server.TcpServer;
-import com.ntros.ticker.Ticker;
-import com.ntros.ticker.WorldTicker;
+import com.ntros.ticker.Clock;
+import com.ntros.ticker.WorldClock;
 import java.io.IOException;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import lombok.extern.slf4j.Slf4j;
@@ -45,6 +45,9 @@ public class ServerBootstrapTest {
 
   private static final int PORT = 5555;
   private static final int TICK_RATE = 100;
+  private static final int BROADCAST_RATE = 21;
+
+  private static final Random SEEDED = new Random(10);
 
   private final ExecutorService serverExecutor = Executors.newSingleThreadExecutor();
   private TcpServer server;
@@ -64,14 +67,14 @@ public class ServerBootstrapTest {
 
     defaultWorld = createWorldConnector("arena-x", 3, 3);
     instance = createInstance(defaultWorld, new ClientSessionManager(),
-        new WorldTicker(TICK_RATE), new BroadcastToAll(),
-        createInstanceConfig(100, false, Visibility.PUBLIC, true));
+        new WorldClock(TICK_RATE), new BroadcastToAll(), Settings.multiplayer(BROADCAST_RATE)
+    );
 
-    InstanceRegistry.registerInstance(instance);
+    Instances.registerInstance(instance);
 
     server = new TcpServer(PORT);
     ServerTestHelper.startServer(server, serverExecutor, PORT);
-    InstanceRegistry.registerInstance(instance);
+    Instances.registerInstance(instance);
 
     server = new TcpServer(PORT);
     // Start the server in a background thread.
@@ -84,7 +87,7 @@ public class ServerBootstrapTest {
     server.stop();
     serverExecutor.shutdownNow();
     IdSequenceGenerator.getInstance().resetAll();
-    InstanceRegistry.clear();
+    Instances.clear();
   }
 
   @Test
@@ -136,12 +139,13 @@ public class ServerBootstrapTest {
       assertEquals(ServerCmd.STATE, actualMoveResponse.type());
 
       String json = actualMoveResponse.args().getFirst();
-      var parsed = new ObjectMapper().readTree(json);
-      assertTrue(parsed.has("entities"));
-      assertTrue(parsed.get("entities").has("client-1"));
+      var parsedJson = new ObjectMapper().readTree(json);
+      assertTrue(parsedJson.has("data"));
 
-//      assertEquals("STATE {", actualMoveResponse.args().getFirst());
-//      assertTrue(actualMoveResponse.contains("STATE {"));
+      var stateJson = parsedJson.get("data");
+      assertTrue(stateJson.has("entities"));
+      assertTrue(stateJson.get("entities").has("client-1"));
+
     }
     // stop server
     stopServerWhen(instance, server, serverExecutor);
@@ -199,9 +203,12 @@ public class ServerBootstrapTest {
         assertEquals(ServerCmd.STATE, actualMoveResponse.type());
 
         String json = actualMoveResponse.args().getFirst();
-        var parsed = new ObjectMapper().readTree(json);
-        assertTrue(parsed.has("entities"));
-        assertTrue(parsed.get("entities").has("client-0"));
+        var parsedJson = new ObjectMapper().readTree(json);
+        assertTrue(parsedJson.has("data"));
+
+        var stateJson = parsedJson.get("data");
+        assertTrue(stateJson.has("entities"));
+        assertTrue(stateJson.get("entities").has("client-0"));
 
 //        assertEquals("client-0:", actualMoveResponse.args().getFirst());
       }
@@ -225,8 +232,8 @@ public class ServerBootstrapTest {
     var secondWorld = createWorldConnector("arena-y", 3, 3);
 
     var secondInstance = createMultiplayerInstance(secondWorld,
-        new InstanceConfig(100, false, Visibility.PUBLIC, true));
-    InstanceRegistry.registerInstance(secondInstance);
+        Settings.multiplayer(BROADCAST_RATE));
+    Instances.registerInstance(secondInstance);
 
     try (TestClient c1 = new TestClient("localhost", PORT);
         TestClient c2 = new TestClient("localhost", PORT)) {
@@ -249,26 +256,23 @@ public class ServerBootstrapTest {
   }
 
   private GridWorldConnector createWorldConnector(String worldName, int width, int height) {
-    return new GridWorldConnector(new GridWorldState(worldName, width, height),
+    return new GridWorldConnector(new GridWorldState(worldName, width, height, SEEDED),
         new GridWorldEngine(),
         new WorldCapabilities(true, true,
             false, true));
   }
 
-  private WorldInstance createInstance(WorldConnector worldConnector, SessionManager sessionManager,
-      Ticker ticker, Broadcaster broadcaster, InstanceConfig config) {
-    return new WorldInstance(worldConnector, sessionManager, ticker, broadcaster, config);
+  private ServerInstance createInstance(WorldConnector worldConnector,
+      SessionManager sessionManager,
+      Clock clock, Broadcaster broadcaster, Settings policy) {
+    return new ServerInstance(worldConnector, sessionManager, clock, broadcaster, policy);
   }
 
-  private WorldInstance createMultiplayerInstance(WorldConnector worldConnector,
-      InstanceConfig config) {
-    return new WorldInstance(worldConnector, new ClientSessionManager(), new WorldTicker(TICK_RATE),
-        new BroadcastToAll(), config);
+  private ServerInstance createMultiplayerInstance(WorldConnector worldConnector,
+      Settings policy) {
+    return new ServerInstance(worldConnector, new ClientSessionManager(), new WorldClock(TICK_RATE),
+        new BroadcastToAll(), policy);
   }
 
-  private InstanceConfig createInstanceConfig(int maxPlayers, boolean requiresOrchestrator,
-      Visibility visibility, boolean autoStartOnPlayerJoin) {
-    return new InstanceConfig(maxPlayers, requiresOrchestrator, visibility, autoStartOnPlayerJoin);
-  }
 
 }

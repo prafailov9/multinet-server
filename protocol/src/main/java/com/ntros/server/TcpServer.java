@@ -2,7 +2,7 @@ package com.ntros.server;
 
 import com.ntros.connection.SocketConnection;
 import com.ntros.instance.ins.Instance;
-import com.ntros.instance.InstanceRegistry;
+import com.ntros.instance.Instances;
 import com.ntros.session.ClientSession;
 import com.ntros.session.Session;
 import java.io.IOException;
@@ -60,7 +60,7 @@ public class TcpServer implements Server {
     }
 
     serverRunning = false;
-    for (Instance instance : InstanceRegistry.getAll()) {
+    for (Instance instance : Instances.getAll()) {
       instance.reset();
     }
     if (serverSocket != null && !serverSocket.isClosed()) {

@@ -3,11 +3,10 @@ package com.ntros.command.impl;
 import static com.ntros.model.world.protocol.CommandType.ACK;
 import static com.ntros.model.world.protocol.CommandType.ERROR;
 
-import com.ntros.instance.InstanceRegistry;
+import com.ntros.instance.Instances;
 import com.ntros.instance.ins.Instance;
 import com.ntros.message.SessionContext;
 import com.ntros.model.entity.Direction;
-import com.ntros.model.world.protocol.CommandType;
 import com.ntros.model.world.protocol.Message;
 import com.ntros.model.world.protocol.request.MoveRequest;
 import com.ntros.model.world.protocol.response.CommandResult;
@@ -44,7 +43,7 @@ public class MoveCommand extends AbstractCommand {
     }
 
     String playerId = ctx.getEntityId();
-    Instance instance = InstanceRegistry.getInstance(ctx.getWorldName());
+    Instance instance = Instances.getInstance(ctx.getWorldName());
     if (instance == null) {
       return Optional.of(new ServerResponse(
           new Message(ERROR, List.of("WORLD_NOT_FOUND")),

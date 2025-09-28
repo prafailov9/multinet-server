@@ -1,11 +1,11 @@
 package com.ntros.command.impl;
 
-import com.ntros.instance.ins.Instance;
 import com.ntros.instance.InstanceFactory;
-import com.ntros.instance.InstanceRegistry;
+import com.ntros.instance.ins.Instance;
+import com.ntros.instance.Instances;
 import com.ntros.message.SessionContext;
 import com.ntros.model.entity.config.WorldCapabilities;
-import com.ntros.model.world.WorldConnectorHolder;
+import com.ntros.model.world.Connectors;
 import com.ntros.model.world.connector.GridWorldConnector;
 import com.ntros.model.world.connector.WorldConnector;
 import com.ntros.model.world.engine.solid.GridWorldEngine;
@@ -40,12 +40,12 @@ public class CreateCommand extends AbstractCommand {
     try {
       // Create a world and instance and register them in their in-memory caches.
       WorldConnector worldConnector = createWorld(message);
-      WorldConnectorHolder.register(worldConnector);
+      Connectors.register(worldConnector);
 
       boolean isShared = parseSharedFlag(message);
 
       Instance instance = InstanceFactory.createInstance(session, isShared, worldConnector);
-      InstanceRegistry.registerInstance(instance);
+      Instances.registerInstance(instance);
 
       serverResponse = ServerResponse.ofSuccess(
           String.valueOf(sessionContext.getSessionId()),

@@ -10,11 +10,17 @@ import com.ntros.model.world.state.dimension.Dimension2D;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Random;
+import java.util.concurrent.ThreadLocalRandom;
 import lombok.extern.slf4j.Slf4j;
 
 
 @Slf4j
 public class GridWorldState implements WorldState {
+
+  private final Random rng; // NEW
+
 
   private final String worldName;
   private final Dimension dimension;
@@ -27,10 +33,14 @@ public class GridWorldState implements WorldState {
   private final Map<Position, TileType> terrainMap;
 
   public GridWorldState(String worldName, int width, int height) {
+    this(worldName, width, height, ThreadLocalRandom.current()); // default
+  }
+
+  public GridWorldState(String worldName, int width, int height, Random rng) {
     this.worldName = worldName;
     this.width = width;
     this.height = height;
-
+    this.rng = Objects.requireNonNull(rng, "rng");
     this.dimension = new Dimension2D(width, height);
 
     entityMap = new LinkedHashMap<>(); // preserve insertion order
@@ -105,23 +115,17 @@ public class GridWorldState implements WorldState {
   }
 
   private void generateTerrain() {
-//        runSafe(() -> {
     for (int x = 0; x < width; x++) {
       for (int y = 0; y < height; y++) {
         Position pos = Position.of(x, y);
-
-        double rand = Math.random();
-
-        TileType tile = rand < 0.1 ? TileType.WALL :
-            rand < 0.15 ? TileType.TRAP :
-                rand < 0.17 ? TileType.WATER :
-                    TileType.EMPTY;
-
+        double r = rng.nextDouble(); // use injected RNG
+        TileType tile = r < 0.10 ? TileType.WALL
+            : r < 0.15 ? TileType.TRAP
+                : r < 0.17 ? TileType.WATER
+                    : TileType.EMPTY;
         terrainMap.put(pos, tile);
       }
     }
-//        }, terrainMapLock);
-
     log.info("Generated terrain for world: {}", worldName);
   }
 

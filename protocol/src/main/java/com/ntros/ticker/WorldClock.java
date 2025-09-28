@@ -7,7 +7,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-public class WorldTicker implements Ticker {
+public class WorldClock implements Clock {
 
     private volatile int tickRate;
 
@@ -29,7 +29,7 @@ public class WorldTicker implements Ticker {
     // Tick counter (number of completed ticks)
     private long tickCount = 0;
 
-    public WorldTicker(int initialTickRate) {
+    public WorldClock(int initialTickRate) {
         this.tickRate = initialTickRate;
     }
 

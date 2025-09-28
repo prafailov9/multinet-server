@@ -2,7 +2,7 @@ package com.ntros.session;
 
 
 import com.ntros.connection.Connection;
-import com.ntros.instance.InstanceRegistry;
+import com.ntros.instance.Instances;
 import com.ntros.message.SessionContext;
 import com.ntros.model.entity.sequence.IdSequenceGenerator;
 import com.ntros.model.world.protocol.response.ServerResponse;
@@ -10,7 +10,6 @@ import com.ntros.session.process.ClientMessageProcessor;
 import com.ntros.session.process.RequestClientMessageProcessor;
 import com.ntros.session.process.ResponseServerMessageProcessor;
 import com.ntros.session.process.ServerMessageProcessor;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import lombok.extern.slf4j.Slf4j;
 
@@ -106,7 +105,7 @@ public class ClientSession implements Session {
     if (sessionContext != null && sessionContext.isAuthenticated()
         && sessionContext.getWorldName() != null) {
       try {
-        var instance = InstanceRegistry.getInstance(sessionContext.getWorldName());
+        var instance = Instances.getInstance(sessionContext.getWorldName());
         if (instance != null) {
           // queue entity removal + deregister session on the actor thread
           instance.leaveAsync(this).exceptionally(ex -> {

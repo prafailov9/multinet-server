@@ -2,7 +2,7 @@ package com.ntros.session.process;
 
 import com.ntros.dispatcher.Dispatcher;
 import com.ntros.dispatcher.MessageDispatcher;
-import com.ntros.instance.InstanceRegistry;
+import com.ntros.instance.Instances;
 import com.ntros.instance.ins.Instance;
 import com.ntros.message.SessionContext;
 import com.ntros.model.world.protocol.CommandType;
@@ -56,7 +56,7 @@ public class RequestClientMessageProcessor implements ClientMessageProcessor {
 
     String worldName = ctx.getWorldName();
     if (ctx.getSessionId() >= 0 && worldName != null && !worldName.isEmpty()) {
-      Instance instance = InstanceRegistry.getInstance(worldName);
+      Instance instance = Instances.getInstance(worldName);
       log.info("IN MESSAGE PROCESSOR:: Removing entity {} from world {}. ", ctx, worldName);
       instance.leaveAsync(session);
     }

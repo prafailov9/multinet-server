@@ -1,6 +1,6 @@
 package com.ntros.session.process;
 
-import com.ntros.instance.InstanceRegistry;
+import com.ntros.instance.Instances;
 import com.ntros.model.world.protocol.Message;
 import com.ntros.model.world.protocol.response.ServerResponse;
 import com.ntros.session.Session;
@@ -20,7 +20,7 @@ public class ResponseServerMessageProcessor implements ServerMessageProcessor {
 
         // 2) Then attach the session to the instance so it starts receiving STATE.
         var ctx = session.getSessionContext();
-        var instance = InstanceRegistry.getInstance(ctx.getWorldName());
+        var instance = Instances.getInstance(ctx.getWorldName());
         if (instance != null) {
           instance.registerSession(session);
         }

@@ -13,15 +13,21 @@ import java.util.concurrent.CompletableFuture;
 /**
  * Single-threaded actor, async running all world changes
  */
-public interface InstanceActor {
+public interface Actor {
 
-  CompletableFuture<CommandResult> join(WorldConnector worldConnector,
+  /**
+   * updates the world state.
+   */
+  CompletableFuture<Void> step(WorldConnector world,
+      Runnable onAfterUpdate);
+
+  CompletableFuture<CommandResult> join(WorldConnector world,
       JoinRequest joinRequest);
 
-  CompletableFuture<CommandResult> move(WorldConnector worldConnector,
+  CompletableFuture<CommandResult> move(WorldConnector world,
       MoveRequest moveRequest);
 
-  CompletableFuture<CommandResult> remove(WorldConnector worldConnector,
+  CompletableFuture<CommandResult> remove(WorldConnector world,
       RemoveRequest removeRequest);
 
   boolean isRunning();
@@ -31,7 +37,7 @@ public interface InstanceActor {
   /**
    * Remove entity (if any) and deregister session on the actor thread
    */
-  CompletableFuture<Void> leave(WorldConnector worldConnector, SessionManager sessionManager,
+  CompletableFuture<Void> leave(WorldConnector world, SessionManager manager,
       Session session);
 
   void stopActor();

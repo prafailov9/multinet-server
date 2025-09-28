@@ -1,18 +1,17 @@
 package com.ntros.instance;
 
 import com.ntros.instance.ins.Instance;
-import com.ntros.model.entity.config.access.InstanceConfig;
-import com.ntros.session.Session;
+import com.ntros.model.entity.config.access.Settings;
 
 import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class InstanceRegistry {
+public class Instances {
 
   /// Keyed by WorldName
   private static final Map<String, Instance> INSTANCES = new ConcurrentHashMap<>();
-  private static final Map<String, InstanceConfig> CONFIG_MAP = new ConcurrentHashMap<>();
+  private static final Map<String, Settings> CONFIG_MAP = new ConcurrentHashMap<>();
 
   public static void registerInstance(Instance instance) {
     INSTANCES.put(instance.getWorldName(), instance);
@@ -23,7 +22,7 @@ public class InstanceRegistry {
     return INSTANCES.get(worldName);
   }
 
-  public static InstanceConfig getInstanceConfigForWorld(String worldName) {
+  public static Settings getInstanceConfigForWorld(String worldName) {
     return CONFIG_MAP.get(worldName);
   }
 
