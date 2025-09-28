@@ -52,7 +52,7 @@ public class PacedRateClock extends AbstractClock {
   }
 
   @Override
-  protected ScheduledFuture<?> scheduleTask(Runnable wrapper, long intervalMs) {
+  protected ScheduledFuture<?> scheduleTask(Runnable lifecycleWrappedTask, long intervalMs) {
     // 'wrapper' already includes pause check, tick count, and listener callbacks
     return scheduler.scheduleAtFixedRate(() -> {
       if (isPaused()) {
@@ -63,7 +63,7 @@ public class PacedRateClock extends AbstractClock {
       }
       worker.execute(() -> {
         try {
-          wrapper.run();
+          lifecycleWrappedTask.run();
         } finally {
           inFlight.set(false);
         }

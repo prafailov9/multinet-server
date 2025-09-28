@@ -32,7 +32,7 @@ public class FixedDelayClock extends AbstractClock {
   }
 
   @Override
-  protected ScheduledFuture<?> scheduleTask(Runnable wrapper, long intervalMs) {
-    return scheduler.scheduleWithFixedDelay(wrapper, 0, intervalMs, MILLISECONDS);
+  protected ScheduledFuture<?> scheduleTask(Runnable lifecycleWrappedTask, long intervalMs) {
+    return scheduler.scheduleWithFixedDelay(lifecycleWrappedTask, 0, intervalMs, MILLISECONDS);
   }
 }
