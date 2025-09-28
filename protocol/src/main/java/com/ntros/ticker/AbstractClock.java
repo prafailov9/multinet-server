@@ -6,17 +6,20 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
- * AbstractClock centralizes all common clock mechanics:
+ * Tick driver with a single-threaded scheduler and a small lifecycle.
  * <p>
- * - Single-threaded scheduler so tick tasks never run concurrently on multiple threads. -
- * Start/stop/shutdown controls. - Pause/resume support (ticks are scheduled but their bodies can be
- * skipped). - Tick listener callbacks (onTickStart/onTickEnd) and tick counting. - Dynamic
- * tick-rate updates and task replacement via a unified (re)scheduling path.
+ * Responsibilities: - Start/stop/shutdown the schedule. - Pause/resume (scheduled, but tick body is
+ * skipped while paused). - Change tick rate and swap the tick task (both trigger a safe
+ * reschedule). - Notify an optional listener before/after each tick and maintain a tick counter.
  * <p>
- * Subclasses only decide *how* to schedule: - FixedRateClock: scheduleAtFixedRate (target cadence,
- * can overlap intent => backlog if slow). - FixedDelayClock: scheduleWithFixedDelay (no overlap by
- * design; adaptive TPS / time dilation). - FixedRateBackpressureClock: fixed-rate intent + a gate
- * to skip ticks if prior hasn't finished (no backlog, bounded latency; ticks may be dropped).
+ * Guarantees: - Tick bodies never overlap (executed on a single scheduler thread or a single
+ * worker, depending on the concrete clock). - Reschedules are atomic from the caller’s perspective
+ * (no overlapping schedules).
+ * <p>
+ * Policy is provided by subclasses via {@link #scheduleTask(Runnable, long)}: - FixedRateClock   →
+ * scheduleAtFixedRate (target cadence; can backlog under load). - FixedDelayClock  →
+ * scheduleWithFixedDelay (no backlog; effective TPS drops under load). - PacedRateClock   →
+ * fixed-rate intent with a drop-if-busy gate (no backlog; ticks may drop).
  */
 public abstract class AbstractClock implements Clock {
 
@@ -151,17 +154,19 @@ public abstract class AbstractClock implements Clock {
     return paused.get();
   }
 
-  // ---- Template methods for subclasses -------------------------------------
+  // --- Template methods for subclasses --------------------------------------
 
   /**
-   * fixed-rate or fixed-delay scheduling.
+   * Implement the scheduling policy (fixed-rate, fixed-delay, or custom).
    */
-  protected abstract ScheduledFuture<?> scheduleInternal(Runnable wrapper, long intervalMs);
+  protected abstract ScheduledFuture<?> scheduleTask(Runnable lifecycleWrappedTask,
+      long intervalMs);
 
   /**
-   * override to add gating/backpressure.
+   * Builds the runnable that enforces the tick lifecycle: pause check → onTickStart → task.run() →
+   * onTickEnd.
    */
-  protected Runnable buildWrapper(Runnable task) {
+  protected Runnable wrapWithLifecycle(Runnable task) {
     return () -> {
       if (isPaused()) {
         return;
@@ -170,20 +175,21 @@ public abstract class AbstractClock implements Clock {
       long start = System.nanoTime();
       long n = ++tickCount;
 
-      if (listener != null) {
-        listener.onTickStart(n);
+      Clock.TickListener l = listener;
+      if (l != null) {
+        l.onTickStart(n);
       }
 
       task.run();
 
       long duration = System.nanoTime() - start;
-      if (listener != null) {
-        listener.onTickEnd(n, duration);
+      if (l != null) {
+        l.onTickEnd(n, duration);
       }
     };
   }
 
-  // ---- Internals ------------------------------------------------------------
+  // --- Internals ---
 
   protected boolean isTicking() {
     return scheduledTaskFuture != null && !scheduledTaskFuture.isCancelled()
@@ -195,8 +201,8 @@ public abstract class AbstractClock implements Clock {
       return;
     }
     long interval = 1000L / tickRate;
-    Runnable wrapper = buildWrapper(currentTask);
-    scheduledTaskFuture = scheduleInternal(wrapper, interval);
+    Runnable wrapper = wrapWithLifecycle(currentTask);
+    scheduledTaskFuture = scheduleTask(wrapper, interval);
   }
 
   /**
@@ -208,5 +214,4 @@ public abstract class AbstractClock implements Clock {
       scheduleTickTask();
     }
   }
-
 }

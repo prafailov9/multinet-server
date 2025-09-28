@@ -52,7 +52,7 @@ public class PacedRateClock extends AbstractClock {
   }
 
   @Override
-  protected ScheduledFuture<?> scheduleInternal(Runnable wrapper, long intervalMs) {
+  protected ScheduledFuture<?> scheduleTask(Runnable wrapper, long intervalMs) {
     // 'wrapper' already includes pause check, tick count, and listener callbacks
     return scheduler.scheduleAtFixedRate(() -> {
       if (isPaused()) {

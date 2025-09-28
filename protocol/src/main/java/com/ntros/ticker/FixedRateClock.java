@@ -26,7 +26,7 @@ public class FixedRateClock extends AbstractClock {
   }
 
   @Override
-  protected ScheduledFuture<?> scheduleInternal(Runnable wrapper, long intervalMs) {
+  protected ScheduledFuture<?> scheduleTask(Runnable wrapper, long intervalMs) {
     return scheduler.scheduleAtFixedRate(wrapper, 0, intervalMs, MILLISECONDS);
   }
 
