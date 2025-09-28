@@ -2,6 +2,9 @@ package com.ntros.ticker;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -24,30 +27,54 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class PacedRateClock extends AbstractClock {
 
   private final AtomicBoolean inFlight = new AtomicBoolean(false);
+  private final ExecutorService worker;
 
   public PacedRateClock(int initialTickRate) {
-    super(initialTickRate, "clock-fixed-rate-bp");
+    this(initialTickRate,
+        Executors.newSingleThreadScheduledExecutor(r -> {
+          var t = new Thread(r, "clock-fixed-rate-bp");
+          t.setDaemon(true);
+          return t;
+        }),
+        Executors.newSingleThreadExecutor(r -> {
+          var t = new Thread(r, "clock-fixed-rate-bp-worker");
+          t.setDaemon(true);
+          return t;
+        }));
+  }
+
+  // package-private for tests (inject deterministic scheduler + worker)
+  PacedRateClock(int initialTickRate,
+      java.util.concurrent.ScheduledExecutorService scheduler,
+      java.util.concurrent.ExecutorService worker) {
+    super(initialTickRate, scheduler);   // ✅ use the scheduler-accepting ctor
+    this.worker = worker;
   }
 
   @Override
   protected ScheduledFuture<?> scheduleInternal(Runnable wrapper, long intervalMs) {
-    return scheduler.scheduleAtFixedRate(wrapper, 0, intervalMs, MILLISECONDS);
+    // 'wrapper' already includes pause check, tick count, and listener callbacks
+    return scheduler.scheduleAtFixedRate(() -> {
+      if (isPaused()) {
+        return;
+      }
+      if (!inFlight.compareAndSet(false, true)) {
+        return; // drop this firing
+      }
+      worker.execute(() -> {
+        try {
+          wrapper.run();
+        } finally {
+          inFlight.set(false);
+        }
+      });
+    }, 0, intervalMs, MILLISECONDS);
   }
 
   @Override
-  protected Runnable buildWrapper(Runnable task) {
-    // Wrap the base wrapper with a simple "skip if busy" gate.
-    Runnable base = super.buildWrapper(task);
-    return () -> {
-      if (!inFlight.compareAndSet(false, true)) {
-        // Previous tick hasn't released yet — skip this firing to avoid backlog.
-        return;
-      }
-      try {
-        base.run();
-      } finally {
-        inFlight.set(false);
-      }
-    };
+  public void shutdown() {
+    super.shutdown();
+    worker.shutdownNow();
   }
 }
+

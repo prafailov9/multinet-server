@@ -148,7 +148,7 @@ public class ServerInstance implements Instance {
    * tasks (join/move/remove/leave)
    */
   @Override
-  public CompletableFuture<Void> drainControl() {
+  public CompletableFuture<Void> drain() {
     return actor.tell(() -> { /* no-op */ });
 
   }

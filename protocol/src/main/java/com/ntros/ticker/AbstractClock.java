@@ -45,6 +45,12 @@ public abstract class AbstractClock implements Clock {
     });
   }
 
+  // inject scheduler for testing
+  protected AbstractClock(int initialTickRate, ScheduledExecutorService scheduler) {
+    this.tickRate = Math.max(1, initialTickRate);
+    this.scheduler = scheduler;
+  }
+
   /// --- Public API ---
 
   /**

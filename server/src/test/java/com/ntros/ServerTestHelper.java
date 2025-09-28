@@ -14,7 +14,6 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 
-import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -59,7 +58,7 @@ public class ServerTestHelper {
 
     // run marker tasks to clean up the actor thread
     List<CompletableFuture<Void>> drains = instances.stream()
-        .map(Instance::drainControl)
+        .map(Instance::drain)
         .toList();
 
     // wait until all actor tasks are done for all instances

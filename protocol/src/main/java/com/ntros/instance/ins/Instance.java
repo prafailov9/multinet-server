@@ -14,7 +14,7 @@ public interface Instance {
   /**
    * Marker task that makes sure all enqueued tasks before it are finished.
    */
-  CompletableFuture<Void> drainControl(); // runs after all queued actor tasks
+  CompletableFuture<Void> drain(); // runs after all queued actor tasks
 
   void startIfNeededForJoin();   // safe to call anytime
 

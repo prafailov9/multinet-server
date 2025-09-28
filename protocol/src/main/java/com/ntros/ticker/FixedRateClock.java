@@ -21,6 +21,10 @@ public class FixedRateClock extends AbstractClock {
     super(initialTickRate, "clock-fixed-rate");
   }
 
+  FixedRateClock(int initialTickRate, ScheduledExecutorService scheduler) {
+    super(initialTickRate, scheduler);
+  }
+
   @Override
   protected ScheduledFuture<?> scheduleInternal(Runnable wrapper, long intervalMs) {
     return scheduler.scheduleAtFixedRate(wrapper, 0, intervalMs, MILLISECONDS);
