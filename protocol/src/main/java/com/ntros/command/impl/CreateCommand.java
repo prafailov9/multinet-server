@@ -1,8 +1,8 @@
 package com.ntros.command.impl;
 
-import com.ntros.instance.InstanceFactory;
-import com.ntros.instance.ins.Instance;
-import com.ntros.instance.Instances;
+import com.ntros.lifecycle.instance.InstanceFactory;
+import com.ntros.lifecycle.instance.Instance;
+import com.ntros.lifecycle.instance.Instances;
 import com.ntros.message.SessionContext;
 import com.ntros.model.entity.config.WorldCapabilities;
 import com.ntros.model.world.Connectors;
@@ -14,7 +14,7 @@ import com.ntros.model.world.protocol.response.ServerResponse;
 
 import com.ntros.model.world.protocol.WorldType;
 import com.ntros.model.world.state.WorldStateFactory;
-import com.ntros.session.Session;
+import com.ntros.lifecycle.session.Session;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 

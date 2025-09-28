@@ -12,6 +12,7 @@ import com.ntros.model.world.protocol.response.CommandResult;
 import com.ntros.model.world.protocol.request.JoinRequest;
 import com.ntros.model.world.protocol.request.MoveRequest;
 import com.ntros.model.world.protocol.TileType;
+import com.ntros.model.world.state.GridState;
 import com.ntros.model.world.state.WorldState;
 import java.util.Map;
 import java.util.concurrent.ThreadLocalRandom;
@@ -24,7 +25,7 @@ public class GridWorldEngine implements WorldEngine {
   }
 
   @Override
-  public void applyIntents(WorldState state) {
+  public void applyIntents(GridState state) {
     for (Map.Entry<String, Direction> intent : state.moveIntents().entrySet()) {
       Entity entity = state.entities().get(intent.getKey());
 
@@ -43,7 +44,7 @@ public class GridWorldEngine implements WorldEngine {
   }
 
   @Override
-  public CommandResult storeMoveIntent(MoveRequest moveRequest, WorldState state) {
+  public CommandResult storeMoveIntent(MoveRequest moveRequest, GridState state) {
     Entity entity = state.entities().get(moveRequest.playerId());
     Position position = createPosition(entity.getPosition(), moveRequest.direction());
 
@@ -60,7 +61,7 @@ public class GridWorldEngine implements WorldEngine {
   }
 
   @Override
-  public CommandResult joinEntity(JoinRequest joinRequest, WorldState worldState) {
+  public CommandResult joinEntity(JoinRequest joinRequest, GridState worldState) {
     // if player exists, return failed result
     if (worldState.entities().containsKey(joinRequest.playerName())) {
       return CommandResult.failed(joinRequest.playerName(), worldState.worldName(),
@@ -86,7 +87,7 @@ public class GridWorldEngine implements WorldEngine {
   }
 
   @Override
-  public Entity removeEntity(String entityId, WorldState worldState) {
+  public Entity removeEntity(String entityId, GridState worldState) {
     Entity entity = worldState.entities().remove(entityId);
     worldState.takenPositions().remove(entity.getPosition());
     return entity;
@@ -94,7 +95,7 @@ public class GridWorldEngine implements WorldEngine {
 
 
   @Override
-  public String serialize(WorldState worldState) {
+  public String serialize(GridState worldState) {
     StringBuilder sb = new StringBuilder();
     sb.append("{\n");
 
@@ -127,7 +128,7 @@ public class GridWorldEngine implements WorldEngine {
   }
 
   @Override
-  public String serializeOneLine(WorldState worldState) {
+  public String serializeOneLine(GridState worldState) {
     StringBuilder sb = new StringBuilder();
     sb.append("{");
 
@@ -161,20 +162,20 @@ public class GridWorldEngine implements WorldEngine {
   }
 
   @Override
-  public void reset(WorldState worldState) {
-    worldState.entities().clear();
-    worldState.takenPositions().clear();
-    worldState.moveIntents().clear();
-    worldState.terrain().clear();
+  public void reset(GridState gridState) {
+    gridState.entities().clear();
+    gridState.takenPositions().clear();
+    gridState.moveIntents().clear();
+    gridState.terrain().clear();
   }
 
-  private void addEntity(StaticEntity entity, WorldState worldState) {
+  private void addEntity(StaticEntity entity, GridState worldState) {
     worldState.entities().put(entity.getName(), entity);
     worldState.takenPositions().put(entity.getPosition(), entity.getName());
     log.info("Added entity: {}", entity);
   }
 
-  private void moveEntity(Entity entity, Position origin, Position target, WorldState worldState) {
+  private void moveEntity(Entity entity, Position origin, Position target, GridState worldState) {
     if (worldState.isLegalMove(target)) {
       worldState.takenPositions().remove(origin);
       worldState.takenPositions().put(target, entity.getName());
@@ -185,7 +186,7 @@ public class GridWorldEngine implements WorldEngine {
     }
   }
 
-  private Position findRandomFreePosition(WorldState state) {
+  private Position findRandomFreePosition(GridState state) {
     int width = state.dimension().getWidth();
     int height = state.dimension().getHeight();
     int maxAttempts = width * height; // avoid infinite loops

@@ -2,13 +2,13 @@ package com.ntros.command.impl;
 
 import static com.ntros.model.world.protocol.CommandType.ACK;
 
-import com.ntros.instance.Instances;
-import com.ntros.instance.ins.Instance;
+import com.ntros.lifecycle.instance.Instances;
+import com.ntros.lifecycle.instance.Instance;
 import com.ntros.message.SessionContext;
 import com.ntros.model.world.protocol.Message;
 import com.ntros.model.world.protocol.response.CommandResult;
 import com.ntros.model.world.protocol.response.ServerResponse;
-import com.ntros.session.Session;
+import com.ntros.lifecycle.session.Session;
 import java.util.List;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;

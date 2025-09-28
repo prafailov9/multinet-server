@@ -1,9 +1,9 @@
 package com.ntros.guard;
 
-import com.ntros.instance.InstanceFactory;
+import com.ntros.lifecycle.instance.InstanceFactory;
 import com.ntros.model.entity.config.access.Role;
 import com.ntros.model.world.protocol.Message;
-import com.ntros.session.Session;
+import com.ntros.lifecycle.session.Session;
 
 public class CapabilityGuard implements CommandGuard {
 

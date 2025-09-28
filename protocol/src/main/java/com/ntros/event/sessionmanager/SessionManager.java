@@ -1,6 +1,6 @@
 package com.ntros.event.sessionmanager;
 
-import com.ntros.session.Session;
+import com.ntros.lifecycle.session.Session;
 import java.util.List;
 
 public interface SessionManager {

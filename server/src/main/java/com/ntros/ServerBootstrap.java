@@ -6,13 +6,13 @@ import java.io.IOException;
 
 import com.ntros.event.sessionmanager.ClientSessionManager;
 import com.ntros.event.sessionmanager.SessionManager;
-import com.ntros.instance.Instances;
-import com.ntros.instance.ins.ServerInstance;
+import com.ntros.lifecycle.instance.Instances;
+import com.ntros.lifecycle.instance.ServerInstance;
 import com.ntros.model.world.Connectors;
 import com.ntros.model.world.connector.WorldConnector;
 import com.ntros.server.Server;
 import com.ntros.server.TcpServer;
-import com.ntros.ticker.FixedRateClock;
+import com.ntros.lifecycle.clock.FixedRateClock;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j

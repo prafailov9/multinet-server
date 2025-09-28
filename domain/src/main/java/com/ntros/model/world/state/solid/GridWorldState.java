@@ -4,6 +4,7 @@ import com.ntros.model.entity.Direction;
 import com.ntros.model.entity.Entity;
 import com.ntros.model.entity.movement.Position;
 import com.ntros.model.world.protocol.TileType;
+import com.ntros.model.world.state.GridState;
 import com.ntros.model.world.state.WorldState;
 import com.ntros.model.world.state.dimension.Dimension;
 import com.ntros.model.world.state.dimension.Dimension2D;
@@ -17,7 +18,7 @@ import lombok.extern.slf4j.Slf4j;
 
 
 @Slf4j
-public class GridWorldState implements WorldState {
+public class GridWorldState implements GridState {
 
   private final Random rng; // NEW
 

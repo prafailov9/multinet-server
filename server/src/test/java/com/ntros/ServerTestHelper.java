@@ -4,7 +4,7 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import com.ntros.instance.ins.Instance;
+import com.ntros.lifecycle.instance.Instance;
 import com.ntros.server.Server;
 
 import java.io.IOException;

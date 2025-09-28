@@ -1,6 +1,6 @@
 package com.ntros.event;
 
-import com.ntros.session.Session;
+import com.ntros.lifecycle.session.Session;
 import lombok.Getter;
 import lombok.Setter;
 

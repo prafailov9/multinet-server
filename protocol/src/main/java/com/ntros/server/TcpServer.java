@@ -1,10 +1,10 @@
 package com.ntros.server;
 
 import com.ntros.connection.SocketConnection;
-import com.ntros.instance.ins.Instance;
-import com.ntros.instance.Instances;
-import com.ntros.session.ClientSession;
-import com.ntros.session.Session;
+import com.ntros.lifecycle.instance.Instance;
+import com.ntros.lifecycle.instance.Instances;
+import com.ntros.lifecycle.session.ClientSession;
+import com.ntros.lifecycle.session.Session;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -75,6 +75,7 @@ public class TcpServer implements Server {
     }
   }
 
+
   private void startSession(Socket socket) {
     try {
       Session session = new ClientSession(new SocketConnection(socket));
@@ -83,4 +84,5 @@ public class TcpServer implements Server {
       log.error("Error occurred during connection handling:", ex);
     }
   }
+
 }

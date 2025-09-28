@@ -5,7 +5,7 @@ import com.ntros.command.impl.Command;
 import com.ntros.command.impl.ErrorCommand;
 import com.ntros.model.world.protocol.Message;
 import com.ntros.model.world.protocol.response.ServerResponse;
-import com.ntros.session.Session;
+import com.ntros.lifecycle.session.Session;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 
