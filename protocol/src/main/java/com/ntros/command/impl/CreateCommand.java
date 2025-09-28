@@ -19,7 +19,7 @@ import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * Class to create worlds, or objects within world
+ * Class to create worlds, and/or objects within world
  */
 @Slf4j
 public class CreateCommand extends AbstractCommand {

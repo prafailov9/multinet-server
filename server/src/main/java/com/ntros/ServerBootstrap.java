@@ -12,7 +12,7 @@ import com.ntros.model.world.Connectors;
 import com.ntros.model.world.connector.WorldConnector;
 import com.ntros.server.Server;
 import com.ntros.server.TcpServer;
-import com.ntros.ticker.WorldClock;
+import com.ntros.ticker.FixedRateClock;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -30,11 +30,11 @@ public class ServerBootstrap {
     log.info("Starting server on port {}", PORT);
 
     // init default worlds
-    initWorld("world-1", new WorldClock(TICK_RATE));
-    initWorld("world-2", new WorldClock(TICK_RATE));
-    initWorld("arena-x", new WorldClock(TICK_RATE));
-    initWorld("arena-y", new WorldClock(TICK_RATE));
-    initWorld("arena-z", new WorldClock(TICK_RATE));
+    initWorld("world-1", new FixedRateClock(TICK_RATE));
+    initWorld("world-2", new FixedRateClock(TICK_RATE));
+    initWorld("arena-x", new FixedRateClock(TICK_RATE));
+    initWorld("arena-y", new FixedRateClock(TICK_RATE));
+    initWorld("arena-z", new FixedRateClock(TICK_RATE));
 
     Server server = new TcpServer(PORT);
 
@@ -47,7 +47,7 @@ public class ServerBootstrap {
 
   }
 
-  private static void initWorld(String name, WorldClock scheduler) {
+  private static void initWorld(String name, FixedRateClock scheduler) {
     WorldConnector world = Connectors.getWorld(name);
     SessionManager sessionManager = new ClientSessionManager();
 

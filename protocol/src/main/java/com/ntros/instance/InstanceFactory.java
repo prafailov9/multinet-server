@@ -14,7 +14,7 @@ import com.ntros.model.world.connector.WorldConnector;
 import com.ntros.model.world.engine.solid.GridWorldEngine;
 import com.ntros.model.world.state.solid.GridWorldState;
 import com.ntros.session.Session;
-import com.ntros.ticker.WorldClock;
+import com.ntros.ticker.FixedRateClock;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Optional;
@@ -35,7 +35,7 @@ public final class InstanceFactory {
     }
 
     Instance inst = new ServerInstance(worldConnector, new ClientSessionManager(),
-        new WorldClock(120), broadcaster,
+        new FixedRateClock(120), broadcaster,
         Settings.multiplayerDefault()
     );
     INST.put(worldConnector.getWorldName(), inst);
@@ -47,7 +47,7 @@ public final class InstanceFactory {
         new GridWorldEngine(), new WorldCapabilities(true, true, false, true));
 
     Settings cfg = Settings.multiplayerJoinable();
-    Instance inst = new ServerInstance(connector, sessions, new WorldClock(30),
+    Instance inst = new ServerInstance(connector, sessions, new FixedRateClock(30),
         new BroadcastToAll(), cfg);
     INST.put(name, inst);
     return inst;
@@ -58,7 +58,7 @@ public final class InstanceFactory {
     WorldConnector connector = new GridWorldConnector(new GridWorldState(name, 128, 128),
         new GridWorldEngine(), new WorldCapabilities(true, true, false, true));
     Settings cfg = Settings.singlePlayerDefault();
-    Instance inst = new ServerInstance(connector, sessions, new WorldClock(30),
+    Instance inst = new ServerInstance(connector, sessions, new FixedRateClock(30),
         new BroadcastToOwnerOnly(ownerUserId), cfg);
     INST.put(name, inst);
     OWNER.put(name, ownerUserId);
@@ -71,7 +71,7 @@ public final class InstanceFactory {
     WorldConnector connector = new GridWorldConnector(new GridWorldState(name, 256, 256),
         new GridWorldEngine(), new WorldCapabilities(true, true, false, true));
     Settings cfg = Settings.singlePlayerOrchestrator();
-    Instance inst = new ServerInstance(connector, sessions, new WorldClock(20),
+    Instance inst = new ServerInstance(connector, sessions, new FixedRateClock(20),
         new BroadcastToOwnerOnly(ownerUserId), cfg);
     INST.put(name, inst);
     OWNER.put(name, ownerUserId);
