@@ -1,6 +1,6 @@
 package com.ntros.lifecycle.clock;
 
-public interface Clock {
+public interface Clock extends TickRateAdjustable, TickTaskConfig {
 
   /**
    * Starts the ticker and schedules the given task. No-op if already running.
@@ -20,19 +20,6 @@ public interface Clock {
   void shutdown();
 
   /**
-   * Reschedules the ticker to use a new tick rate. If the ticker is running, it will restart with
-   * the updated rate.
-   *
-   * @param ticksPerSecond the new tick rate
-   */
-  void updateTickRate(int ticksPerSecond);
-
-  /**
-   * Returns the current tick rate (ticks per second).
-   */
-  int getTickRate();
-
-  /**
    * Pauses the ticker. The scheduled task is temporarily halted but not discarded.
    */
   void pause();
@@ -46,13 +33,6 @@ public interface Clock {
    * Returns whether the ticker is currently paused.
    */
   boolean isPaused();
-
-  /**
-   * Replaces the currently scheduled task with a new one. Useful for dynamic behavior changes.
-   *
-   * @param task the new task to run on each tick
-   */
-  void updateTask(Runnable task);
 
   /**
    * Registers a listener to be notified at the start and end of each tick. Can be used for logging,
