@@ -201,9 +201,9 @@ public abstract class AbstractClock implements Clock {
     if (currentTask == null) {
       return;
     }
-    long interval = 1000L / tickRate;
+    long intervalMs = 1000L / tickRate;
     Runnable wrapper = wrapWithLifecycle(currentTask);
-    scheduledTaskFuture = schedule(wrapper, interval);
+    scheduledTaskFuture = schedule(wrapper, intervalMs);
   }
 
   /**

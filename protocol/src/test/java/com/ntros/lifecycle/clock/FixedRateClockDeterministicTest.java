@@ -2,19 +2,25 @@ package com.ntros.lifecycle.clock;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 class FixedRateClockDeterministicTest {
 
-  ManualScheduler scheduler;
-  FixedRateClock clock;
+  // 10ms
+  private static final int DEFAULT_TICK_RATE = 100;
+
+  private ManualScheduler scheduler;
+  private FixedRateClock clock;
 
   @BeforeEach
   void setUp() {
     scheduler = new ManualScheduler();
-    clock = new FixedRateClock(100, scheduler); // 10ms period
+
+    // clock will tick 100 times per second
+    clock = new FixedRateClock(DEFAULT_TICK_RATE, scheduler);
   }
 
   @AfterEach
@@ -24,16 +30,19 @@ class FixedRateClockDeterministicTest {
 
   @Test
   void tick_advanceTime_ticksFireAtFixedRate() {
-    var count = new java.util.concurrent.atomic.AtomicInteger();
+    var count = new AtomicInteger();
     clock.tick(count::incrementAndGet);
 
-    scheduler.advanceTimeBy(100); // 0,10,20,...,100  => 11 firings
-    assertThat(count.get()).isEqualTo(11);
+    var expectedTicksCount = new AtomicInteger(11);
+
+    // 0,10,20,...,100  => 11 firings
+    scheduler.advanceTimeBy(DEFAULT_TICK_RATE);
+    assertThat(count.get()).isEqualTo(expectedTicksCount.get());
   }
 
   @Test
   void pause_resume_ticksStopThenContinue() {
-    var count = new java.util.concurrent.atomic.AtomicInteger();
+    var count = new AtomicInteger();
     clock.tick(count::incrementAndGet);
 
     scheduler.advanceTimeBy(50);            // 6 firings (0..50)
@@ -50,8 +59,8 @@ class FixedRateClockDeterministicTest {
 
   @Test
   void updateTask_swapRunnable_newTaskRuns() {
-    var a = new java.util.concurrent.atomic.AtomicInteger();
-    var b = new java.util.concurrent.atomic.AtomicInteger();
+    var a = new AtomicInteger();
+    var b = new AtomicInteger();
 
     clock.tick(a::incrementAndGet);
     scheduler.advanceTimeBy(30);            // 4 firings (0,10,20,30)
@@ -68,7 +77,7 @@ class FixedRateClockDeterministicTest {
 
   @Test
   void updateTickRate_increaseFrequency_tickCountRisesFaster() {
-    var count = new java.util.concurrent.atomic.AtomicInteger();
+    var count = new AtomicInteger();
     clock.tick(count::incrementAndGet);
 
     scheduler.advanceTimeBy(100);                 // 11 at 100 tps

@@ -2,6 +2,7 @@ package com.ntros.event.broadcaster;
 
 import com.ntros.event.sessionmanager.SessionManager;
 import com.ntros.lifecycle.session.Session;
+import com.ntros.model.world.protocol.encoder.StateFrame;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j

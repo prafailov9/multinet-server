@@ -7,6 +7,9 @@ import com.ntros.lifecycle.instance.actor.CommandActor;
 import com.ntros.model.entity.config.access.Settings;
 import com.ntros.model.world.connector.WorldConnector;
 import com.ntros.model.world.connector.ops.JoinOp;
+import com.ntros.model.world.protocol.encoder.JsonProtocolEncoder;
+import com.ntros.model.world.protocol.encoder.ProtocolEncoder;
+import com.ntros.model.world.protocol.encoder.StateFrame;
 import com.ntros.model.world.protocol.request.RemoveRequest;
 import com.ntros.model.world.protocol.response.CommandResult;
 import com.ntros.model.world.protocol.request.JoinRequest;
@@ -28,31 +31,33 @@ public class ServerInstance implements Instance {
 
   /// --- Constants
   private static final Boolean SERIALIZE_ONE_LINE = Boolean.TRUE;
-  private static final int PROTOCOL_VERSION = 1;
+  private static final int PROTO_VER = 1;
 
   /// --- broadcast pacing + sequence
   private volatile long lastBroadcastNanos = 0L;
   private final long broadcastIntervalNanos; // derived from config.broadcastHz()
 
-  ///  --- Atomic ops
-  private final AtomicLong stateSeq = new AtomicLong(0);
+  /// --- Counters + flags
+  // sequence number of each queried world state
+  private final AtomicLong seq = new AtomicLong(0);
   private final AtomicBoolean clockTicking;
 
   /// --- State
   private final SessionManager sessionManager;
-  private final WorldConnector connector;
+  private final WorldConnector world;
   private final Clock clock;
   private final Broadcaster broadcaster;
   private final Settings settings;
   private final Actor actor;
+  private final ProtocolEncoder encoder;
 
-  public ServerInstance(WorldConnector connector, SessionManager sessionManager,
-      Clock clock, Broadcaster broadcaster, Settings settings) {
-    this.connector = connector;
+  public ServerInstance(WorldConnector world, SessionManager sessionManager, Clock clock,
+      Broadcaster broadcaster, Settings settings) {
+    this.world = world;
     this.sessionManager = sessionManager;
     this.clock = clock;
 
-    configureTickerListener();
+    configureClockListener();
 
     this.broadcaster = broadcaster;
     this.settings = settings;
@@ -60,8 +65,9 @@ public class ServerInstance implements Instance {
     int hz = Math.max(1, settings.broadcastHz()); // guard
     this.broadcastIntervalNanos = 1_000_000_000L / hz;
 
-    this.actor = new CommandActor(true, connector.getWorldName());
+    this.actor = new CommandActor(true, world.getWorldName());
     this.clockTicking = new AtomicBoolean(false);
+    this.encoder = new JsonProtocolEncoder();
   }
 
   /**
@@ -84,56 +90,24 @@ public class ServerInstance implements Instance {
       return;
     }
 
-    log.info("[IN WORLD INSTANCE]: Scheduling update for {} world ...", getWorldName());
     clock.tick(() -> {
       try {
-        actor
-            .step(connector, () -> {
-              if (sessionManager.activeSessionsCount() == 0) {
-                return;
-              }
-              // Still on actor thread here; safe to snapshot & broadcast
-              String frame = buildStateFrame();
-              broadcaster.publish(frame, sessionManager);
-            })
-            .exceptionally(ex -> {
-              log.error("[{}] tick failed: {}", getWorldName(), ex.toString());
-              return null;
-            });
+        actor.step(world, () -> {
+          // on actor thread, safe to snapshot
+          Object data = world.snapshot();
+          String dataLine = encoder.encodeState(
+              new StateFrame(PROTO_VER, getWorldName(), seq.incrementAndGet(), data));
+          broadcaster.publish(dataLine, sessionManager);
+        }).exceptionally(ex -> {
+          log.error("tick failed", ex);
+          return null;
+        });
       } catch (Throwable t) {
-        log.error("[{}] scheduling tick failed: {}", getWorldName(), t.toString());
+        log.error("scheduling tick failed", t);
       }
     });
 
-  }
-
-  private String buildStateFrame() {
-    long seq = stateSeq.incrementAndGet();
-    String snap = connector.snapshot(SERIALIZE_ONE_LINE);
-    // Prefix carries protocol and sequencing info (easy to parse/ignore)
-    // e.g.: STATE proto=1 inst=arena-x seq=42 <json>
-    // Produce: STATE {"proto":1,"inst":"arena-x","seq":42,"data":{...}}
-    return "STATE " +
-        "{\"proto\":" + PROTOCOL_VERSION +
-        ",\"inst\":\"" + getWorldName() + "\"" +
-        ",\"seq\":" + seq +
-        ",\"data\":" + snap + "}";
-  }
-
-  private void rateLimitedBroadcast() {
-    long now = System.nanoTime();
-    if (now - lastBroadcastNanos >= broadcastIntervalNanos) {
-      lastBroadcastNanos = now;
-      String frame = buildStateFrame();
-      broadcaster.publish(frame, sessionManager);
-    }
-  }
-
-  private void standardBroadcast() {
-    // includes proto/inst/seq
-    String frame = buildStateFrame();
-    // broadcast to clients
-    broadcaster.publish(frame, sessionManager);
+    clockTicking.set(true);
   }
 
   @Override
@@ -153,7 +127,7 @@ public class ServerInstance implements Instance {
     } finally {
       clockTicking.set(false);
       sessionManager.shutdownAll();
-      connector.reset();
+      world.reset();
       actor.shutdown();
     }
   }
@@ -178,28 +152,28 @@ public class ServerInstance implements Instance {
 
   @Override
   public CommandResult joinSync(JoinRequest req) {
-    return connector.apply(new JoinOp(req));
+    return world.apply(new JoinOp(req));
   }
 
 
   @Override
   public CompletableFuture<CommandResult> joinAsync(JoinRequest req) {
-    return actor.join(connector, req);
+    return actor.join(world, req);
   }
 
   @Override
   public CompletableFuture<CommandResult> storeMoveAsync(MoveRequest req) {
-    return actor.stageMove(connector, req);
+    return actor.stageMove(world, req);
   }
 
   @Override
   public CompletableFuture<Void> leaveAsync(Session session) {
-    return actor.leave(connector, sessionManager, session);
+    return actor.leave(world, sessionManager, session);
   }
 
   @Override
   public CompletableFuture<CommandResult> removeEntityAsync(String entityId) {
-    return actor.remove(connector, new RemoveRequest(entityId));
+    return actor.remove(world, new RemoveRequest(entityId));
   }
 
   @Override
@@ -222,7 +196,7 @@ public class ServerInstance implements Instance {
 
   @Override
   public String getWorldName() {
-    return connector.getWorldName();
+    return world.getWorldName();
   }
 
   @Override
@@ -232,15 +206,13 @@ public class ServerInstance implements Instance {
 
   @Override
   public WorldConnector getWorldConnector() {
-    return connector;
+    return world;
   }
 
   @Override
   public Session getSession(Long sessionId) {
-    return sessionManager.getActiveSessions()
-        .stream()
-        .filter(session -> session.getSessionContext().getSessionId() == sessionId)
-        .findFirst()
+    return sessionManager.getActiveSessions().stream()
+        .filter(session -> session.getSessionContext().getSessionId() == sessionId).findFirst()
         .orElseThrow(() -> new IllegalArgumentException(
             String.format("Session with ID:[%s] does not exist", sessionId)));
   }
@@ -252,7 +224,7 @@ public class ServerInstance implements Instance {
 
   @Override
   public int getEntityCount() {
-    return connector.getCurrentEntities().size();
+    return world.getCurrentEntities().size();
   }
 
   @Override
@@ -276,21 +248,24 @@ public class ServerInstance implements Instance {
   }
 
   private String getWorldSnapshot() {
-    return SERIALIZE_ONE_LINE
-        ? String.format("STATE %s", connector.snapshot(true))
-        : String.format("STATE \n%s\n", connector.snapshot(false));
+    return SERIALIZE_ONE_LINE ? String.format("STATE %s", world.snapshot(true))
+        : String.format("STATE \n%s\n", world.snapshot(false));
   }
 
-  private void configureTickerListener() {
+  private void configureClockListener() {
     this.clock.setListener(new Clock.TickListener() {
       @Override
-      public void onTickStart(long n) { /* noop */ }
+      public void onTickStart(long n) {
+        /* noop */
+//        log.info("ON TICK START: tickCount={}", n);
+      }
 
       @Override
       public void onTickEnd(long n, long nanos) {
-        if (n % 120 == 0) { // sample
-          log.debug("[{}] tick={} duration={}µs", getWorldName(), n, nanos / 1_000);
-        }
+//        if (n % 120 == 0) { // sample
+//        log.info("ON TICK END: [{}] tickCount={} duration={}µs", getWorldName(), n,
+//            nanos / 1_000);
+//        }
       }
     });
   }

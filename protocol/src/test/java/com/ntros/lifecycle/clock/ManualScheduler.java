@@ -12,6 +12,9 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+/**
+ * Manue scheduler implementation to control time for testing.
+ */
 public class ManualScheduler implements ScheduledExecutorService {
 
   // Access from a scheduled task (to simulate "work time" passing)
@@ -53,7 +56,7 @@ public class ManualScheduler implements ScheduledExecutorService {
     @Override
     public int compareTo(Delayed o) {
       return Long.compare(this.getDelay(TimeUnit.MILLISECONDS),
-          ((ScheduledTask) o).getDelay(TimeUnit.MILLISECONDS));
+          o.getDelay(TimeUnit.MILLISECONDS));
     }
 
     @Override

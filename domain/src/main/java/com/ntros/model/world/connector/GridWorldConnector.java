@@ -9,8 +9,11 @@ import com.ntros.model.world.connector.ops.RemoveOp;
 import com.ntros.model.world.connector.ops.WorldOp;
 import com.ntros.model.world.engine.solid.GridWorldEngine;
 import com.ntros.model.world.protocol.response.CommandResult;
+import com.ntros.model.world.state.GridSnapshot;
 import com.ntros.model.world.state.solid.GridWorldState;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -42,6 +45,27 @@ public class GridWorldConnector implements WorldConnector {
   @Override
   public void update() {
     engine.applyIntents(state);
+  }
+
+  /**
+   * Preferred: build a typed POJO view
+   */
+  @Override
+  public Object snapshot() {
+    // tiles: "x,y" -> "EMPTY|WALL|TRAP|WATER"
+    Map<String, String> tiles = new LinkedHashMap<>();
+    state.terrain().forEach((pos, tile) -> {
+      tiles.put(pos.getX() + "," + pos.getY(), tile.name());
+    });
+
+    // entities: "entityName" -> {x,y}
+    Map<String, GridSnapshot.EntityView> ents = new LinkedHashMap<>();
+    state.entities().forEach((name, entity) -> {
+      ents.put(name,
+          new GridSnapshot.EntityView(entity.getPosition().getX(), entity.getPosition().getY()));
+    });
+
+    return new GridSnapshot(tiles, ents);
   }
 
   @Override

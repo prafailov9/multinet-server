@@ -210,7 +210,6 @@ public class ServerBootstrapTest {
         assertTrue(stateJson.has("entities"));
         assertTrue(stateJson.get("entities").has("client-0"));
 
-//        assertEquals("client-0:", actualMoveResponse.args().getFirst());
       }
     } finally {
       // TestClient is auto-closable, but with simulating multiple clients, close them explicitly

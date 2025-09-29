@@ -31,22 +31,21 @@ public class PacedRateClock extends AbstractClock {
   public PacedRateClock(int initialTickRate) {
     this(initialTickRate,
         Executors.newSingleThreadScheduledExecutor(r -> {
-          var t = new Thread(r, "clock-fixed-rate-bp");
+          var t = new Thread(r, "clock-paced-rate-bp");
           t.setDaemon(true);
           return t;
         }),
         Executors.newSingleThreadExecutor(r -> {
-          var t = new Thread(r, "clock-fixed-rate-bp-worker");
+          var t = new Thread(r, "clock-paced-rate-bp-worker");
           t.setDaemon(true);
           return t;
         }));
   }
 
-  // package-private for tests (inject deterministic scheduler + worker)
   PacedRateClock(int initialTickRate,
       java.util.concurrent.ScheduledExecutorService scheduler,
       java.util.concurrent.ExecutorService worker) {
-    super(initialTickRate, scheduler);   // ✅ use the scheduler-accepting ctor
+    super(initialTickRate, scheduler);
     this.worker = worker;
   }
 

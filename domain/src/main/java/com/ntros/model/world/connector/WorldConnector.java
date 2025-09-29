@@ -17,6 +17,8 @@ public interface WorldConnector {
 
   void update();
 
+  Object snapshot();
+
   String snapshot(boolean oneLine);
 
   String getWorldName();

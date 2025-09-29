@@ -34,7 +34,7 @@ public final class CommandActor implements Actor {
 
   public CommandActor(boolean runInBackground, String worldName) {
     this.control = Executors.newSingleThreadExecutor(r -> {
-      var t = new Thread(r, "ins-" + worldName + "-ctl");
+      var t = new Thread(r, "actor-" + worldName + "-ctl");
       t.setDaemon(runInBackground);
       return t;
     });
@@ -57,7 +57,6 @@ public final class CommandActor implements Actor {
         }
         stagedMoves.clear();
       }
-      log.info("[Actor]: Updating world state...");
       // advance the world one step: applies flushed intents
       world.update();
 
