@@ -27,17 +27,17 @@ public abstract class AbstractClock implements Clock {
   protected final ScheduledExecutorService scheduler;
 
   // The task to run on each tick
-  protected Runnable currentTask;
+  protected volatile Runnable currentTask;
 
   private volatile int tickRate;
   private final AtomicBoolean paused = new AtomicBoolean(false);
-  private Clock.TickListener listener;
+  private volatile Clock.TickListener listener;
 
   // listener to observe tick start and end events
   private long tickCount = 0;
 
   // reference to the tick task for management
-  private ScheduledFuture<?> scheduledTaskFuture;
+  private volatile ScheduledFuture<?> scheduledTaskFuture;
 
   protected AbstractClock(int initialTickRate, String threadName) {
     this.tickRate = Math.max(1, initialTickRate);
@@ -124,11 +124,12 @@ public abstract class AbstractClock implements Clock {
   /**
    * Resumes ticking if paused.
    */
-  @Override
   public void resume() {
     paused.set(false);
-    if (!isTicking() && currentTask != null) {
-      scheduleTickTask();
+    synchronized (this) {
+      if (!isTicking() && currentTask != null) {
+        scheduleTickTask();
+      }
     }
   }
 
@@ -193,8 +194,8 @@ public abstract class AbstractClock implements Clock {
   // --- Internals ---
 
   protected boolean isTicking() {
-    return scheduledTaskFuture != null && !scheduledTaskFuture.isCancelled()
-        && !scheduledTaskFuture.isDone();
+    ScheduledFuture<?> f = scheduledTaskFuture;
+    return f != null && !f.isCancelled() && !f.isDone();
   }
 
   protected synchronized void scheduleTickTask() {

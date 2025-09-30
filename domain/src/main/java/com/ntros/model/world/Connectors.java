@@ -31,7 +31,6 @@ public final class Connectors {
     WORLDS.put("arena-y",
         new GridWorldConnector(new GridWorldState("arena-y", 9, 9), new GridWorldEngine(),
             new WorldCapabilities(true, true, false, true)));
-
     WORLDS.put("gol-x",
         new GridWorldConnector(new GridWorldState("gol-x", 9, 9), new GridWorldEngine(),
             new WorldCapabilities(true, true, false, true)));

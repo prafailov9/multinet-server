@@ -1,6 +1,8 @@
 package com.ntros;
 
 import com.ntros.event.broadcaster.BroadcastToAll;
+import com.ntros.lifecycle.clock.Clock;
+import com.ntros.lifecycle.clock.PacedRateClock;
 import com.ntros.model.entity.config.access.Settings;
 import java.io.IOException;
 
@@ -22,19 +24,19 @@ public class ServerBootstrap {
   private static final int PORT = 5555;
 
   // server updates 120 times per second
-  private static final int TICK_RATE = 120;
+  private static final int TICK_RATE = 70;
   // emits only 70 messages per second
-  private static final int BROADCAST_RATE = 70;
+  private static final int BROADCAST_RATE = 69;
 
   public static void startServer() {
     log.info("Starting server on port {}", PORT);
 
     // init default worlds
-    initWorld("world-1", new FixedRateClock(TICK_RATE));
-    initWorld("world-2", new FixedRateClock(TICK_RATE));
-    initWorld("arena-x", new FixedRateClock(TICK_RATE));
-    initWorld("arena-y", new FixedRateClock(TICK_RATE));
-    initWorld("arena-z", new FixedRateClock(TICK_RATE));
+    initWorld("world-1", new PacedRateClock(TICK_RATE));
+    initWorld("world-2", new PacedRateClock(TICK_RATE));
+    initWorld("world-3", new PacedRateClock(TICK_RATE));
+    initWorld("arena-x", new PacedRateClock(TICK_RATE));
+    initWorld("arena-y", new PacedRateClock(TICK_RATE));
 
     Server server = new TcpServer(PORT);
 
@@ -47,11 +49,11 @@ public class ServerBootstrap {
 
   }
 
-  private static void initWorld(String name, FixedRateClock scheduler) {
+  private static void initWorld(String name, Clock clock) {
     WorldConnector world = Connectors.getWorld(name);
     SessionManager sessionManager = new ClientSessionManager();
 
-    ServerInstance instance = new ServerInstance(world, sessionManager, scheduler,
+    ServerInstance instance = new ServerInstance(world, sessionManager, clock,
         new BroadcastToAll(),
         Settings.multiplayer(BROADCAST_RATE));
     Instances.registerInstance(instance);
