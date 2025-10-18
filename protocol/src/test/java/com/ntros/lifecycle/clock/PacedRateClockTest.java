@@ -1,7 +1,5 @@
 package com.ntros.lifecycle.clock;
 
-// test/java/.../PacedRateClockTest.java
-
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
@@ -16,7 +14,7 @@ class PacedRateClockTest {
   @BeforeEach
   void setUp() {
     clock = new PacedRateClock(100);
-  } // 10ms cadence
+  }
 
   @AfterEach
   void tearDown() {
