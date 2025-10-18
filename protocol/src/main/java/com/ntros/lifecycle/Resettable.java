@@ -5,5 +5,5 @@ package com.ntros.lifecycle;
  */
 public interface Resettable {
 
-  void reset();
+  void stop();
 }

@@ -3,14 +3,16 @@ package com.ntros.lifecycle.instance;
 import com.ntros.event.broadcaster.Broadcaster;
 import com.ntros.event.sessionmanager.SessionManager;
 import com.ntros.lifecycle.instance.actor.Actor;
+import com.ntros.lifecycle.instance.actor.Actors;
 import com.ntros.lifecycle.instance.actor.CommandActor;
+import com.ntros.lifecycle.instance.actor.movestrategy.ApplyMoveStrategy;
+import com.ntros.lifecycle.instance.actor.movestrategy.MoveStrategy;
+import com.ntros.lifecycle.instance.actor.movestrategy.StageMovesStrategy;
 import com.ntros.model.entity.config.access.Settings;
 import com.ntros.model.world.connector.WorldConnector;
-import com.ntros.model.world.connector.ops.JoinOp;
 import com.ntros.model.world.protocol.encoder.JsonProtocolEncoder;
 import com.ntros.model.world.protocol.encoder.ProtocolEncoder;
 import com.ntros.model.world.protocol.encoder.StateFrame;
-import com.ntros.model.world.protocol.request.RemoveRequest;
 import com.ntros.model.world.protocol.response.CommandResult;
 import com.ntros.model.world.protocol.request.JoinRequest;
 import com.ntros.model.world.protocol.request.MoveRequest;
@@ -64,8 +66,7 @@ public class ServerInstance implements Instance {
 
     int hz = Math.max(1, settings.broadcastHz()); // guard
     this.broadcastIntervalNanos = 1_000_000_000L / hz;
-
-    this.actor = new CommandActor(true, world.getWorldName());
+    this.actor = Actors.create(world.getWorldName(), settings.stageMoves());
     this.clockTicking = new AtomicBoolean(false);
     this.encoder = new JsonProtocolEncoder();
   }
@@ -85,7 +86,7 @@ public class ServerInstance implements Instance {
    * </p>
    */
   @Override
-  public void run() {
+  public void start() {
     if (!clockTicking.compareAndSet(false, true)) {
       return;
     }
@@ -111,7 +112,7 @@ public class ServerInstance implements Instance {
   }
 
   @Override
-  public void reset() {
+  public void stop() {
     if (!clockTicking.get()) {
       return;
     }
@@ -120,8 +121,7 @@ public class ServerInstance implements Instance {
       // 1) stop scheduling new ticks
       clock.stop();
       // 2) ensure all queued actor work (join/move/remove/leave) is drained
-      actor.tell(() -> {
-      }).join();
+      drain().join();
       // 3) now we can fully shut down the clock thread
       clock.shutdown();
     } finally {
@@ -146,15 +146,9 @@ public class ServerInstance implements Instance {
   @Override
   public void startIfNeededForJoin() {
     if (settings.autoStartOnPlayerJoin() && !isRunning()) {
-      run();
+      start();
     }
   }
-
-  @Override
-  public CommandResult joinSync(JoinRequest req) {
-    return world.apply(new JoinOp(req));
-  }
-
 
   @Override
   public CompletableFuture<CommandResult> joinAsync(JoinRequest req) {
@@ -172,16 +166,11 @@ public class ServerInstance implements Instance {
   }
 
   @Override
-  public CompletableFuture<CommandResult> removeEntityAsync(String entityId) {
-    return actor.remove(world, new RemoveRequest(entityId));
-  }
-
-  @Override
   public void registerSession(Session session) {
     sessionManager.register(session);
     // Auto-start only when configured to do so
     if (settings.autoStartOnPlayerJoin() && !isRunning() && getActiveSessionsCount() > 0) {
-      run();
+      start();
     }
   }
 
@@ -190,7 +179,7 @@ public class ServerInstance implements Instance {
     sessionManager.remove(session);
     // Auto-stop when last leaves (only for worlds that autostart on join)
     if (settings.autoStartOnPlayerJoin() && isRunning() && getActiveSessionsCount() == 0) {
-      reset();
+      this.stop();
     }
   }
 
@@ -207,14 +196,6 @@ public class ServerInstance implements Instance {
   @Override
   public WorldConnector getWorldConnector() {
     return world;
-  }
-
-  @Override
-  public Session getSession(Long sessionId) {
-    return sessionManager.getActiveSessions().stream()
-        .filter(session -> session.getSessionContext().getSessionId() == sessionId).findFirst()
-        .orElseThrow(() -> new IllegalArgumentException(
-            String.format("Session with ID:[%s] does not exist", sessionId)));
   }
 
   @Override
@@ -240,6 +221,11 @@ public class ServerInstance implements Instance {
   @Override
   public void resume() {
     clock.resume();
+  }
+
+  @Override
+  public boolean isPaused() {
+    return clock.isPaused();
   }
 
   @Override
@@ -269,6 +255,4 @@ public class ServerInstance implements Instance {
       }
     });
   }
-
-
 }

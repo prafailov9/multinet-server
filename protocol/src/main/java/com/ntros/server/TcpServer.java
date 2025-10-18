@@ -61,7 +61,7 @@ public class TcpServer implements Server {
 
     serverRunning = false;
     for (Instance instance : Instances.getAll()) {
-      instance.reset();
+      instance.stop();
     }
     if (serverSocket != null && !serverSocket.isClosed()) {
       try {

@@ -83,7 +83,7 @@ public class ServerBootstrapTest {
 
   @AfterEach
   public void tearDown() throws IOException {
-    instance.reset();
+    instance.stop();
     server.stop();
     serverExecutor.shutdownNow();
     IdSequenceGenerator.getInstance().resetAll();

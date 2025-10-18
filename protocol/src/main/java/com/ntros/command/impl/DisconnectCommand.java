@@ -24,18 +24,15 @@ public final class DisconnectCommand extends AbstractCommand {
     SessionContext ctx = session.getSessionContext();
     String worldName = ctx.getWorldName();
 
-    // Always ACK first
     ServerResponse ack = new ServerResponse(new Message(ACK, List.of("DISCONNECT")),
         CommandResult.succeeded(ctx.getUserId(), worldName, "user disconnecting"));
 
     if (worldName == null) {
-      // Not in a world: just ACK
       clearContext(ctx);
       return Optional.of(ack);
     }
     Instance inst = Instances.getInstance(worldName);
     if (inst != null) {
-      // Remove entity on the actor thread (async)
       String entityId = ctx.getEntityId();
       if (entityId != null && !entityId.isBlank()) {
         inst.leaveAsync(session).exceptionally(ex -> {
@@ -44,7 +41,6 @@ public final class DisconnectCommand extends AbstractCommand {
         });
         ;
       }
-      // Stop receiving STATE for this client
       inst.removeSession(session);
     }
 

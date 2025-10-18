@@ -1,6 +1,5 @@
 package com.ntros.lifecycle;
 
-
 public interface Lifecycle {
 
   void start();             // Start (idempotent). After shutdown(), starting may throw.

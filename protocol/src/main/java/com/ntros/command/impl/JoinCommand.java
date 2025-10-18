@@ -3,19 +3,19 @@ package com.ntros.command.impl;
 import static com.ntros.model.world.protocol.CommandType.ERROR;
 import static com.ntros.model.world.protocol.CommandType.WELCOME;
 
-import com.ntros.lifecycle.instance.Instances;
-import com.ntros.lifecycle.instance.InstanceFactory;
 import com.ntros.lifecycle.instance.Instance;
+import com.ntros.lifecycle.instance.InstanceFactory;
+import com.ntros.lifecycle.instance.Instances;
 import com.ntros.lifecycle.instance.ServerInstance;
+import com.ntros.lifecycle.session.Session;
 import com.ntros.message.SessionContext;
 import com.ntros.model.entity.config.access.Settings;
 import com.ntros.model.entity.config.access.Visibility;
 import com.ntros.model.world.Connectors;
-import com.ntros.model.world.protocol.response.CommandResult;
-import com.ntros.model.world.protocol.request.JoinRequest;
 import com.ntros.model.world.protocol.Message;
+import com.ntros.model.world.protocol.request.JoinRequest;
+import com.ntros.model.world.protocol.response.CommandResult;
 import com.ntros.model.world.protocol.response.ServerResponse;
-import com.ntros.lifecycle.session.Session;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -30,25 +30,16 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class JoinCommand extends AbstractCommand {
 
-  /**
-   * Expected Message: JOIN client_name world_name
-   *
-   * @param message
-   * @param session
-   * @return
-   */
   @Override
   public Optional<ServerResponse> execute(Message message, Session session) {
     SessionContext ctx = session.getSessionContext();
     String player = resolvePlayer(message);
 
-    // Resolve instance ONLY (no connector here)
-    Instance instance = resolveInstance(message); // by worldName
+    Instance instance = resolveInstance(message);
     if (instance == null) {
       return Optional.of(error("WORLD_NOT_FOUND", player, null));
     }
 
-    // Policy checks (visibility / capacity)
     Settings cfg = instance.getSettings();
     if (cfg.visibility() == Visibility.PRIVATE) {
       var owner = InstanceFactory.ownerOf(instance.getWorldName()).orElse(null);
@@ -61,11 +52,9 @@ public class JoinCommand extends AbstractCommand {
       return Optional.of(error("WORLD_BUSY", player, instance.getWorldName()));
     }
 
-    // Enqueue join and ensure ticking so the mailbox gets drained
     CompletableFuture<CommandResult> fut = instance.joinAsync(new JoinRequest(player));
-    instance.startIfNeededForJoin(); // safe if already running
+    instance.startIfNeededForJoin();
 
-    // Wait a short time so JOIN is atomic from the client’s POV
     CommandResult result;
     try {
       result = fut.get(750, TimeUnit.MILLISECONDS);
@@ -79,13 +68,11 @@ public class JoinCommand extends AbstractCommand {
       return Optional.of(error(result.reason(), player, instance.getWorldName()));
     }
 
-    // Success: fill session context; DO NOT register here.
     ctx.setEntityId(result.playerName());
     ctx.setWorldId(result.worldName());
     ctx.setJoinedAt(OffsetDateTime.now());
     ctx.setAuthenticated(true);
 
-    // Only return WELCOME. Registration happens after WELCOME is sent.
     return Optional.of(
         new ServerResponse(new Message(WELCOME, List.of(result.playerName())), result));
   }

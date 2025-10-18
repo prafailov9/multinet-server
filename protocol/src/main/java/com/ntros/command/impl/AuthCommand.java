@@ -26,7 +26,6 @@ public class AuthCommand extends AbstractCommand {
 
     sessionContext.setAuthenticated(true);
     // TODO: create Constants class for these markers
-    // marker for clients that are authenticated into the server, but are not in a world.
     if ((sessionContext.getWorldName() == null || sessionContext.getWorldName().isBlank()) && (
         sessionContext.getEntityId() == null || sessionContext.getEntityId().isBlank())) {
       sessionContext.setEntityId(CLIENT_AUTHENTICATED);

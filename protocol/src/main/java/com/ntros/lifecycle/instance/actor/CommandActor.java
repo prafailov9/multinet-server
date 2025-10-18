@@ -1,6 +1,7 @@
 package com.ntros.lifecycle.instance.actor;
 
 import com.ntros.event.sessionmanager.SessionManager;
+import com.ntros.lifecycle.instance.actor.movestrategy.MoveStrategy;
 import com.ntros.model.entity.Direction;
 import com.ntros.model.world.connector.WorldConnector;
 import com.ntros.model.world.connector.ops.JoinOp;
@@ -21,23 +22,27 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public final class CommandActor implements Actor {
 
+  private static final Boolean RUN_IN_BACKGROUND = Boolean.TRUE;
   private final ExecutorService control;
+
+  private final MoveStrategy moveStrategy;
 
   /**
    * last-write-wins move coalescing
    */
   private final ConcurrentHashMap<String, Direction> stagedMoves = new ConcurrentHashMap<>();
 
-  public CommandActor(String worldName) {
-    this(true, worldName);
+  public CommandActor(String worldName, MoveStrategy moveStrategy) {
+    this(RUN_IN_BACKGROUND, worldName, moveStrategy);
   }
 
-  public CommandActor(boolean runInBackground, String worldName) {
+  public CommandActor(boolean runInBackground, String worldName, MoveStrategy moveStrategy) {
     this.control = Executors.newSingleThreadExecutor(r -> {
       var t = new Thread(r, "actor-" + worldName + "-ctl");
       t.setDaemon(runInBackground);
       return t;
     });
+    this.moveStrategy = moveStrategy;
   }
 
   /**

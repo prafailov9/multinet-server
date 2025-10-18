@@ -23,9 +23,8 @@ public class MoveCommand extends AbstractCommand {
   @Override
   public Optional<ServerResponse> execute(Message message, Session session) {
     SessionContext ctx = session.getSessionContext();
-    validateContext(ctx); // ensure joined/auth’d, has world/entity
+    validateContext(ctx);
 
-    // Parse & validate direction defensively
     String rawDir = message.args().getFirst();
     if (rawDir == null || rawDir.isBlank()) {
       return Optional.of(new ServerResponse(
@@ -50,7 +49,6 @@ public class MoveCommand extends AbstractCommand {
           CommandResult.failed(playerId, null, "world not found")));
     }
 
-    // Enqueue asynchronously; do NOT block.
     instance.storeMoveAsync(new MoveRequest(playerId, dir))
         .exceptionally(ex -> {
           log.warn("MOVE failed later for player={} world={} : {}",
@@ -58,7 +56,6 @@ public class MoveCommand extends AbstractCommand {
           return null;
         });
 
-    // Immediate ACK so client stays snappy; STATE will arrive on next tick.
     return Optional.of(new ServerResponse(
         new Message(ACK, List.of(dir.name())),
         CommandResult.succeeded(playerId, ctx.getWorldName(), "queued")));

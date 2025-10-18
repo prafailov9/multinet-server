@@ -17,6 +17,7 @@ import static org.mockito.Mockito.when;
 import com.ntros.event.sessionmanager.SessionManager;
 import com.ntros.lifecycle.instance.actor.Actor;
 import com.ntros.lifecycle.instance.actor.CommandActor;
+import com.ntros.lifecycle.instance.actor.movestrategy.StageMovesStrategy;
 import com.ntros.message.SessionContext;
 import com.ntros.model.world.connector.WorldConnector;
 import com.ntros.model.world.connector.ops.MoveOp;
@@ -50,7 +51,7 @@ class CommandActorTest {
 
   @BeforeEach
   void setUp() {
-    actor = new CommandActor(true, "arena-1");
+    actor = new CommandActor(true, "arena-1", new StageMovesStrategy());
   }
 
   @AfterEach

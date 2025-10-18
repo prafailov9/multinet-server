@@ -171,7 +171,6 @@ public class SocketConnection implements Connection {
     // background task that writes to client buffer.
     sendExecutor.execute(() -> {
       try {
-
         // write all queued messages to client buffer until queue is empty.
         while (!sendQueue.isEmpty()) {
           String msg = sendQueue.poll();

@@ -1,5 +1,8 @@
 package com.ntros.lifecycle.instance;
 
+import com.ntros.lifecycle.Lifecycle;
+import com.ntros.lifecycle.Pausable;
+import com.ntros.lifecycle.Resettable;
 import com.ntros.model.entity.config.access.Settings;
 import com.ntros.model.world.connector.WorldConnector;
 import com.ntros.model.world.protocol.response.CommandResult;
@@ -8,8 +11,7 @@ import com.ntros.model.world.protocol.request.MoveRequest;
 import com.ntros.lifecycle.session.Session;
 import java.util.concurrent.CompletableFuture;
 
-public interface Instance {
-
+public interface Instance extends Lifecycle, Pausable {
 
   /**
    * Marker task that makes sure all enqueued tasks before it are finished.
@@ -18,8 +20,6 @@ public interface Instance {
 
   void startIfNeededForJoin();   // safe to call anytime
 
-  CommandResult joinSync(JoinRequest req);
-
   // --- Domain actions exposed to commands ---
   CompletableFuture<CommandResult> joinAsync(JoinRequest req);
 
@@ -27,11 +27,7 @@ public interface Instance {
 
   CompletableFuture<Void> leaveAsync(Session session);
 
-  CompletableFuture<CommandResult> removeEntityAsync(String entityId);
-
   // --- Session lifecycle (called from response pipeline) ---
-
-  void run();
 
   Settings getSettings();
 
@@ -39,23 +35,13 @@ public interface Instance {
 
   String getWorldName();
 
-  void reset();
-
   void registerSession(Session session);
 
   void removeSession(Session session);
 
-  Session getSession(Long sessionId);
-
   int getActiveSessionsCount();
 
   int getEntityCount();
-
-  boolean isRunning();
-
-  void pause();
-
-  void resume();
 
   void updateTickRate(int ticksPerSecond);
 
