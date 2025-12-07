@@ -91,7 +91,7 @@ public class ClientSession implements Session {
 
   @Override
   public boolean isRunning() {
-    return false;
+    return running;
   }
 
   @Override

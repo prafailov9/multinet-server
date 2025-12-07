@@ -33,7 +33,6 @@ public class RequestClientMessageProcessor implements ClientMessageProcessor {
   @Override
   public ServerResponse process(String rawMessage, Session session) {
     if (rawMessage.startsWith(SESSION_FAILED_NOTIFIER)) {
-//      removeSessionEntityFromWorld(session);
       session.stop();
       return ServerResponse.ofError(
           new Message(CommandType.ERROR, List.of("unexpected session failure. Removed session.")),

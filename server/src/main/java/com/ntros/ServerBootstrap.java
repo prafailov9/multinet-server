@@ -24,9 +24,9 @@ public class ServerBootstrap {
   private static final int PORT = 5555;
 
   // server updates 120 times per second
-  private static final int TICK_RATE = 70;
+  private static final int TICK_RATE = 120;
   // emits only 70 messages per second
-  private static final int BROADCAST_RATE = 69;
+  private static final int BROADCAST_RATE = 70;
 
   public static void startServer() {
     log.info("Starting server on port {}", PORT);

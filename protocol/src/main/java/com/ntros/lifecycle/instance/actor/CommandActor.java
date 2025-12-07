@@ -112,9 +112,6 @@ public final class CommandActor implements Actor {
       try {
         promise.complete(action.get());
       } catch (Throwable t) {
-        if (t instanceof InterruptedException) {
-          Thread.currentThread().interrupt();
-        }
 
         promise.completeExceptionally(t);
       }

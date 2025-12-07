@@ -1,6 +1,5 @@
 package com.ntros.model.world.connector;
 
-import com.ntros.model.entity.Direction;
 import com.ntros.model.entity.Entity;
 import com.ntros.model.entity.config.WorldCapabilities;
 import com.ntros.model.world.connector.ops.JoinOp;

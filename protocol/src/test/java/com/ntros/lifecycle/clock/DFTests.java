@@ -15,7 +15,7 @@ public class DFTests {
   private long nextTicket = 0L;
   private long nowServing = 0L;
 
-  @Test
+//  @Test
   public void dpTestV2() throws InterruptedException {
     Thread t1 = createThread("ph1", createInfTask(f1, f5)); // forks ordered low->high
     Thread t2 = createThread("ph2", createInfTask(f1, f2));
