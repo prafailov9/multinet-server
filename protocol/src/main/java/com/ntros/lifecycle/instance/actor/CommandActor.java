@@ -1,7 +1,7 @@
 package com.ntros.lifecycle.instance.actor;
 
 import com.ntros.event.sessionmanager.SessionManager;
-import com.ntros.lifecycle.instance.actor.movestrategy.MoveStrategy;
+import com.ntros.lifecycle.session.Session;
 import com.ntros.model.entity.Direction;
 import com.ntros.model.world.connector.WorldConnector;
 import com.ntros.model.world.connector.ops.JoinOp;
@@ -11,7 +11,6 @@ import com.ntros.model.world.protocol.request.JoinRequest;
 import com.ntros.model.world.protocol.request.MoveRequest;
 import com.ntros.model.world.protocol.request.RemoveRequest;
 import com.ntros.model.world.protocol.response.CommandResult;
-import com.ntros.lifecycle.session.Session;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
