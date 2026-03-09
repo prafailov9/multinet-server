@@ -34,8 +34,14 @@ public class Velocity2D implements Velocity {
     return new Velocity2D(this.dx * factor, this.dy * factor);
   }
 
-  public Velocity2D normalize(Vector2D vector2D) {
-    return null;
+  public Velocity2D normalize() {
+    float lenSq = dx * dx + dy * dy;
+    if (lenSq == 0f) {
+      return this;
+    }
+
+    float invLen = quake3InverseSqrt(lenSq);
+    return new Velocity2D(dx * invLen, dy * invLen);
   }
 
 
@@ -47,8 +53,15 @@ public class Velocity2D implements Velocity {
     return Float.compare(dx, that.dx) == 0 && Float.compare(dy, that.dy) == 0;
   }
 
+
   private float magnitude() {
-    return 1f;
+    float lengthSquared = dx * dx + dy * dy;
+
+    if (lengthSquared == 0f) {
+      return 0f;
+    }
+
+    return quake3InverseSqrt(lengthSquared);
   }
 
   private float fastSqrt(float x) {
@@ -81,9 +94,6 @@ public class Velocity2D implements Velocity {
 
   @Override
   public String toString() {
-    return "Velocity2D{" +
-        "dx=" + dx +
-        ", dy=" + dy +
-        '}';
+    return "Velocity2D{" + "dx=" + dx + ", dy=" + dy + '}';
   }
 }

@@ -51,7 +51,7 @@ class CommandActorTest {
 
   @BeforeEach
   void setUp() {
-    actor = new CommandActor(true, "arena-1", new StageMovesStrategy());
+    actor = new CommandActor(true, "arena-1");
   }
 
   @AfterEach

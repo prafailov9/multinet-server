@@ -25,24 +25,21 @@ public final class CommandActor implements Actor {
   private static final Boolean RUN_IN_BACKGROUND = Boolean.TRUE;
   private final ExecutorService control;
 
-  private final MoveStrategy moveStrategy;
-
   /**
    * last-write-wins move coalescing
    */
   private final ConcurrentHashMap<String, Direction> stagedMoves = new ConcurrentHashMap<>();
 
-  public CommandActor(String worldName, MoveStrategy moveStrategy) {
-    this(RUN_IN_BACKGROUND, worldName, moveStrategy);
+  public CommandActor(String worldName) {
+    this(RUN_IN_BACKGROUND, worldName);
   }
 
-  public CommandActor(boolean runInBackground, String worldName, MoveStrategy moveStrategy) {
+  public CommandActor(boolean runInBackground, String worldName) {
     this.control = Executors.newSingleThreadExecutor(r -> {
       var t = new Thread(r, "actor-" + worldName + "-ctl");
       t.setDaemon(runInBackground);
       return t;
     });
-    this.moveStrategy = moveStrategy;
   }
 
   /**
@@ -79,10 +76,10 @@ public final class CommandActor implements Actor {
 
   // coalesce move; do not mutate the world here
   @Override
-  public CompletableFuture<CommandResult> stageMove(WorldConnector world, MoveRequest req) {
-    stagedMoves.put(req.playerId(), req.direction()); // last-write-wins
+  public CompletableFuture<CommandResult> stageMove(WorldConnector world, MoveRequest move) {
+    stagedMoves.put(move.playerId(), move.direction()); // last-write-wins
     return CompletableFuture.completedFuture(
-        CommandResult.succeeded(req.playerId(), world.getWorldName(), "queued"));
+        CommandResult.succeeded(move.playerId(), world.getWorldName(), "queued"));
   }
 
   // Used by disconnect

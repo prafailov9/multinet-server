@@ -15,9 +15,14 @@ class FixedDelayClockTest {
   FixedDelayClock clock;
 
   @BeforeEach
-  void setUp() { clock = new FixedDelayClock(100); } // 10ms delay
+  void setUp() {
+    clock = new FixedDelayClock(100);
+  } // 10ms delay
+
   @AfterEach
-  void tearDown() { clock.shutdown(); }
+  void tearDown() {
+    clock.shutdown();
+  }
 
   @Test
   void runs_and_respects_delay_between_ticks() {
@@ -26,7 +31,10 @@ class FixedDelayClockTest {
 
     // Make each tick heavy (~30ms). With fixed *delay*, start-to-start intervals should be ~ task(30) + delay(10) ~= 40ms.
     clock.tick(() -> {
-      try { TimeUnit.MILLISECONDS.sleep(30); } catch (InterruptedException ignored) {}
+      try {
+        TimeUnit.MILLISECONDS.sleep(30);
+      } catch (InterruptedException ignored) {
+      }
     });
 
     await().atMost(ClockTestSupport.MEDIUM)
@@ -43,7 +51,8 @@ class FixedDelayClockTest {
     clock.setListener(probe);
 
     clock.updateTickRate(20); // 50ms delay
-    clock.tick(() -> {});
+    clock.tick(() -> {
+    });
     TimeUnit.MILLISECONDS.sleep(220);
     int slow = probe.startsNanos.size();
 
@@ -54,4 +63,5 @@ class FixedDelayClockTest {
 
     assertThat(fast).isGreaterThan(slow);
   }
+
 }
