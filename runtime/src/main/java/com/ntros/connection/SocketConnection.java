@@ -60,10 +60,14 @@ public class SocketConnection implements Connection {
    */
   private final BlockingQueue<byte[]> sendQueue = new LinkedBlockingQueue<>(MAX_QUEUE_SIZE);
 
-  /** CAS gate — at most one drain task writes to the socket at a time. */
+  /**
+   * CAS gate — at most one drain task writes to the socket at a time.
+   */
   private final AtomicBoolean sending = new AtomicBoolean(false);
 
-  /** Reused buffer for line reads — avoids per-call allocation. */
+  /**
+   * Reused buffer for line reads — avoids per-call allocation.
+   */
   private final ByteArrayOutputStream lineBuffer = new ByteArrayOutputStream(256);
 
   public SocketConnection(Socket socket) throws IOException {
@@ -107,7 +111,7 @@ public class SocketConnection implements Connection {
   private void enqueue(byte[] bytes) {
     if (!sendQueue.offer(bytes)) {
       sendQueue.poll();     // drop the oldest stale frame
-      sendQueue.offer(bytes);
+      var unused = sendQueue.offer(bytes);
     }
     trySend();
   }
@@ -124,7 +128,7 @@ public class SocketConnection implements Connection {
       try {
         while (true) {
           byte[] frame;
-          // Drain the full queue in one burst to amortise executor scheduling overhead.
+          // Drain the full queue in one burst to amortize executor scheduling overhead.
           while ((frame = sendQueue.poll()) != null) {
             output.write(frame);
           }
@@ -171,7 +175,8 @@ public class SocketConnection implements Connection {
       if ("Connection reset".equals(ex.getMessage())) {
         log.info("[SocketConnection]: Connection reset.");
       } else {
-        log.error("[SocketConnection]: Read error ({}): {}", getRemoteAddress(), ex.getMessage(), ex);
+        log.error("[SocketConnection]: Read error ({}): {}", getRemoteAddress(), ex.getMessage(),
+            ex);
       }
       close();
     }
