@@ -2,11 +2,11 @@ package com.ntros.event.broadcaster;
 
 import com.ntros.event.sessionmanager.SessionManager;
 
-public final class BroadcastToOwnerOnly implements Broadcaster {
+public final class SingleBroadcaster implements Broadcaster {
 
   private final String ownerUserId;
 
-  public BroadcastToOwnerOnly(String ownerUserId) {
+  public SingleBroadcaster(String ownerUserId) {
     this.ownerUserId = ownerUserId;
   }
 

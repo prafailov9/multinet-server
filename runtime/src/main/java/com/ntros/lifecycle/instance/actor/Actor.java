@@ -2,6 +2,7 @@ package com.ntros.lifecycle.instance.actor;
 
 
 import com.ntros.event.sessionmanager.SessionManager;
+import com.ntros.lifecycle.Shutdownable;
 import com.ntros.model.world.connector.WorldConnector;
 import com.ntros.model.world.protocol.request.JoinRequest;
 import com.ntros.model.world.protocol.request.MoveRequest;
@@ -13,7 +14,7 @@ import java.util.concurrent.CompletableFuture;
 /**
  * Single-threaded actor, async running all world changes
  */
-public interface Actor {
+public interface Actor extends Shutdownable {
 
   /**
    * updates the world state.
@@ -39,7 +40,4 @@ public interface Actor {
       Session session);
 
   boolean isRunning();
-
-  void shutdown();
-
 }

@@ -1,7 +1,7 @@
 package com.ntros.lifecycle.instance;
 
-import com.ntros.event.broadcaster.BroadcastToAll;
-import com.ntros.event.broadcaster.BroadcastToOwnerOnly;
+import com.ntros.event.broadcaster.SessionsBroadcaster;
+import com.ntros.event.broadcaster.SingleBroadcaster;
 import com.ntros.event.broadcaster.Broadcaster;
 import com.ntros.event.sessionmanager.ClientSessionManager;
 import com.ntros.event.sessionmanager.SessionManager;
@@ -27,9 +27,9 @@ public final class InstanceFactory {
       WorldConnector worldConnector) {
     Broadcaster broadcaster;
     if (isShared) {
-      broadcaster = new BroadcastToAll();
+      broadcaster = new SessionsBroadcaster();
     } else {
-      broadcaster = new BroadcastToOwnerOnly(session.getSessionContext().getEntityId());
+      broadcaster = new SingleBroadcaster(session.getSessionContext().getEntityId());
     }
 
     Instance inst = new ServerInstance(worldConnector, new ClientSessionManager(),
@@ -46,7 +46,7 @@ public final class InstanceFactory {
 
     Settings cfg = Settings.multiplayerJoinable();
     Instance inst = new ServerInstance(connector, sessions, new FixedRateClock(30),
-        new BroadcastToAll(), cfg);
+        new SessionsBroadcaster(), cfg);
     INST.put(name, inst);
     return inst;
   }
@@ -57,7 +57,7 @@ public final class InstanceFactory {
         new GridWorldEngine(), new WorldCapabilities(true, true, false, true));
     Settings cfg = Settings.singlePlayerDefault();
     Instance inst = new ServerInstance(connector, sessions, new FixedRateClock(30),
-        new BroadcastToOwnerOnly(ownerUserId), cfg);
+        new SingleBroadcaster(ownerUserId), cfg);
     INST.put(name, inst);
     OWNER.put(name, ownerUserId);
     return inst;
@@ -70,7 +70,7 @@ public final class InstanceFactory {
         new GridWorldEngine(), new WorldCapabilities(true, true, false, true));
     Settings cfg = Settings.singlePlayerOrchestrator();
     Instance inst = new ServerInstance(connector, sessions, new FixedRateClock(20),
-        new BroadcastToOwnerOnly(ownerUserId), cfg);
+        new SingleBroadcaster(ownerUserId), cfg);
     INST.put(name, inst);
     OWNER.put(name, ownerUserId);
     return inst;

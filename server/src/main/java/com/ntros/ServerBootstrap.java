@@ -1,6 +1,6 @@
 package com.ntros;
 
-import com.ntros.event.broadcaster.BroadcastToAll;
+import com.ntros.event.broadcaster.SessionsBroadcaster;
 import com.ntros.lifecycle.clock.Clock;
 import com.ntros.lifecycle.clock.PacedRateClock;
 import com.ntros.model.entity.config.access.Settings;
@@ -14,7 +14,6 @@ import com.ntros.model.world.Connectors;
 import com.ntros.model.world.connector.WorldConnector;
 import com.ntros.server.Server;
 import com.ntros.server.TcpServer;
-import com.ntros.lifecycle.clock.FixedRateClock;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -54,7 +53,7 @@ public class ServerBootstrap {
     SessionManager sessionManager = new ClientSessionManager();
 
     Instances.registerInstance(new ServerInstance(world, sessionManager, clock,
-        new BroadcastToAll(),
+        new SessionsBroadcaster(),
         Settings.multiplayer(BROADCAST_RATE)));
   }
 }

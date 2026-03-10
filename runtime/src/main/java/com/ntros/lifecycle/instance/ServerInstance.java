@@ -51,7 +51,7 @@ public class ServerInstance extends AbstractInstance {
    */
   @Override
   public void start() {
-    if (isAlreadyTicking()) {
+    if (tryTicking()) {
       return;
     }
     clock.tick(this::tryWorldUpdate);
@@ -120,16 +120,16 @@ public class ServerInstance extends AbstractInstance {
   }
 
   private void tryWorldUpdate() {
-    if (!clockTicking.get() || !actor.isRunning()) {
+    if (!hasWorldStarted()) {
       return;
     }
     try {
+      // TODO: Broadcast off-actor thread
       actor.step(world, this::broadcastWorldSnapshot)
           .exceptionally(ex -> {
             log.error("tick failed", ex);
             return null;
           });
-      // TODO: Broadcast off-actor thread
     } catch (Throwable t) {
       log.error("scheduling tick failed", t);
     }
@@ -142,8 +142,12 @@ public class ServerInstance extends AbstractInstance {
     broadcaster.publish(dataLine, sessionManager);
   }
 
-  private boolean isAlreadyTicking() {
+  private boolean tryTicking() {
     return !clockTicking.compareAndSet(false, true);
+  }
+
+  private boolean hasWorldStarted() {
+    return clockTicking.get() && actor.isRunning();
   }
 
   @Override

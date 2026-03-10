@@ -5,7 +5,7 @@ import com.ntros.lifecycle.session.Session;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-public final class BroadcastToAll implements Broadcaster {
+public final class SessionsBroadcaster implements Broadcaster {
 
   /**
    * When publish() fails to send to a session, remove it from the SessionManager right there

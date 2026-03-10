@@ -8,7 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ntros.TestClient.ServerCmd;
 import com.ntros.TestClient.ServerMessage;
-import com.ntros.event.broadcaster.BroadcastToAll;
+import com.ntros.event.broadcaster.SessionsBroadcaster;
 import com.ntros.event.broadcaster.Broadcaster;
 import com.ntros.event.sessionmanager.ClientSessionManager;
 import com.ntros.event.sessionmanager.SessionManager;
@@ -26,7 +26,6 @@ import com.ntros.model.world.state.solid.GridWorldState;
 import com.ntros.server.TcpServer;
 import com.ntros.lifecycle.clock.Clock;
 import com.ntros.lifecycle.clock.PacedRateClock;
-import java.io.IOException;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
@@ -67,7 +66,7 @@ public class ServerBootstrapTest {
 
     defaultWorld = createWorldConnector("arena-x", 3, 3);
     instance = createInstance(defaultWorld, new ClientSessionManager(),
-        new PacedRateClock(TICK_RATE), new BroadcastToAll(), Settings.multiplayer(BROADCAST_RATE)
+        new PacedRateClock(TICK_RATE), new SessionsBroadcaster(), Settings.multiplayer(BROADCAST_RATE)
     );
     Instances.registerInstance(instance);
     server = new TcpServer(PORT);
@@ -265,7 +264,7 @@ public class ServerBootstrapTest {
       Settings policy) {
     return new ServerInstance(worldConnector, new ClientSessionManager(),
         new PacedRateClock(TICK_RATE),
-        new BroadcastToAll(), policy);
+        new SessionsBroadcaster(), policy);
   }
 
 
