@@ -5,10 +5,13 @@ import com.ntros.model.entity.config.WorldCapabilities;
 import com.ntros.model.world.connector.ops.JoinOp;
 import com.ntros.model.world.connector.ops.MoveOp;
 import com.ntros.model.world.connector.ops.RemoveOp;
+import com.ntros.model.world.connector.ops.GridWorldOp;
+import com.ntros.model.world.connector.ops.ThrustOp;
 import com.ntros.model.world.connector.ops.WorldOp;
 import com.ntros.model.world.engine.solid.GridWorldEngine;
 import com.ntros.model.world.protocol.response.CommandResult;
 import com.ntros.model.world.state.GridSnapshot;
+import com.ntros.model.world.state.GridSnapshot.EntityView;
 import com.ntros.model.world.state.solid.GridWorldState;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -37,6 +40,7 @@ public class GridWorldConnector implements WorldConnector {
         engine.removeEntity(r.removeRequest().entityId(), state);
         yield CommandResult.succeeded(r.removeRequest().entityId(), state.worldName(), "ok");
       }
+      default -> throw new IllegalStateException("Unexpected value: " + op);
     };
   }
 
@@ -58,10 +62,10 @@ public class GridWorldConnector implements WorldConnector {
     });
 
     // entities: "entityName" -> {x,y}
-    Map<String, GridSnapshot.EntityView> ents = new LinkedHashMap<>();
+    Map<String, EntityView> ents = new LinkedHashMap<>();
     state.entities().forEach((name, entity) -> {
       ents.put(name,
-          new GridSnapshot.EntityView(entity.getPosition().getX(), entity.getPosition().getY()));
+          new EntityView(entity.getPosition().getX(), entity.getPosition().getY()));
     });
 
     return new GridSnapshot(tiles, ents);

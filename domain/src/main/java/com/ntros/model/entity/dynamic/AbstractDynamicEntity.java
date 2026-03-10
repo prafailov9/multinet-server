@@ -8,8 +8,8 @@ import com.ntros.model.entity.movement.Velocity2D;
 public abstract class AbstractDynamicEntity implements DynamicEntity {
 
 
-  protected final Vector2D position;
-  protected final Velocity2D velocity;
+  protected Vector2D position;
+  protected Velocity2D velocity;
 
   public AbstractDynamicEntity(Vector2D position, Velocity2D velocity) {
     this.position = position;
@@ -28,26 +28,30 @@ public abstract class AbstractDynamicEntity implements DynamicEntity {
 
   @Override
   public void setVelocity(Velocity velocity) {
-
+    if (velocity instanceof Velocity2D v) {
+      this.velocity = v;
+    } else {
+      throw new IllegalArgumentException("Velocity must be Velocity2D");
+    }
   }
 
   @Override
   public void updatePosition(float deltaTime) {
+    float dx = velocity.getDx() * deltaTime;
+    float dy = velocity.getDy() * deltaTime;
 
+    position = Vector2D.of(
+        position.getX() + dx,
+        position.getY() + dy
+    );
   }
 
   @Override
-  public float rotation() {
-    return 0;
-  }
+  public abstract float rotation();
 
   @Override
-  public float acceleration() {
-    return 0;
-  }
+  public abstract float acceleration();
 
   @Override
-  public float maxSpeed() {
-    return 0;
-  }
+  public abstract float maxSpeed();
 }

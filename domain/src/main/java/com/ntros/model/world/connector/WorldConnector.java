@@ -2,6 +2,7 @@ package com.ntros.model.world.connector;
 
 import com.ntros.model.entity.Entity;
 import com.ntros.model.entity.config.WorldCapabilities;
+import com.ntros.model.world.connector.ops.GridWorldOp;
 import com.ntros.model.world.connector.ops.WorldOp;
 import com.ntros.model.world.protocol.response.CommandResult;
 import java.util.List;
@@ -13,7 +14,7 @@ import java.util.List;
 public interface WorldConnector {
 
   // Synchronous, immediate mutations:
-  CommandResult apply(WorldOp op);          // JoinOp, MoveOp, RemoveOp
+  CommandResult apply(WorldOp op);
 
   void update();
 

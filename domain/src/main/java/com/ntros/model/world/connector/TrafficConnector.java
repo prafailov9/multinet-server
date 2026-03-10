@@ -2,6 +2,7 @@ package com.ntros.model.world.connector;
 
 import com.ntros.model.entity.Entity;
 import com.ntros.model.entity.config.WorldCapabilities;
+import com.ntros.model.world.connector.ops.GridWorldOp;
 import com.ntros.model.world.connector.ops.WorldOp;
 import com.ntros.model.world.engine.sim.TrafficEngine;
 import com.ntros.model.world.protocol.response.CommandResult;
@@ -20,8 +21,6 @@ public final class TrafficConnector implements WorldConnector {
     this.caps = caps;
   }
 
-  @Override
-  public CommandResult apply(WorldOp op) {
 //    return switch (op) {
 //      case JoinOp j    -> {
 //        // interpret JOIN as SpawnVehicle (choose lane/spawn point via policy)
@@ -35,7 +34,10 @@ public final class TrafficConnector implements WorldConnector {
 //      }
 //      case RemoveOp r  -> engine.enqueueIntent(new DespawnVehicle(new VehicleId(r.removeRequest().entityId())), state);
 //    };
-    return CommandResult.succeeded("", "", "");
+
+  @Override
+  public CommandResult apply(WorldOp op) {
+    return null;
   }
 
   @Override
