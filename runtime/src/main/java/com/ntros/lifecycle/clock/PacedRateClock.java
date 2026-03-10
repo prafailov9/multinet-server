@@ -6,6 +6,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * FixedRateBackpressureClock: scheduleAtFixedRate + *in-flight gate*.
@@ -25,54 +26,67 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 public class PacedRateClock extends AbstractClock {
 
-  private final AtomicBoolean inFlight = new AtomicBoolean(false);
-  private final ExecutorService worker;
+    private final AtomicBoolean inFlight = new AtomicBoolean(false);
+    private final ExecutorService worker;
+    private final ReentrantLock workerLock = new ReentrantLock();
 
-  public PacedRateClock(int initialTickRate) {
-    this(initialTickRate,
-        Executors.newSingleThreadScheduledExecutor(r -> {
-          var t = new Thread(r, "clock-paced-rate-bp");
-          t.setDaemon(true);
-          return t;
-        }),
-        Executors.newSingleThreadExecutor(r -> {
-          var t = new Thread(r, "clock-paced-rate-bp-worker");
-          t.setDaemon(true);
-          return t;
-        }));
-  }
+    public PacedRateClock(int initialTickRate) {
+        this(initialTickRate,
+                Executors.newSingleThreadScheduledExecutor(r -> {
+                    var t = new Thread(r, "clock-paced-rate-bp");
+                    t.setDaemon(true);
+                    return t;
+                }),
+                Executors.newSingleThreadExecutor(r -> {
+                    var t = new Thread(r, "clock-paced-rate-bp-worker");
+                    t.setDaemon(true);
+                    return t;
+                }));
+    }
 
-  PacedRateClock(int initialTickRate,
-      java.util.concurrent.ScheduledExecutorService scheduler,
-      java.util.concurrent.ExecutorService worker) {
-    super(initialTickRate, scheduler);
-    this.worker = worker;
-  }
+    PacedRateClock(int initialTickRate,
+                   java.util.concurrent.ScheduledExecutorService scheduler,
+                   java.util.concurrent.ExecutorService worker) {
+        super(initialTickRate, scheduler);
+        this.worker = worker;
+    }
 
-  @Override
-  protected ScheduledFuture<?> schedule(Runnable lifecycleWrappedTask, long intervalMs) {
-    // 'wrapper' already includes pause check, tick count, and listener callbacks
-    return scheduler.scheduleAtFixedRate(() -> {
-      if (isPaused()) {
-        return;
-      }
-      if (!inFlight.compareAndSet(false, true)) {
-        return; // drop this firing
-      }
-      worker.execute(() -> {
+    @Override
+    protected ScheduledFuture<?> schedule(Runnable lifecycleWrappedTask, long intervalMs) {
+        // 'wrapper' already includes pause check, tick count, and listener callbacks
+        workerLock.lock();
         try {
-          lifecycleWrappedTask.run();
-        } finally {
-          inFlight.set(false);
-        }
-      });
-    }, 0, intervalMs, MILLISECONDS);
-  }
+            return scheduler.scheduleAtFixedRate(() -> {
+                if (isPaused()) {
+                    return;
+                }
+                // if a task is still being processed - return
+                if (!inFlight.compareAndSet(false, true)) {
+                    return; // drop this firing
+                }
 
-  @Override
-  public void shutdown() {
-    super.shutdown();
-    worker.shutdownNow();
-  }
+                worker.execute(() -> {
+                    try {
+                        lifecycleWrappedTask.run();
+                    } finally {
+                        inFlight.set(false);
+                    }
+                });
+            }, 0, intervalMs, MILLISECONDS);
+        } finally {
+            workerLock.unlock();
+        }
+    }
+
+    @Override
+    public void shutdown() {
+        super.shutdown();
+        workerLock.lock();
+        try {
+            worker.shutdownNow();
+        } finally {
+            workerLock.unlock();
+        }
+    }
 }
 
