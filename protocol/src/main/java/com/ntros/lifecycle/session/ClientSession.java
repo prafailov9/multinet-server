@@ -1,16 +1,20 @@
 package com.ntros.lifecycle.session;
 
 
+import static com.ntros.lifecycle.session.SessionState.RUNNING;
+import static com.ntros.lifecycle.session.SessionState.STOPPING;
+import static com.ntros.lifecycle.session.SessionState.TERMINATED;
+
 import com.ntros.connection.Connection;
 import com.ntros.lifecycle.instance.Instances;
-import com.ntros.message.SessionContext;
-import com.ntros.model.entity.sequence.IdSequenceGenerator;
-import com.ntros.model.world.protocol.response.ServerResponse;
 import com.ntros.lifecycle.session.process.ClientMessageProcessor;
 import com.ntros.lifecycle.session.process.RequestClientMessageProcessor;
 import com.ntros.lifecycle.session.process.ResponseServerMessageProcessor;
 import com.ntros.lifecycle.session.process.ServerMessageProcessor;
-import java.util.concurrent.atomic.AtomicBoolean;
+import com.ntros.message.SessionContext;
+import com.ntros.model.entity.sequence.IdSequenceGenerator;
+import com.ntros.model.world.protocol.response.ServerResponse;
+import java.util.concurrent.atomic.AtomicReference;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -27,10 +31,7 @@ public class ClientSession implements Session {
   private final ClientMessageProcessor clientMessageProcessor;
   private final ServerMessageProcessor serverMessageProcessor;
 
-  private final AtomicBoolean terminated = new AtomicBoolean(false);
-
-  private volatile boolean running = true;
-
+  private final AtomicReference<SessionState> state = new AtomicReference<>(RUNNING);
 
   public ClientSession(Connection connection) {
     this.connection = connection;
@@ -45,7 +46,7 @@ public class ClientSession implements Session {
   @Override
   public void start() {
     try {
-      while (running && connection.isOpen()) {
+      while (isRunning() && connection.isOpen()) {
         String rawMessage = connection.receive();
         // continue processing the stream if current captured frame is empty
         if (rawMessage == null || rawMessage.isEmpty()) {
@@ -86,12 +87,12 @@ public class ClientSession implements Session {
 
   @Override
   public void stop() {
-    running = false;
+    state.compareAndSet(RUNNING, STOPPING);
   }
 
   @Override
   public boolean isRunning() {
-    return running;
+    return state.get() == RUNNING;
   }
 
   @Override
@@ -101,14 +102,17 @@ public class ClientSession implements Session {
 
   @Override
   public void shutdown() {
-    if (!terminated.compareAndSet(false, true)) {
-      return;
+    if (tryTerminate()) {
+      cleanupResources();
     }
+  }
 
-    running = false;
+  private boolean tryTerminate() {
+    return state.compareAndSet(STOPPING, TERMINATED) || state.compareAndSet(RUNNING, TERMINATED);
+  }
 
-    if (sessionContext != null && sessionContext.isAuthenticated()
-        && sessionContext.getWorldName() != null) {
+  void cleanupResources() {
+    if (sessionContext.isAuthenticated() && sessionContext.getWorldName() != null) {
       try {
         var instance = Instances.getInstance(sessionContext.getWorldName());
         if (instance != null) {
@@ -120,10 +124,10 @@ public class ClientSession implements Session {
         }
       } catch (Throwable t) {
         log.warn("terminate(): cleanup error: {}", t.toString());
+      } finally {
+        connection.close();
       }
     }
-
-    connection.close();
   }
 
 }

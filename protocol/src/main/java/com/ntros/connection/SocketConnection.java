@@ -186,7 +186,7 @@ public class SocketConnection implements Connection {
         close();
       } finally {
         sending.set(false);
-        // attempt retry if there are still messages in the queue.
+        // attempt retry if new messages have arrived.
         if (!sendQueue.isEmpty()) {
           trySend();
         }

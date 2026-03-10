@@ -38,7 +38,8 @@ public class TcpServer implements Server {
 
         // once received, create connection + session
         // process client input in separate thread, unblocks server loop
-        Thread.startVirtualThread(() -> startSession(socket));
+        Thread.startVirtualThread(() -> startSession(socket))
+            .setName("session-" + socket.getPort());
       } catch (SocketException ex) {
         if (!serverRunning) {
           log.info("Server socket closed, exiting accept() loop.");
