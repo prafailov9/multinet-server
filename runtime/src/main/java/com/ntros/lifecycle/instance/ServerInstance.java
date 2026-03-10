@@ -9,7 +9,7 @@ import com.ntros.lifecycle.instance.actor.Actors;
 import com.ntros.lifecycle.session.Session;
 import com.ntros.model.entity.config.access.Settings;
 import com.ntros.model.world.connector.WorldConnector;
-import com.ntros.model.world.protocol.ServerResult;
+import com.ntros.model.world.protocol.WorldResult;
 import com.ntros.model.world.protocol.request.JoinRequest;
 import com.ntros.model.world.protocol.request.MoveRequest;
 import java.io.IOException;
@@ -64,12 +64,12 @@ public class ServerInstance extends AbstractInstance {
   }
 
   @Override
-  public CompletableFuture<ServerResult> joinAsync(JoinRequest req) {
+  public CompletableFuture<WorldResult> joinAsync(JoinRequest req) {
     return actor.join(world, req);
   }
 
   @Override
-  public CompletableFuture<ServerResult> storeMoveAsync(MoveRequest req) {
+  public CompletableFuture<WorldResult> storeMoveAsync(MoveRequest req) {
     return actor.stageMove(world, req);
   }
 

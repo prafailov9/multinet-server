@@ -1,7 +1,7 @@
 package com.ntros.model.world.engine.sim;
 
 import com.ntros.model.world.engine.sim.model.TrafficIntent;
-import com.ntros.model.world.protocol.ServerResult;
+import com.ntros.model.world.protocol.WorldResult;
 import com.ntros.model.world.state.TrafficState;
 
 /**
@@ -15,7 +15,7 @@ public interface TrafficEngine {
   /**
    * Queue a driver/system intent; validated later during step.
    */
-  ServerResult enqueueIntent(TrafficIntent intent, TrafficState state);
+  WorldResult enqueueIntent(TrafficIntent intent, TrafficState state);
 
   /**
    * Advance simulation one step (apply intents, resolve signals, integrate motion, collisions,

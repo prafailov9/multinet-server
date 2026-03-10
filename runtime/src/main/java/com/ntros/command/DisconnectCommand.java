@@ -5,7 +5,7 @@ import static com.ntros.protocol.CommandType.ACK;
 import com.ntros.lifecycle.instance.Instances;
 import com.ntros.lifecycle.instance.Instance;
 import com.ntros.message.SessionContext;
-import com.ntros.model.world.protocol.ServerResult;
+import com.ntros.model.world.protocol.WorldResult;
 import com.ntros.protocol.Message;
 import com.ntros.protocol.response.ServerResponse;
 import com.ntros.lifecycle.session.Session;
@@ -25,7 +25,7 @@ public final class DisconnectCommand extends AbstractCommand {
     String worldName = ctx.getWorldName();
 
     ServerResponse ack = new ServerResponse(new Message(ACK, List.of("DISCONNECT")),
-        ServerResult.succeeded(ctx.getUserId(), worldName, "user disconnecting"));
+        WorldResult.succeeded(ctx.getUserId(), worldName, "user disconnecting"));
 
     if (worldName == null) {
       clearContext(ctx);

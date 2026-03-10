@@ -4,7 +4,7 @@ import com.ntros.dispatcher.Dispatcher;
 import com.ntros.dispatcher.MessageDispatcher;
 import com.ntros.protocol.CommandType;
 import com.ntros.protocol.Message;
-import com.ntros.model.world.protocol.ServerResult;
+import com.ntros.model.world.protocol.WorldResult;
 import com.ntros.protocol.response.ServerResponse;
 import com.ntros.parser.MessageParser;
 import com.ntros.lifecycle.session.Session;
@@ -33,7 +33,7 @@ public class RequestClientMessageProcessor implements ClientMessageProcessor {
       session.stop();
       return ServerResponse.ofError(
           new Message(CommandType.ERROR, List.of("unexpected session failure. Removed session.")),
-          ServerResult.failed(session.getSessionContext().getUserId(),
+          WorldResult.failed(session.getSessionContext().getUserId(),
               session.getSessionContext().getWorldName(), "Session failed"));
     }
 

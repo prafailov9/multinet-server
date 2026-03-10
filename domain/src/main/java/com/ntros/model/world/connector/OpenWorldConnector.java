@@ -4,7 +4,7 @@ import com.ntros.model.entity.Entity;
 import com.ntros.model.entity.config.WorldCapabilities;
 import com.ntros.model.world.connector.ops.WorldOp;
 import com.ntros.model.world.engine.open.OpenWorldEngine;
-import com.ntros.model.world.protocol.ServerResult;
+import com.ntros.model.world.protocol.WorldResult;
 import com.ntros.model.world.state.open.OpenWorldState;
 import java.util.List;
 
@@ -19,7 +19,7 @@ public class OpenWorldConnector implements WorldConnector {
   }
 
   @Override
-  public ServerResult apply(WorldOp op) {
+  public WorldResult apply(WorldOp op) {
 //    return switch (op) {
 //      case JoinOp j -> engine.join(j.req(), state);
 //      case ThrustOp t -> engine.storeIntent(t.req(), state);
