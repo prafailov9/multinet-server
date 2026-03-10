@@ -8,10 +8,10 @@ import com.ntros.lifecycle.instance.actor.Actors;
 import com.ntros.lifecycle.session.Session;
 import com.ntros.model.entity.config.access.Settings;
 import com.ntros.model.world.connector.WorldConnector;
-import com.ntros.protocol.encoder.StateFrame;
+import com.ntros.model.world.protocol.CommandResult;
 import com.ntros.model.world.protocol.request.JoinRequest;
 import com.ntros.model.world.protocol.request.MoveRequest;
-import com.ntros.model.world.protocol.CommandResult;
+import com.ntros.protocol.encoder.StateFrame;
 import java.util.concurrent.CompletableFuture;
 import lombok.extern.slf4j.Slf4j;
 
@@ -54,8 +54,12 @@ public class ServerInstance extends AbstractInstance {
     if (tryTicking()) {
       return;
     }
-    clock.tick(this::tryWorldUpdate);
+    clock.tick(() -> {
+      Object snapshot = tryWorldUpdate();
+      broadcastWorldUpdate(snapshot);
+    });
   }
+
 
   /**
    * Schedules a no-op on the actor so the returned future completes after all previously queued
@@ -119,26 +123,22 @@ public class ServerInstance extends AbstractInstance {
     }
   }
 
-  private void tryWorldUpdate() {
+  private Object tryWorldUpdate() {
+    Object snapshot = null;
     if (!hasWorldStarted()) {
-      return;
+      return null;
     }
     try {
-      // TODO: Broadcast off-actor thread
-      actor.step(world, this::broadcastWorldSnapshot)
-          .exceptionally(ex -> {
-            log.error("tick failed", ex);
-            return null;
-          });
+      snapshot = actor.step(world).join();
     } catch (Throwable t) {
-      log.error("scheduling tick failed", t);
+      log.error("Tick failed", t);
     }
+    return snapshot;
   }
 
-  private void broadcastWorldSnapshot() {
-    Object data = world.snapshot();
+  private void broadcastWorldUpdate(Object snapshot) {
     String dataLine = encoder.encodeState(
-        new StateFrame(PROTO_VER, getWorldName(), seq.incrementAndGet(), data));
+        new StateFrame(PROTO_VER, getWorldName(), seq.incrementAndGet(), snapshot));
     broadcaster.publish(dataLine, sessionManager);
   }
 

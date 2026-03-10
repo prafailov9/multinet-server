@@ -19,7 +19,9 @@ public interface Actor extends Shutdownable {
   /**
    * updates the world state.
    */
-  CompletableFuture<Void> step(WorldConnector world,
+  CompletableFuture<Object> step(WorldConnector world) ;
+
+    CompletableFuture<Void> step(WorldConnector world,
       Runnable onAfterUpdate);
 
   CompletableFuture<CommandResult> join(WorldConnector world,
