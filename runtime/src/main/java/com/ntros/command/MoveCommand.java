@@ -7,9 +7,9 @@ import com.ntros.lifecycle.instance.Instances;
 import com.ntros.lifecycle.instance.Instance;
 import com.ntros.message.SessionContext;
 import com.ntros.model.entity.Direction;
+import com.ntros.model.world.protocol.ServerResult;
 import com.ntros.protocol.Message;
 import com.ntros.model.world.protocol.request.MoveRequest;
-import com.ntros.model.world.protocol.CommandResult;
 import com.ntros.protocol.response.ServerResponse;
 import com.ntros.lifecycle.session.Session;
 import java.util.List;
@@ -29,7 +29,7 @@ public class MoveCommand extends AbstractCommand {
     if (rawDir == null || rawDir.isBlank()) {
       return Optional.of(new ServerResponse(
           new Message(ERROR, List.of("MISSING_DIRECTION")),
-          CommandResult.failed(ctx.getEntityId(), ctx.getWorldName(), "missing direction")));
+          ServerResult.failed(ctx.getEntityId(), ctx.getWorldName(), "missing direction")));
     }
 
     Direction dir;
@@ -38,7 +38,7 @@ public class MoveCommand extends AbstractCommand {
     } catch (IllegalArgumentException ex) {
       return Optional.of(new ServerResponse(
           new Message(ERROR, List.of("INVALID_DIRECTION")),
-          CommandResult.failed(ctx.getEntityId(), ctx.getWorldName(), "invalid direction")));
+          ServerResult.failed(ctx.getEntityId(), ctx.getWorldName(), "invalid direction")));
     }
 
     String playerId = ctx.getEntityId();
@@ -46,7 +46,7 @@ public class MoveCommand extends AbstractCommand {
     if (instance == null) {
       return Optional.of(new ServerResponse(
           new Message(ERROR, List.of("WORLD_NOT_FOUND")),
-          CommandResult.failed(playerId, null, "world not found")));
+          ServerResult.failed(playerId, null, "world not found")));
     }
 
     instance.storeMoveAsync(new MoveRequest(playerId, dir))
@@ -58,6 +58,6 @@ public class MoveCommand extends AbstractCommand {
 
     return Optional.of(new ServerResponse(
         new Message(ACK, List.of(dir.name())),
-        CommandResult.succeeded(playerId, ctx.getWorldName(), "queued")));
+        ServerResult.succeeded(playerId, ctx.getWorldName(), "queued")));
   }
 }

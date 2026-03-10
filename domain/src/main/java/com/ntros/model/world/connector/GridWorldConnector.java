@@ -7,7 +7,7 @@ import com.ntros.model.world.connector.ops.MoveOp;
 import com.ntros.model.world.connector.ops.RemoveOp;
 import com.ntros.model.world.connector.ops.WorldOp;
 import com.ntros.model.world.engine.solid.GridWorldEngine;
-import com.ntros.model.world.protocol.CommandResult;
+import com.ntros.model.world.protocol.ServerResult;
 import com.ntros.model.world.state.GridSnapshot;
 import com.ntros.model.world.state.GridSnapshot.EntityView;
 import com.ntros.model.world.state.solid.GridWorldState;
@@ -30,13 +30,13 @@ public class GridWorldConnector implements WorldConnector {
   }
 
   @Override
-  public CommandResult apply(WorldOp op) {
+  public ServerResult apply(WorldOp op) {
     return switch (op) {
       case JoinOp j -> engine.joinEntity(j.req(), state);
       case MoveOp m -> engine.storeMoveIntent(m.req(), state);
       case RemoveOp r -> {
         engine.removeEntity(r.removeRequest().entityId(), state);
-        yield CommandResult.succeeded(r.removeRequest().entityId(), state.worldName(), "ok");
+        yield ServerResult.succeeded(r.removeRequest().entityId(), state.worldName(), "ok");
       }
       default -> throw new IllegalStateException("Unexpected value: " + op);
     };

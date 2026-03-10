@@ -4,7 +4,7 @@ import com.ntros.model.entity.Entity;
 import com.ntros.model.entity.config.WorldCapabilities;
 import com.ntros.model.world.connector.ops.WorldOp;
 import com.ntros.model.world.engine.sim.TrafficEngine;
-import com.ntros.model.world.protocol.CommandResult;
+import com.ntros.model.world.protocol.ServerResult;
 import com.ntros.model.world.state.TrafficState;
 import java.util.List;
 
@@ -35,7 +35,7 @@ public final class TrafficConnector implements WorldConnector {
 //    };
 
   @Override
-  public CommandResult apply(WorldOp op) {
+  public ServerResult apply(WorldOp op) {
     return null;
   }
 

@@ -5,7 +5,7 @@ import com.ntros.event.sessionmanager.SessionManager;
 import com.ntros.lifecycle.Shutdownable;
 import com.ntros.lifecycle.session.Session;
 import com.ntros.model.world.connector.WorldConnector;
-import com.ntros.model.world.protocol.CommandResult;
+import com.ntros.model.world.protocol.ServerResult;
 import com.ntros.model.world.protocol.request.JoinRequest;
 import com.ntros.model.world.protocol.request.MoveRequest;
 import com.ntros.model.world.protocol.request.RemoveRequest;
@@ -24,13 +24,13 @@ public interface Actor extends Shutdownable {
     CompletableFuture<Void> step(WorldConnector world,
       Runnable onAfterUpdate);
 
-  CompletableFuture<CommandResult> join(WorldConnector world,
+  CompletableFuture<ServerResult> join(WorldConnector world,
       JoinRequest joinRequest);
 
-  CompletableFuture<CommandResult> stageMove(WorldConnector world,
+  CompletableFuture<ServerResult> stageMove(WorldConnector world,
       MoveRequest moveRequest);
 
-  CompletableFuture<CommandResult> remove(WorldConnector world,
+  CompletableFuture<ServerResult> remove(WorldConnector world,
       RemoveRequest removeRequest);
 
   CompletableFuture<Void> tell(Runnable action);

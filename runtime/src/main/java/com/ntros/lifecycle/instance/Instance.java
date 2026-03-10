@@ -4,7 +4,7 @@ import com.ntros.lifecycle.Lifecycle;
 import com.ntros.lifecycle.Pausable;
 import com.ntros.model.entity.config.access.Settings;
 import com.ntros.model.world.connector.WorldConnector;
-import com.ntros.model.world.protocol.CommandResult;
+import com.ntros.model.world.protocol.ServerResult;
 import com.ntros.model.world.protocol.request.JoinRequest;
 import com.ntros.model.world.protocol.request.MoveRequest;
 import com.ntros.lifecycle.session.Session;
@@ -20,9 +20,9 @@ public interface Instance extends Lifecycle, Pausable {
   void startIfNeededForJoin();   // safe to call anytime
 
   // --- Domain actions exposed to commands ---
-  CompletableFuture<CommandResult> joinAsync(JoinRequest req);
+  CompletableFuture<ServerResult> joinAsync(JoinRequest req);
 
-  CompletableFuture<CommandResult> storeMoveAsync(MoveRequest req);
+  CompletableFuture<ServerResult> storeMoveAsync(MoveRequest req);
 
   CompletableFuture<Void> leaveAsync(Session session);
 

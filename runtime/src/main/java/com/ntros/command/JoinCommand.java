@@ -11,9 +11,9 @@ import com.ntros.lifecycle.session.Session;
 import com.ntros.message.SessionContext;
 import com.ntros.model.entity.config.access.Settings;
 import com.ntros.model.entity.config.access.Visibility;
+import com.ntros.model.world.protocol.ServerResult;
 import com.ntros.protocol.Message;
 import com.ntros.model.world.protocol.request.JoinRequest;
-import com.ntros.model.world.protocol.CommandResult;
 import com.ntros.protocol.response.ServerResponse;
 import java.time.OffsetDateTime;
 import java.util.List;
@@ -53,10 +53,10 @@ public class JoinCommand extends AbstractCommand {
       return Optional.of(error("WORLD_BUSY", player, instance.getWorldName()));
     }
 
-    CompletableFuture<CommandResult> fut = instance.joinAsync(new JoinRequest(player));
+    CompletableFuture<ServerResult> fut = instance.joinAsync(new JoinRequest(player));
     instance.startIfNeededForJoin();
 
-    CommandResult result;
+    ServerResult result;
     try {
       result = fut.get(750, TimeUnit.MILLISECONDS);
     } catch (TimeoutException te) {
@@ -98,7 +98,7 @@ public class JoinCommand extends AbstractCommand {
 
   private ServerResponse error(String code, String player, String world) {
     return new ServerResponse(new Message(ERROR, List.of(code)),
-        CommandResult.failed(player, world, code));
+        ServerResult.failed(player, world, code));
   }
 
 }

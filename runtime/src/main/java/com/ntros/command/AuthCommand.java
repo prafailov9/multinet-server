@@ -1,7 +1,7 @@
 package com.ntros.command;
 
 import com.ntros.message.SessionContext;
-import com.ntros.model.world.protocol.CommandResult;
+import com.ntros.model.world.protocol.ServerResult;
 import com.ntros.protocol.CommandType;
 import com.ntros.protocol.Message;
 import com.ntros.protocol.response.ServerResponse;
@@ -33,7 +33,7 @@ public class AuthCommand extends AbstractCommand {
     }
     return Optional.of(
         ServerResponse.ofSuccess(new Message(CommandType.AUTH_SUCCESS, List.of()),
-            new CommandResult(true, sessionContext.getEntityId(),
+            new ServerResult(true, sessionContext.getEntityId(),
                 sessionContext.getWorldName(), "User successfully authenticated")));
   }
 }

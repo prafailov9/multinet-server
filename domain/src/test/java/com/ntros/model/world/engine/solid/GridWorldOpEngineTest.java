@@ -3,7 +3,7 @@ package com.ntros.model.world.engine.solid;
 import static org.junit.jupiter.api.Assertions.*;
 
 import com.ntros.model.entity.sequence.IdSequenceGenerator;
-import com.ntros.model.world.protocol.CommandResult;
+import com.ntros.model.world.protocol.ServerResult;
 import com.ntros.model.world.protocol.request.JoinRequest;
 import com.ntros.model.world.state.solid.GridWorldState;
 import org.junit.jupiter.api.AfterEach;
@@ -34,11 +34,11 @@ class GridWorldOpEngineTest {
     GridWorldState state = createWorldState(expectedWorldName, 10, 10);
 
     // act
-    CommandResult result = engine.joinEntity(request, state);
+    ServerResult result = engine.joinEntity(request, state);
 
     //verify
     assertEquals(
-        CommandResult.succeeded(expectedPlayerName, expectedWorldName, expectedSuccessReason),
+        ServerResult.succeeded(expectedPlayerName, expectedWorldName, expectedSuccessReason),
         result);
     assertEquals(1, state.takenPositions().size());
     assertEquals(1, state.entities().size());
@@ -56,13 +56,13 @@ class GridWorldOpEngineTest {
     JoinRequest request = new JoinRequest(existingPlayerName);
     GridWorldState state = createWorldState(expectedWorldName, 10, 10);
 
-    CommandResult unused = engine.joinEntity(request, state);
+    ServerResult unused = engine.joinEntity(request, state);
     // add new player with same name(same join request)
-    CommandResult result2 = engine.joinEntity(request, state);
+    ServerResult result2 = engine.joinEntity(request, state);
 
     //verify
     assertEquals(
-        CommandResult.failed(existingPlayerName, expectedWorldName, expectedErrorReason),
+        ServerResult.failed(existingPlayerName, expectedWorldName, expectedErrorReason),
         result2);
     assertEquals(1, state.takenPositions().size());
     assertEquals(1, state.entities().size());
@@ -81,13 +81,13 @@ class GridWorldOpEngineTest {
     // creating world with only one position
     GridWorldState state = createWorldState(expectedWorldName, 1, 1);
 
-    CommandResult unused = engine.joinEntity(new JoinRequest(existingPlayerName), state);
+    ServerResult unused = engine.joinEntity(new JoinRequest(existingPlayerName), state);
 
-    CommandResult result2 = engine.joinEntity(new JoinRequest(newPlayerName), state);
+    ServerResult result2 = engine.joinEntity(new JoinRequest(newPlayerName), state);
 
     //verify
     assertEquals(
-        CommandResult.failed(newPlayerName, expectedWorldName, expectedErrorReason),
+        ServerResult.failed(newPlayerName, expectedWorldName, expectedErrorReason),
         result2);
     assertEquals(1, state.takenPositions().size());
     assertEquals(1, state.entities().size());

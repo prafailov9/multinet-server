@@ -3,7 +3,7 @@ package com.ntros.model.world.connector;
 import com.ntros.model.entity.Entity;
 import com.ntros.model.entity.config.WorldCapabilities;
 import com.ntros.model.world.connector.ops.WorldOp;
-import com.ntros.model.world.protocol.CommandResult;
+import com.ntros.model.world.protocol.ServerResult;
 import java.util.List;
 
 /**
@@ -13,7 +13,7 @@ import java.util.List;
 public interface WorldConnector {
 
   // Synchronous, immediate mutations:
-  CommandResult apply(WorldOp op);
+  ServerResult apply(WorldOp op);
 
   void update();
 

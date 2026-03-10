@@ -7,7 +7,7 @@ import com.ntros.model.world.connector.WorldConnector;
 import com.ntros.model.world.connector.ops.JoinOp;
 import com.ntros.model.world.connector.ops.MoveOp;
 import com.ntros.model.world.connector.ops.RemoveOp;
-import com.ntros.model.world.protocol.CommandResult;
+import com.ntros.model.world.protocol.ServerResult;
 import com.ntros.model.world.protocol.request.JoinRequest;
 import com.ntros.model.world.protocol.request.MoveRequest;
 import com.ntros.model.world.protocol.request.RemoveRequest;
@@ -75,15 +75,15 @@ public final class WorldActor implements Actor {
   }
 
   @Override
-  public CompletableFuture<CommandResult> join(WorldConnector world, JoinRequest join) {
+  public CompletableFuture<ServerResult> join(WorldConnector world, JoinRequest join) {
     return ask(() -> world.apply(new JoinOp(join)));
   }
 
   @Override
-  public CompletableFuture<CommandResult> stageMove(WorldConnector world, MoveRequest move) {
+  public CompletableFuture<ServerResult> stageMove(WorldConnector world, MoveRequest move) {
     stagedMoves.put(move.playerId(), move.direction());
     return CompletableFuture.completedFuture(
-        CommandResult.succeeded(move.playerId(), world.getWorldName(), "queued"));
+        ServerResult.succeeded(move.playerId(), world.getWorldName(), "queued"));
   }
 
   @Override
@@ -104,7 +104,7 @@ public final class WorldActor implements Actor {
   }
 
   @Override
-  public CompletableFuture<CommandResult> remove(WorldConnector world, RemoveRequest req) {
+  public CompletableFuture<ServerResult> remove(WorldConnector world, RemoveRequest req) {
     return ask(() -> world.apply(new RemoveOp(req)));
   }
 
