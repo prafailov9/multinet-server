@@ -46,19 +46,4 @@ public class RequestClientMessageProcessor implements ClientMessageProcessor {
         .orElseThrow(() -> new NoResponseFromServerException("Server returned empty response"));
   }
 
-  private void removeSessionEntityFromWorld(Session session) {
-    SessionContext ctx = session.getSessionContext();
-    if (ctx == null || !ctx.isAuthenticated()) {
-      log.warn("SessionContext is invalid: {}. Exiting...", ctx);
-      return;
-    }
-
-    String worldName = ctx.getWorldName();
-    if (ctx.getSessionId() >= 0 && worldName != null && !worldName.isEmpty()) {
-      Instance instance = Instances.getInstance(worldName);
-      log.info("IN MESSAGE PROCESSOR:: Removing entity {} from world {}. ", ctx, worldName);
-      instance.leaveAsync(session);
-    }
-  }
-
 }

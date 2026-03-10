@@ -53,9 +53,8 @@ public class ServerBootstrap {
     WorldConnector world = Connectors.getWorld(name);
     SessionManager sessionManager = new ClientSessionManager();
 
-    ServerInstance instance = new ServerInstance(world, sessionManager, clock,
+    Instances.registerInstance(new ServerInstance(world, sessionManager, clock,
         new BroadcastToAll(),
-        Settings.multiplayer(BROADCAST_RATE));
-    Instances.registerInstance(instance);
+        Settings.multiplayer(BROADCAST_RATE)));
   }
 }

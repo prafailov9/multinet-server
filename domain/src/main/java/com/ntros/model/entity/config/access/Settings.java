@@ -24,8 +24,7 @@ public record Settings(
     int idleTps,
     int idleAfterSeconds,
     boolean deterministic,
-    Long seed,
-    boolean stageMoves
+    Long seed
 ) {
 
   public static Settings multiplayer(int broadcastHz) {
@@ -33,7 +32,7 @@ public record Settings(
         100, false, Visibility.PUBLIC, true,
         broadcastHz,
         120, 10, 30,
-        false, null, true
+        false, null
     );
   }
 
@@ -42,7 +41,7 @@ public record Settings(
         100, false, Visibility.PUBLIC, true,
         20,
         120, 10, 30,
-        false, null, false
+        false, null
     );
   }
 
@@ -52,7 +51,6 @@ public record Settings(
         20,          // broadcastHz
         120, 10, 30, // activeTps, idleTps, idleAfterSeconds
         false, null  // deterministic, seed
-        , true
     );
   }
 
@@ -62,7 +60,6 @@ public record Settings(
         20,          // broadcastHz
         120, 10, 30, // activeTps, idleTps, idleAfterSeconds
         false, null  // deterministic, seed
-        , true
     );
   }
 
@@ -72,7 +69,6 @@ public record Settings(
         20,          // broadcastHz
         120, 10, 30, // activeTps, idleTps, idleAfterSeconds
         false, null  // deterministic, seed
-        , true
     );
   }
 
