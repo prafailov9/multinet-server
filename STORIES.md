@@ -35,7 +35,7 @@ Compare with `Vector2D.normalize()` to confirm expected behaviour and reuse the 
 **Type:** Bug
 **Priority:** Critical
 **Module:** domain
-**File:** `domain/src/main/java/com/ntros/model/world/state/GridWorldState.java`
+**File:** `domain/src/main/java/com/ntros/model/cfgWorld/state/GridWorldState.java`
 
 **Description:**
 `getTileTypeAt(x, y)` returns `null` unconditionally. Callers in `GridWorldEngine` that check tile type for collision/movement validity will silently fail or throw NPEs.
@@ -59,7 +59,7 @@ Compare with `Vector2D.normalize()` to confirm expected behaviour and reuse the 
 
 **Acceptance Criteria:**
 - [ ] Returns `Optional.empty()` or a populated `Optional<ServerResponse>` — never `null`
-- [ ] The immediate-apply logic is actually implemented (apply move to world state synchronously)
+- [ ] The immediate-apply logic is actually implemented (apply move to cfgWorld state synchronously)
 - [ ] Unit test verifies both the success path and invalid-move path
 
 ---
@@ -108,12 +108,12 @@ The `MoveStrategy` interface does not specify that `move()` must not return `nul
 **File:** `protocol/src/main/java/com/ntros/command/impl/StateCommand.java`
 
 **Description:**
-`StateCommand.execute()` returns `Optional.empty()`. Clients that send a `STATE` command receive no response, leaving them with no on-demand way to poll current world state.
+`StateCommand.execute()` returns `Optional.empty()`. Clients that send a `STATE` command receive no response, leaving them with no on-demand way to poll current cfgWorld state.
 
 **Acceptance Criteria:**
-- [ ] Calling `STATE <worldId>` returns a `ServerResponse` whose payload is the current serialised `GridSnapshot` for that world
+- [ ] Calling `STATE <worldId>` returns a `ServerResponse` whose payload is the current serialised `GridSnapshot` for that cfgWorld
 - [ ] Command validates that the session is authenticated and has a valid `worldId`
-- [ ] Unit test covers: authenticated + valid world → state returned; unauthenticated → error response
+- [ ] Unit test covers: authenticated + valid cfgWorld → state returned; unauthenticated → error response
 
 ---
 
@@ -128,7 +128,7 @@ The `MoveStrategy` interface does not specify that `move()` must not return `nul
 Both command handlers return `Optional.empty()`. They are registered in `CommandRegistry` but do nothing. `WelcomeCommand` should return a welcome banner and server metadata; `ErrorCommand` should echo a structured error response.
 
 **Acceptance Criteria:**
-- [ ] `WelcomeCommand` returns a `ServerResponse` containing server version, available worlds, and accepted commands
+- [ ] `WelcomeCommand` returns a `ServerResponse` containing server version, available cfgWorlds, and accepted commands
 - [ ] `ErrorCommand` returns a `ServerResponse` with `success=false` and a human-readable reason derived from the message args
 - [ ] Unit tests for each
 
@@ -142,7 +142,7 @@ Both command handlers return `Optional.empty()`. They are registered in `Command
 **File:** `domain/src/main/java/com/ntros/model/entity/dynamic/AbstractDynamicEntity.java`
 
 **Description:**
-All `DynamicEntity` interface methods on `AbstractDynamicEntity` have empty bodies (return defaults / no-ops). The class is the intended base for physics-capable entities (players in open-world mode, vehicles).
+All `DynamicEntity` interface methods on `AbstractDynamicEntity` have empty bodies (return defaults / no-ops). The class is the intended base for physics-capable entities (players in open-cfgWorld mode, vehicles).
 
 **Acceptance Criteria:**
 - [ ] `getPosition()`, `getVelocity()`, `getAcceleration()`, `getMaxSpeed()`, `getRotation()` return stored state
@@ -157,10 +157,10 @@ All `DynamicEntity` interface methods on `AbstractDynamicEntity` have empty bodi
 **Type:** Feature / Cleanup
 **Priority:** Medium
 **Module:** domain
-**File:** `domain/src/main/java/com/ntros/model/world/protocol/request/CreateRequest.java`
+**File:** `domain/src/main/java/com/ntros/model/cfgWorld/protocol/request/CreateRequest.java`
 
 **Description:**
-`CreateRequest` has a `// TODO` comment noting missing fields. `CreateCommand` currently only supports `GRID` world type and ignores many possible creation parameters. The request model should capture the full intent.
+`CreateRequest` has a `// TODO` comment noting missing fields. `CreateCommand` currently only supports `GRID` cfgWorld type and ignores many possible creation parameters. The request model should capture the full intent.
 
 **Acceptance Criteria:**
 - [ ] `CreateRequest` includes: `worldName`, `worldType`, `width`, `height`, `maxPlayers`, `visibility`, `shared` (boolean), `tps`, `broadcastHz`
@@ -175,10 +175,10 @@ All `DynamicEntity` interface methods on `AbstractDynamicEntity` have empty bodi
 **Type:** Feature
 **Priority:** Low
 **Module:** domain
-**File:** `domain/src/main/java/com/ntros/model/world/engine/OpenWorldEngine.java`
+**File:** `domain/src/main/java/com/ntros/model/cfgWorld/engine/OpenWorldEngine.java`
 
 **Description:**
-`OpenWorldEngine` is an empty class implementing `DynamicWorldEngine` (which is itself an empty interface). The open-world type is reserved but non-functional.
+`OpenWorldEngine` is an empty class implementing `DynamicWorldEngine` (which is itself an empty interface). The open-cfgWorld type is reserved but non-functional.
 
 **Acceptance Criteria:**
 - [ ] `DynamicWorldEngine` defines: `applyIntents()`, `joinEntity()`, `removeEntity()`, `serialize()` (mirror of `WorldEngine`)
@@ -207,14 +207,14 @@ The traffic simulation domain model (`Vehicle`, `Signal`, `RoadNode`, `RoadLink`
 
 ---
 
-### STORY-207 · Implement Game of Life world type
+### STORY-207 · Implement Game of Life cfgWorld type
 
 **Type:** Feature
 **Priority:** Low
 **Module:** domain / protocol
 
 **Description:**
-`WorldType.GAME_OF_LIFE` is defined and three `gol-*` worlds are registered in `ServerBootstrap`, but no engine or connector implements the cellular-automaton rules.
+`WorldType.GAME_OF_LIFE` is defined and three `gol-*` cfgWorlds are registered in `ServerBootstrap`, but no engine or connector implements the cellular-automaton rules.
 
 **Acceptance Criteria:**
 - [ ] A `GameOfLifeEngine` applies Conway's rules each tick
@@ -325,7 +325,7 @@ The text-based protocol is implied by the code but never formally documented. Ne
 **Module:** protocol
 
 **Description:**
-Log statements throughout `ClientSession`, `CommandActor`, and command handlers lack a shared session/world identifier. Correlating logs for a single client across threads is difficult.
+Log statements throughout `ClientSession`, `CommandActor`, and command handlers lack a shared session/cfgWorld identifier. Correlating logs for a single client across threads is difficult.
 
 **Acceptance Criteria:**
 - [ ] `ClientSession` sets `MDC.put("sessionId", ...)` and `MDC.put("worldId", ...)` at session start
@@ -365,10 +365,10 @@ Error responses are ad hoc: some commands return `Optional.empty()`, some return
 Only `AuthCommand` has a meaningful unit test. `JoinCommand`, `MoveCommand`, `DisconnectCommand`, `CreateCommand` are exercised only through integration or not at all.
 
 **Acceptance Criteria:**
-- [ ] Unit tests exist for `JoinCommand`: world-not-found, world-full, join-timeout, successful join
+- [ ] Unit tests exist for `JoinCommand`: cfgWorld-not-found, cfgWorld-full, join-timeout, successful join
 - [ ] Unit tests exist for `MoveCommand`: unauthenticated, invalid direction, successful stage
-- [ ] Unit tests exist for `DisconnectCommand`: clean disconnect removes session and stops world when empty
-- [ ] Unit tests exist for `CreateCommand`: GRID creation with valid args, invalid world type
+- [ ] Unit tests exist for `DisconnectCommand`: clean disconnect removes session and stops cfgWorld when empty
+- [ ] Unit tests exist for `CreateCommand`: GRID creation with valid args, invalid cfgWorld type
 - [ ] All tests use Mockito mocks for `Session`, `WorldConnector`, and `Instances`
 
 ---
@@ -420,7 +420,7 @@ Only `AuthCommand` has a meaningful unit test. `JoinCommand`, `MoveCommand`, `Di
 `ServerBootstrapTest` and `TestClient` exist but the test coverage of the full AUTHENTICATE → JOIN → MOVE → DISCONNECT flow is unclear.
 
 **Acceptance Criteria:**
-- [ ] Integration test: `TestClient` sends `AUTHENTICATE`, `JOIN world-1`, `MOVE UP` × 3, `DISCONNECT`
+- [ ] Integration test: `TestClient` sends `AUTHENTICATE`, `JOIN cfgWorld-1`, `MOVE UP` × 3, `DISCONNECT`
 - [ ] Server responds with `AUTH_SUCCESS`, `WELCOME`, `ACK`, `ACK`×3, and session is cleanly removed
 - [ ] Test verifies the server can handle 10 concurrent `TestClient` sessions without deadlock (use a `CountDownLatch`)
 - [ ] Test runs in < 5 s (use `PacedRateClock` with reduced TPS for speed)
@@ -477,7 +477,7 @@ Only `AuthCommand` has a meaningful unit test. `JoinCommand`, `MoveCommand`, `Di
 `CommandActor.ask()` submits tasks to a single-threaded executor and wraps results in `CompletableFuture`. If the executor is shut down or the task throws, the future completes exceptionally but the caller may not handle it. Dead-letter tasks are silently dropped.
 
 **Acceptance Criteria:**
-- [ ] Uncaught exceptions in actor tasks are logged at `ERROR` with session/world context
+- [ ] Uncaught exceptions in actor tasks are logged at `ERROR` with session/cfgWorld context
 - [ ] A dead-letter counter metric (via Micrometer or a simple `AtomicLong`) tracks dropped tasks
 - [ ] `CommandActor.shutdown()` drains the queue and logs how many pending tasks were discarded
 - [ ] Unit test: submitting a task to a shut-down actor throws or returns a failed future — not a silent no-op
@@ -513,7 +513,7 @@ There is no way for a client or monitoring system to confirm the server is alive
 **Acceptance Criteria:**
 - [ ] `PING` command is registered and requires no authentication
 - [ ] Server responds with `PONG <serverTimestampMs>`
-- [ ] `PING` does not create a session context or affect any world state
+- [ ] `PING` does not create a session context or affect any cfgWorld state
 - [ ] Unit test verifies `PONG` response and timestamp is within ±1 s of wall clock
 
 ---
@@ -522,7 +522,7 @@ There is no way for a client or monitoring system to confirm the server is alive
 
 ---
 
-### STORY-601 · Expose per-world metrics (TPS, player count, tick latency)
+### STORY-601 · Expose per-cfgWorld metrics (TPS, player count, tick latency)
 
 **Type:** Feature
 **Priority:** Medium
@@ -534,7 +534,7 @@ There is no way to observe runtime behaviour (actual TPS, broadcast rate, sessio
 **Acceptance Criteria:**
 - [ ] `AbstractClock` records measured tick duration via `TickListener.onTickEnd(tickNumber, durationNs)`
 - [ ] `ServerInstance` tracks player count and exposes it via a `getMetrics()` method returning a simple record
-- [ ] A `STATS` admin command (requires `Role.ORCHESTRATOR`) returns a JSON snapshot of all world metrics
+- [ ] A `STATS` admin command (requires `Role.ORCHESTRATOR`) returns a JSON snapshot of all cfgWorld metrics
 - [ ] Metrics are logged at `INFO` level every 30 s in a structured format
 
 ---
@@ -572,7 +572,7 @@ No `log4j2.xml` configuration file is present in the repository. Log4j2 falls ba
 | STORY-204 | Complete `CreateRequest` fields | Medium | EPIC-2 |
 | STORY-205 | Implement `OpenWorldEngine` | Low | EPIC-2 |
 | STORY-206 | Implement `TrafficConnector` and `TrafficEngine` | Low | EPIC-2 |
-| STORY-207 | Implement Game of Life world type | Low | EPIC-2 |
+| STORY-207 | Implement Game of Life cfgWorld type | Low | EPIC-2 |
 | STORY-301 | Extract `ProtocolConstants` class | Medium | EPIC-3 |
 | STORY-302 | Replace static singletons with DI | Medium | EPIC-3 |
 | STORY-303 | Document the wire protocol | Medium | EPIC-3 |
@@ -589,5 +589,5 @@ No `log4j2.xml` configuration file is present in the repository. Log4j2 falls ba
 | STORY-502 | Add dead-letter handling to `CommandActor` | Medium | EPIC-5 |
 | STORY-503 | Replace hard-coded 750 ms join timeout | Low | EPIC-5 |
 | STORY-504 | Add `PING`/`PONG` health-check command | Low | EPIC-5 |
-| STORY-601 | Expose per-world metrics | Medium | EPIC-6 |
+| STORY-601 | Expose per-cfgWorld metrics | Medium | EPIC-6 |
 | STORY-602 | Add `log4j2.xml` configuration file | Low | EPIC-6 |

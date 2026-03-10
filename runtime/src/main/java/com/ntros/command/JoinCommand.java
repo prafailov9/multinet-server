@@ -11,7 +11,6 @@ import com.ntros.lifecycle.session.Session;
 import com.ntros.message.SessionContext;
 import com.ntros.model.entity.config.access.Settings;
 import com.ntros.model.entity.config.access.Visibility;
-import com.ntros.model.world.Connectors;
 import com.ntros.protocol.Message;
 import com.ntros.model.world.protocol.request.JoinRequest;
 import com.ntros.model.world.protocol.CommandResult;
@@ -32,22 +31,24 @@ public class JoinCommand extends AbstractCommand {
 
   @Override
   public Optional<ServerResponse> execute(Message message, Session session) {
-    SessionContext ctx = session.getSessionContext();
+    SessionContext sessionContext = session.getSessionContext();
     String player = resolvePlayer(message);
 
     Instance instance = resolveInstance(message);
     if (instance == null) {
+      log.error("instance does not exist. Full client message: {}", message);
+      // TODO: change Command return types to CommandResult(vo package)
       return Optional.of(error("WORLD_NOT_FOUND", player, null));
     }
 
-    Settings cfg = instance.getSettings();
-    if (cfg.visibility() == Visibility.PRIVATE) {
+    Settings settings = instance.getSettings();
+    if (settings.visibility() == Visibility.PRIVATE) {
       var owner = InstanceFactory.ownerOf(instance.getWorldName()).orElse(null);
-      if (owner != null && !owner.equals(ctx.getUserId())) {
+      if (owner != null && !owner.equals(sessionContext.getUserId())) {
         return Optional.of(error("WORLD_PRIVATE", player, instance.getWorldName()));
       }
     }
-    if (cfg.maxPlayers() == 1 && instance.isRunning() && instance instanceof ServerInstance wi
+    if (settings.maxPlayers() == 1 && instance.isRunning() && instance instanceof ServerInstance wi
         && wi.getActiveSessionsCount() >= 1) {
       return Optional.of(error("WORLD_BUSY", player, instance.getWorldName()));
     }
@@ -68,10 +69,10 @@ public class JoinCommand extends AbstractCommand {
       return Optional.of(error(result.reason(), player, instance.getWorldName()));
     }
 
-    ctx.setEntityId(result.playerName());
-    ctx.setWorldId(result.worldName());
-    ctx.setJoinedAt(OffsetDateTime.now());
-    ctx.setAuthenticated(true);
+    sessionContext.setEntityId(result.playerName());
+    sessionContext.setWorldId(result.worldName());
+    sessionContext.setJoinedAt(OffsetDateTime.now());
+    sessionContext.setAuthenticated(true);
 
     return Optional.of(
         new ServerResponse(new Message(WELCOME, List.of(result.playerName())), result));
@@ -89,7 +90,8 @@ public class JoinCommand extends AbstractCommand {
   private Instance resolveInstance(Message message) {
     String worldName = message.args().size() >= 2 ? message.args().get(1) : null;
     if (worldName == null) {
-      worldName = Connectors.getDefaultWorld().getWorldName();
+      log.error("no world name in JOIN message {}", message);
+      throw new IllegalArgumentException("Message missing world-name argument");
     }
     return Instances.getInstance(worldName);
   }

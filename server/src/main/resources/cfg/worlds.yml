@@ -1,0 +1,55 @@
+#!!com.ntros.config.data.WorldCfg
+worlds:
+  - state:
+      name: arena-x-multi
+      dimensions: [9, 12]
+    capabilities:
+      multiplayer: true
+      orchestrated: true
+      hasAi: false
+      deterministic: true
+
+  - state:
+      name: arena-y-multi
+      dimensions: [7, 7]
+    capabilities:
+      multiplayer: true
+      orchestrated: true
+      hasAi: false
+      deterministic: true
+
+  - state:
+      name: gol-big
+      dimensions: [1024, 1024]
+    capabilities:
+      multiplayer: false
+      orchestrated: true
+      hasAi: true
+      deterministic: true
+
+  - state:
+      name: gol-small
+      dimensions: [18, 18]
+    capabilities:
+      multiplayer: true
+      orchestrated: true
+      hasAi: false
+      deterministic: true
+
+  - state:
+      name: space3d
+      dimensions: [9, 12, 11]
+    capabilities:
+      multiplayer: false
+      orchestrated: true
+      hasAi: true
+      deterministic: true
+
+  - state:
+      name: hypercube
+      dimensions: [10, 10, 10, 10]
+    capabilities:
+      multiplayer: false
+      orchestrated: true
+      hasAi: true
+      deterministic: true

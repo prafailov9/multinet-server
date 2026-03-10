@@ -117,7 +117,7 @@ public final class WorldActor implements Actor {
    */
   private <T> CompletableFuture<T> ask(Supplier<T> action) {
     CompletableFuture<T> promise = new CompletableFuture<>();
-    // actor not accepting commands
+    // actor not accepting requests
     if (!accepting.get()) {
       promise.completeExceptionally(new IllegalStateException("Actor shutting down"));
       return promise;

@@ -1,19 +1,22 @@
 package com.ntros;
 
 
+import com.ntros.config.converter.WorldConverter;
+import com.ntros.config.reader.WorldConfigReader;
 import com.ntros.event.broadcaster.SessionsBroadcaster;
 import com.ntros.event.sessionmanager.ClientSessionManager;
 import com.ntros.event.sessionmanager.SessionManager;
 import com.ntros.lifecycle.clock.Clock;
+import com.ntros.lifecycle.clock.FixedRateClock;
 import com.ntros.lifecycle.clock.PacedRateClock;
 import com.ntros.lifecycle.instance.Instances;
 import com.ntros.lifecycle.instance.ServerInstance;
 import com.ntros.model.entity.config.access.Settings;
-import com.ntros.model.world.Connectors;
 import com.ntros.model.world.connector.WorldConnector;
 import com.ntros.server.Server;
 import com.ntros.server.TcpServer;
 import java.io.IOException;
+import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -30,13 +33,9 @@ public class ServerBootstrap {
   public static void startServer() {
     log.info("Starting server on port {}", PORT);
 
-    // init default worlds
-    initWorld("world-1", new PacedRateClock(TICK_RATE));
-    initWorld("world-2", new PacedRateClock(TICK_RATE));
-    initWorld("world-3", new PacedRateClock(TICK_RATE));
-    initWorld("arena-x", new PacedRateClock(TICK_RATE));
-    initWorld("arena-y", new PacedRateClock(TICK_RATE));
-
+    // load default worlds from worlds.yml and init instances
+    List<WorldConnector> worlds = loadWorlds();
+    initInstances(worlds);
     Server server = new TcpServer(PORT);
 
     try {
@@ -48,12 +47,25 @@ public class ServerBootstrap {
 
   }
 
-  private static void initWorld(String name, Clock clock) {
-    WorldConnector world = Connectors.getWorld(name);
-    SessionManager sessionManager = new ClientSessionManager();
-
-    Instances.registerInstance(new ServerInstance(world, sessionManager, clock,
-        new SessionsBroadcaster(),
-        Settings.multiplayer(BROADCAST_RATE)));
+  private static List<WorldConnector> loadWorlds() {
+    WorldConverter converter = new WorldConverter();
+    return new WorldConfigReader().readAll().stream().map(converter::toModelObject).toList();
   }
+
+  private static void initInstances(List<WorldConnector> worlds) {
+    for (WorldConnector world : worlds) {
+      SessionManager sessionManager = new ClientSessionManager();
+      // build clock based on worlds cap:
+      Clock clock = new PacedRateClock(TICK_RATE); // default if cap cfg missing
+      // if singleplayer: fixed clock
+      if (!world.getCapabilities().supportsPlayers()) {
+        clock = new FixedRateClock(TICK_RATE);
+      }
+
+      Instances.registerInstance(
+          new ServerInstance(world, sessionManager, clock, new SessionsBroadcaster(),
+              Settings.multiplayer(BROADCAST_RATE)));
+    }
+  }
+
 }

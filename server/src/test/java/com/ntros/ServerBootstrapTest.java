@@ -45,12 +45,10 @@ public class ServerBootstrapTest {
   private static final int PORT = 5555;
   private static final int TICK_RATE = 100;
   private static final int BROADCAST_RATE = 21;
-
   private static final Random SEEDED = new Random(10);
 
   private final ExecutorService serverExecutor = Executors.newSingleThreadExecutor();
   private TcpServer server;
-
   private Instance instance;
   private WorldConnector defaultWorld;
 
@@ -65,8 +63,9 @@ public class ServerBootstrapTest {
     // register the world instance(state + engine) with the tick server
 
     defaultWorld = createWorldConnector("arena-x", 3, 3);
-    instance = createInstance(defaultWorld, new ClientSessionManager(),
-        new PacedRateClock(TICK_RATE), new SessionsBroadcaster(), Settings.multiplayer(BROADCAST_RATE)
+    instance = createSingleplayerInstance(defaultWorld, new ClientSessionManager(),
+        new PacedRateClock(TICK_RATE), new SessionsBroadcaster(),
+        Settings.multiplayer(BROADCAST_RATE)
     );
     Instances.registerInstance(instance);
     server = new TcpServer(PORT);
@@ -250,7 +249,7 @@ public class ServerBootstrapTest {
             false, true));
   }
 
-  private ServerInstance createInstance(WorldConnector worldConnector,
+  private ServerInstance createSingleplayerInstance(WorldConnector worldConnector,
       SessionManager sessionManager,
       Clock clock, Broadcaster broadcaster, Settings policy) {
     return new ServerInstance(worldConnector, sessionManager, clock, broadcaster, policy);
