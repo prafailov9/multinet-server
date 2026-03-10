@@ -109,8 +109,9 @@ public class SocketConnection implements Connection {
    */
   @Override
   public void send(String message) {
+    // if queue full, drop stale messages
     if (!sendQueue.offer(message)) {
-      throw new RuntimeException("Backpressure: client not reading data.");
+      log.info("Queue full: dropped serverResponse: {}", sendQueue.poll());
     }
     trySend();
   }

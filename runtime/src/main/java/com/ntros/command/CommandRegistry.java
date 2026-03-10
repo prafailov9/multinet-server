@@ -1,5 +1,6 @@
 package com.ntros.command;
 
+import static com.ntros.command.CommandUtil.AUTH;
 import static com.ntros.command.CommandUtil.DISCONNECT;
 import static com.ntros.command.CommandUtil.ERROR;
 import static com.ntros.command.CommandUtil.JOIN;
@@ -7,6 +8,7 @@ import static com.ntros.command.CommandUtil.MOVE;
 import static com.ntros.command.CommandUtil.STATE;
 import static com.ntros.command.CommandUtil.WELCOME;
 
+import com.ntros.command.impl.AuthCommand;
 import com.ntros.command.impl.Command;
 import com.ntros.command.impl.DisconnectCommand;
 import com.ntros.command.impl.ErrorCommand;
@@ -25,6 +27,7 @@ public final class CommandRegistry {
   static {
     COMMAND_MAP = Map.of(JOIN, new JoinCommand(),
         WELCOME, new WelcomeCommand(),
+        AUTH, new AuthCommand(),
         MOVE, new MoveCommand(),
         STATE, new StateCommand(),
         DISCONNECT, new DisconnectCommand(),

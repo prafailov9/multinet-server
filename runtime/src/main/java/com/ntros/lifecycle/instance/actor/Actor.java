@@ -3,12 +3,12 @@ package com.ntros.lifecycle.instance.actor;
 
 import com.ntros.event.sessionmanager.SessionManager;
 import com.ntros.lifecycle.Shutdownable;
+import com.ntros.lifecycle.session.Session;
 import com.ntros.model.world.connector.WorldConnector;
+import com.ntros.model.world.protocol.CommandResult;
 import com.ntros.model.world.protocol.request.JoinRequest;
 import com.ntros.model.world.protocol.request.MoveRequest;
 import com.ntros.model.world.protocol.request.RemoveRequest;
-import com.ntros.model.world.protocol.CommandResult;
-import com.ntros.lifecycle.session.Session;
 import java.util.concurrent.CompletableFuture;
 
 /**

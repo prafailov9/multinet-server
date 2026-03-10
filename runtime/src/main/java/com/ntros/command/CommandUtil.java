@@ -12,6 +12,7 @@ public class CommandUtil {
       CommandType.MOVE, CommandType.DISCONNECT);
 
   public static final String JOIN = "JOIN";
+  public static final String AUTH = "AUTH";
   public static final String MOVE = "MOVE";
   public static final String DISCONNECT = "DISCONNECT";
   public static final String STATE = "STATE";
