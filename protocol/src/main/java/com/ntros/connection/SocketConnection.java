@@ -1,46 +1,93 @@
 package com.ntros.connection;
 
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.net.Socket;
 import java.net.SocketTimeoutException;
 import java.nio.charset.StandardCharsets;
-import java.util.Queue;
-import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * Wraps one client socket, abstracts I/O
+ * Wraps one client socket and abstracts network I/O.
+ * <p>
+ * Optimizations in this implementation:
+ * <p>
+ * 1. Buffered streams for faster IO
+ * Avoids syscall per byte and reduces kernel transitions.
+ * <p>
+ * 2. Asynchronous send queue
+ * Game/session threads never block on socket writes.
+ * <p>
+ * 3. Lock-free send scheduling
+ * Uses CAS (AtomicBoolean) instead of synchronized.
+ * <p>
+ * 4. Burst draining sender
+ * A single sender task drains the queue fully to reduce executor scheduling.
+ * <p>
+ * 5. Shared IO thread pool
+ * Prevents one thread per connection which would not scale.
+ * <p>
+ * 6. Line-buffered receive with memory reuse
+ * Avoids allocating new objects per byte.
  */
 @Slf4j
 public class SocketConnection implements Connection {
 
   private static final int MAX_TIMEOUT_MILLIS = 5000;
   private static final int MAX_QUEUE_SIZE = 1024;
+  private static final int MAX_LINE_LENGTH = 8192;
+
+  /**
+   * Shared IO thread pool.
+   * Important scalability optimization:
+   * Instead of creating a thread per connection (which would kill performance
+   * with thousands of clients), all connections share a small IO pool.
+   */
+  private static final ExecutorService SEND_POOL =
+      Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors() * 2);
+
   private final Socket socket;
-  private final InputStream input;
-  private final OutputStream output;
-  private final Queue<String> sendQueue = new ConcurrentLinkedQueue<>();
+
+  /**
+   * Buffered streams drastically reduce the number of syscalls.
+   * Without buffering, each read/write can trigger a kernel call.
+   * With buffering, reads happen in chunks (8KB default).
+   */
+  private final BufferedInputStream input;
+  private final BufferedOutputStream output;
+
+  /**
+   * Outgoing messages are queued so that game logic threads
+   * never block on network IO.
+   */
+  private final BlockingQueue<String> sendQueue =
+      new LinkedBlockingQueue<>(MAX_QUEUE_SIZE);
+
+  /**
+   * Ensures only one sender task writes to the socket at a time.
+   * CAS is used instead of synchronized to avoid lock contention.
+   */
   private final AtomicBoolean sending = new AtomicBoolean(false);
 
-  private final ExecutorService sendExecutor =
-      Executors.newSingleThreadExecutor(r -> {
-        var t = new Thread(r, "send-" + getRemoteAddress());
-        t.setDaemon(true);
-        return t;
-      });
+  /**
+   * Reusable buffer for reading lines from the socket.
+   * Avoids allocating new buffers on every receive() call.
+   */
+  private final ByteArrayOutputStream lineBuffer = new ByteArrayOutputStream(256);
 
   public SocketConnection(Socket socket) throws IOException {
     this.socket = socket;
     socket.setSoTimeout(MAX_TIMEOUT_MILLIS);
 
-    this.input = socket.getInputStream();
-    this.output = socket.getOutputStream();
+    this.input = new BufferedInputStream(socket.getInputStream());
+    this.output = new BufferedOutputStream(socket.getOutputStream());
   }
 
   public SocketConnection(Socket socket, boolean shouldTimeout) throws IOException {
@@ -48,65 +95,108 @@ public class SocketConnection implements Connection {
     if (shouldTimeout) {
       socket.setSoTimeout(MAX_TIMEOUT_MILLIS);
     }
-
-    this.input = socket.getInputStream();
-    this.output = socket.getOutputStream();
+    this.input = new BufferedInputStream(socket.getInputStream());
+    this.output = new BufferedOutputStream(socket.getOutputStream());
   }
 
   /**
-   * Sends data stream to the client. Blocks until socket's out-buffer is flushed.
+   * Enqueues a message to be sent to the client.
+   * This method is intentionally very lightweight:
+   * - No blocking IO
+   * - No locks
+   * - Just queue + scheduling
+   * This allows many threads to call send() concurrently.
    */
   @Override
   public void send(String message) {
-
-    if (sendQueue.size() > MAX_QUEUE_SIZE) {
+    if (!sendQueue.offer(message)) {
       throw new RuntimeException("Backpressure: client not reading data.");
     }
-    sendQueue.add(message);
-    // schedule flush
     trySend();
   }
 
   /**
-   * Reads bytes until a new line(\n) is encountered.
+   * Attempts to schedule a sender task.
+   * Only one sender task may run at a time.
+   * CAS prevents concurrent writers.
+   */
+  private void trySend() {
+    if (!sending.compareAndSet(false, true)) {
+      return;
+    }
+    SEND_POOL.execute(() -> {
+      try {
+        while (true) {
+          String msg;
+          /**
+           * Drain the queue completely in a burst.
+           * This significantly reduces executor scheduling overhead
+           * when many messages are sent quickly.
+           */
+          while ((msg = sendQueue.poll()) != null) {
+            output.write((msg + "\n").getBytes(StandardCharsets.UTF_8));
+          }
+          output.flush();
+          /**
+           * Release sender ownership.
+           */
+          sending.set(false);
+          /**
+           * If new messages arrived during flush(), attempt to continue.
+           */
+          if (sendQueue.isEmpty() || !sending.compareAndSet(false, true)) {
+            return;
+          }
+        }
+      } catch (IOException ex) {
+        log.error("Send failed: {}", ex.getMessage());
+        close();
+      }
+    });
+  }
+
+  /**
+   * Reads a single line terminated by '\n'.
+   * <p>
+   * Optimization vs naive implementations:
+   * <p>
+   * - Uses buffered input stream
+   * - Reuses internal buffer
+   * - Avoids per-byte allocations
    */
   @Override
   public String receive() {
-    // Create a new buffer for every line. This ensures that each call is independent,
-    // and you don't keep stale data from a previous read.
-    ByteArrayOutputStream lineBuffer = new ByteArrayOutputStream();
+
+    lineBuffer.reset();
+
     try {
       int nextByte;
       while ((nextByte = input.read()) != -1) {
         if (nextByte == '\n') {
-          break; // end of line
+          break;
         }
-        // ignore carriage return if present.
         if (nextByte != '\r') {
           lineBuffer.write(nextByte);
         }
-        // limited line length to avoid potential issues with malicious clients.
-        if (lineBuffer.size() > 8192) { // 8KB limit
+        if (lineBuffer.size() > MAX_LINE_LENGTH) {
           throw new IOException("Line too long");
         }
       }
-      // return null if no data read
       if (nextByte == -1 && lineBuffer.size() == 0) {
         return null;
       }
-
     } catch (SocketTimeoutException ex) {
-      // no data within MAX_TIMEOUT_MILLIS time. Signal to Session.
       return "_TIMEOUT_";
     } catch (IOException ex) {
-      // CONN_RESET can happen when the server shuts down, while client connections are still active. Just log and move on.
-      if ("Connection reset".equals(ex.getMessage())) {
-        log.info("[SocketConnection]: Connection reset, likely due to shutdown.");
-      } else {
-        String err = String.format("[SocketConnection]: Failed to read line from socket (%s): %s",
-            getRemoteAddress(), ex.getMessage());
 
-        log.error(err, ex);
+      if ("Connection reset".equals(ex.getMessage())) {
+        log.info("[SocketConnection]: Connection reset.");
+      } else {
+        log.error(
+            "[SocketConnection]: Failed to read line from socket ({}): {}",
+            getRemoteAddress(),
+            ex.getMessage(),
+            ex);
       }
       close();
     }
@@ -115,12 +205,21 @@ public class SocketConnection implements Connection {
 
   @Override
   public void sendFrame(String headerLine, byte[] body) {
-
+    throw new UnsupportedOperationException("Not implemented");
   }
 
   @Override
   public byte[] receiveBytesExactly(int length) throws IOException {
-    return new byte[0];
+    byte[] data = new byte[length];
+    int read = 0;
+    while (read < length) {
+      int r = input.read(data, read, length - read);
+      if (r == -1) {
+        throw new IOException("Unexpected EOF");
+      }
+      read += r;
+    }
+    return data;
   }
 
   @Override
@@ -128,12 +227,14 @@ public class SocketConnection implements Connection {
     try {
       if (isOpen()) {
         socket.close();
-        log.info("[SocketConnection]: Closed socket connection to {}", getRemoteAddress());
-
+        log.info("[SocketConnection]: Closed socket {}", getRemoteAddress());
       }
     } catch (IOException ex) {
-      log.error("[SocketConnection]: Error while closing socket ({}): {}", getRemoteAddress(),
-          ex.getMessage(), ex);
+      log.error(
+          "[SocketConnection]: Error while closing socket ({}): {}",
+          getRemoteAddress(),
+          ex.getMessage(),
+          ex);
     }
   }
 
@@ -149,49 +250,4 @@ public class SocketConnection implements Connection {
       return "unknown";
     }
   }
-
-  /**
-   * Attempts to flush the {@code sendQueue} to the client socket asynchronously. This method
-   * ensures that only one background send task runs at a time: Uses the sending flag as a guard to
-   * prevent overlapping concurrent writes to the socket's output stream. If a send task is already
-   * in progress, the method returns immediately. If no send task is active, a new async task is
-   * scheduled with The background task: Polls and writes all queued messages from {@code sendQueue}
-   * to the socket's output buffer. Flushes the output stream to ensure delivery to the client. On
-   * failure (e.g., client disconnect, socket error), logs the error and closes the connection.
-   * Resets the {@code sending} flag to allow future sends, and retries immediately if messages
-   * arrived in the meantime.
-   */
-  private void trySend() {
-    // checks if the send tasks is already running.
-    // If yes -> return to avoid multiple overlapping writes to the client buffer.
-    if (!sending.compareAndSet(false, true)) {
-      return;
-    }
-
-    // background task that writes to client buffer.
-    sendExecutor.execute(() -> {
-      try {
-        // write all queued messages to client buffer until queue is empty.
-        while (!sendQueue.isEmpty()) {
-          String msg = sendQueue.poll();
-          if (msg != null) {
-            output.write((msg + "\n").getBytes(StandardCharsets.UTF_8));
-          }
-        }
-        // confirm and send the buffer changes to the client socket.
-        output.flush();
-      } catch (IOException ex) {
-        // client disconnected or socket no longer valid.
-        log.error("Send failed: {}", ex.getMessage());
-        close();
-      } finally {
-        sending.set(false);
-        // attempt retry if new messages have arrived.
-        if (!sendQueue.isEmpty()) {
-          trySend();
-        }
-      }
-    });
-  }
-
 }

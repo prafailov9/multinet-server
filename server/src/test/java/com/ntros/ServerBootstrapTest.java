@@ -75,10 +75,6 @@ public class ServerBootstrapTest {
     server = new TcpServer(PORT);
     ServerTestHelper.startServer(server, serverExecutor, PORT);
     Instances.registerInstance(instance);
-
-    server = new TcpServer(PORT);
-    // Start the server in a background thread.
-    ServerTestHelper.startServer(server, serverExecutor, PORT);
   }
 
   @AfterEach
@@ -227,6 +223,9 @@ public class ServerBootstrapTest {
 
   @Test
   void multipleClients_joinDifferentWorlds_welcomeMessageResponse() throws Exception {
+    server = new TcpServer(PORT);
+    // Start the server in a background thread.
+    ServerTestHelper.startServer(server, serverExecutor, PORT);
     // register second world
     var secondWorld = createWorldConnector("arena-y", 3, 3);
 

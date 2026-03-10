@@ -18,7 +18,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * Abstracts the external client, its behaviour and how it's represented in the system. Emits events
+ * Abstracts the external client, its behavior and how it's represented in the system. Emits events
  * based on the server response.
  */
 @Slf4j
@@ -79,10 +79,8 @@ public class ClientSession implements Session {
    */
   @Override
   public void response(String serverResponse) {
-    synchronized (connection) { // sync because writing to the socket connection
-      log.info("{} received server response: {}. Sending to client...\n", this, serverResponse);
-      connection.send(serverResponse);
-    }
+    log.info("{} received server response: {}. Sending to client...\n", this, serverResponse);
+    connection.send(serverResponse);
   }
 
   @Override

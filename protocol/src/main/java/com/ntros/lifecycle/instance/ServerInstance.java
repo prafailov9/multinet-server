@@ -51,23 +51,11 @@ public class ServerInstance extends AbstractInstance {
    */
   @Override
   public void start() {
-    if (!clockTicking.compareAndSet(false, true)) {
+    if (isAlreadyTicking()) {
       return;
     }
-    clock.tick(() -> {
-      try {
-        actor.step(world, this::broadcastCurrentSnapshot).exceptionally(ex -> {
-          log.error("tick failed", ex);
-          return null;
-        });
-      } catch (Throwable t) {
-        log.error("scheduling tick failed", t);
-      }
-    });
-
-    clockTicking.set(true);
+    clock.tick(this::tryUpdateWorld);
   }
-
 
   /**
    * Schedules a no-op on the actor so the returned future completes after all previously queued
@@ -115,11 +103,26 @@ public class ServerInstance extends AbstractInstance {
     }
   }
 
-  private void broadcastCurrentSnapshot() {
+  private void tryUpdateWorld() {
+    try {
+      actor.step(world, this::broadcastWorldSnapshot).exceptionally(ex -> {
+        log.error("tick failed", ex);
+        return null;
+      });
+    } catch (Throwable t) {
+      log.error("scheduling tick failed", t);
+    }
+  }
+
+  private void broadcastWorldSnapshot() {
     Object data = world.snapshot();
     String dataLine = encoder.encodeState(
         new StateFrame(PROTO_VER, getWorldName(), seq.incrementAndGet(), data));
     broadcaster.publish(dataLine, sessionManager);
+  }
+
+  private boolean isAlreadyTicking() {
+    return !clockTicking.compareAndSet(false, true);
   }
 
   @Override
