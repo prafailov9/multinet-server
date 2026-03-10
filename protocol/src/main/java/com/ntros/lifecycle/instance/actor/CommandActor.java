@@ -11,18 +11,24 @@ import com.ntros.model.world.protocol.request.JoinRequest;
 import com.ntros.model.world.protocol.request.MoveRequest;
 import com.ntros.model.world.protocol.request.RemoveRequest;
 import com.ntros.model.world.protocol.response.CommandResult;
-import java.util.concurrent.CompletableFuture;
+
+import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.function.Supplier;
+
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public final class CommandActor implements Actor {
 
-  private static final Boolean RUN_IN_BACKGROUND = Boolean.TRUE;
   private final ExecutorService control;
+
+  /**
+   * Indicates whether the actor still accepts new work.
+   * Prevents tasks from being submitted after shutdown begins.
+   */
+  private final AtomicBoolean accepting = new AtomicBoolean(true);
 
   /**
    * last-write-wins move coalescing
@@ -30,68 +36,60 @@ public final class CommandActor implements Actor {
   private final ConcurrentHashMap<String, Direction> stagedMoves = new ConcurrentHashMap<>();
 
   public CommandActor(String worldName) {
-    this(RUN_IN_BACKGROUND, worldName);
+    this(true, worldName);
   }
 
   public CommandActor(boolean runInBackground, String worldName) {
     this.control = Executors.newSingleThreadExecutor(r -> {
-      var t = new Thread(r, "actor-" + worldName + "-ctl");
+      Thread t = new Thread(r, "actor-" + worldName + "-ctl");
       t.setDaemon(runInBackground);
       return t;
     });
   }
 
   /**
-   * one tick executed entirely on the actor
-   *
-   * @param world         - state to update
-   * @param onAfterUpdate - task to run after updating the state
-   * @return void future, signifying the task is completed
+   * One tick executed entirely on the actor thread.
    */
   public CompletableFuture<Void> step(WorldConnector world, Runnable onAfterUpdate) {
-    // submit world update
     return ask(() -> {
-      // flush staged moves to the engine
+
       if (!stagedMoves.isEmpty()) {
         for (var e : stagedMoves.entrySet()) {
           world.apply(new MoveOp(new MoveRequest(e.getKey(), e.getValue())));
         }
         stagedMoves.clear();
       }
-      // advance the world one step: applies flushed intents
-      world.update();
 
-      // allow caller to run task on actor thread(snapshot & broadcast)
+      world.update();
       onAfterUpdate.run();
       return null;
     });
   }
-
 
   @Override
   public CompletableFuture<CommandResult> join(WorldConnector world, JoinRequest join) {
     return ask(() -> world.apply(new JoinOp(join)));
   }
 
-  // coalesce move; do not mutate the world here
   @Override
   public CompletableFuture<CommandResult> stageMove(WorldConnector world, MoveRequest move) {
-    stagedMoves.put(move.playerId(), move.direction()); // last-write-wins
+    stagedMoves.put(move.playerId(), move.direction());
     return CompletableFuture.completedFuture(
         CommandResult.succeeded(move.playerId(), world.getWorldName(), "queued"));
   }
 
-  // Used by disconnect
   @Override
   public CompletableFuture<Void> leave(WorldConnector world, SessionManager manager,
       Session session) {
 
     return ask(() -> {
       var ctx = session.getSessionContext();
+
       if (ctx.getEntityId() != null) {
         world.apply(new RemoveOp(new RemoveRequest(ctx.getEntityId())));
-        stagedMoves.remove(ctx.getEntityId()); // drop any staged move
+        stagedMoves.remove(ctx.getEntityId());
       }
+
       manager.remove(session);
       return null;
     });
@@ -102,20 +100,42 @@ public final class CommandActor implements Actor {
     return ask(() -> world.apply(new RemoveOp(req)));
   }
 
+  /**
+   * Safe actor execution helper.
+   * <p>
+   * Guarantees:
+   * - never throws RejectedExecutionException
+   * - completes future exceptionally instead
+   */
   private <T> CompletableFuture<T> ask(Supplier<T> action) {
-    var promise = new CompletableFuture<T>();
-    control.execute(() -> {
-      try {
-        promise.complete(action.get());
-      } catch (Throwable t) {
 
-        promise.completeExceptionally(t);
-      }
-    });
+    CompletableFuture<T> promise = new CompletableFuture<>();
+
+    if (!accepting.get()) {
+      promise.completeExceptionally(
+          new IllegalStateException("Actor shutting down"));
+      return promise;
+    }
+
+    try {
+
+      control.execute(() -> {
+        try {
+          promise.complete(action.get());
+        } catch (Throwable t) {
+          promise.completeExceptionally(t);
+        }
+      });
+
+    } catch (RejectedExecutionException ex) {
+
+      promise.completeExceptionally(
+          new IllegalStateException("Actor executor terminated", ex));
+    }
+
     return promise;
   }
 
-  // Generic run-on-actor hook
   @Override
   public CompletableFuture<Void> tell(Runnable task) {
     return ask(() -> {
@@ -124,17 +144,45 @@ public final class CommandActor implements Actor {
     });
   }
 
-  @Override
-  public boolean isRunning() {
-    return !control.isShutdown() && !control.isTerminated();
+  /**
+   * Allows tests or shutdown code to wait until all queued tasks finish.
+   */
+  public CompletableFuture<Void> drain() {
+    return tell(() -> {
+    });
   }
 
   @Override
+  public boolean isRunning() {
+    return accepting.get();
+  }
+
+  /**
+   * Graceful shutdown.
+   * <p>
+   * Steps:
+   * 1. stop accepting new tasks
+   * 2. let queued tasks finish
+   * 3. terminate executor
+   */
+  @Override
   public void shutdown() {
-    if (!isRunning()) {
-      log.info("Actor already terminated");
+
+    if (!accepting.compareAndSet(true, false)) {
+      log.info("Actor already shutting down");
       return;
     }
-    control.shutdownNow();
+
+    control.shutdown();
+
+    try {
+      if (!control.awaitTermination(5, TimeUnit.SECONDS)) {
+        log.warn("Actor did not terminate gracefully, forcing shutdown");
+        control.shutdownNow();
+      }
+    } catch (InterruptedException e) {
+      control.shutdownNow();
+      Thread.currentThread().interrupt();
+    }
   }
 }

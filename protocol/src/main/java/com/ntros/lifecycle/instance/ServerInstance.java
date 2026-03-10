@@ -54,7 +54,7 @@ public class ServerInstance extends AbstractInstance {
     if (isAlreadyTicking()) {
       return;
     }
-    clock.tick(this::tryUpdateWorld);
+    clock.tick(this::tryWorldUpdate);
   }
 
   /**
@@ -63,8 +63,11 @@ public class ServerInstance extends AbstractInstance {
    */
   @Override
   public CompletableFuture<Void> drain() {
-    return actor.tell(() -> { /* no-op */ });
-
+    if (!actor.isRunning()) {
+      return CompletableFuture.completedFuture(null);
+    }
+    return actor.tell(() -> {
+    });
   }
 
   @Override
@@ -79,36 +82,53 @@ public class ServerInstance extends AbstractInstance {
 
   @Override
   public CompletableFuture<Void> leaveAsync(Session session) {
+    if (!actor.isRunning()) {
+      sessionManager.remove(session);
+      return CompletableFuture.completedFuture(null);
+    }
     return actor.leave(world, sessionManager, session);
   }
 
   @Override
   public void stop() {
+
     if (!clockTicking.get()) {
       return;
     }
+
     log.info("[{}] resetting…", getWorldName());
+
     try {
-      // 1) stop scheduling new ticks
+
+      // 1 stop scheduling new ticks
       clock.stop();
-      // 2) ensure all queued actor work (join/move/remove/leave) is drained
+      // 2 finish all actor work
       drain().join();
-      // 3) now we can fully shut down the clock thread
-      clock.shutdown();
+      // 3 shutdown sessions (may enqueue actor tasks)
+      sessionManager.shutdownAll();
+      // 4 drain again to process leave() operations
+      drain().join();
+      // 5 reset world state
+      world.reset();
     } finally {
       clockTicking.set(false);
-      sessionManager.shutdownAll();
-      world.reset();
+      // 6 stop actor
       actor.shutdown();
+      // 7 stop clock thread
+      clock.shutdown();
     }
   }
 
-  private void tryUpdateWorld() {
+  private void tryWorldUpdate() {
+    if (!clockTicking.get() || !actor.isRunning()) {
+      return;
+    }
     try {
-      actor.step(world, this::broadcastWorldSnapshot).exceptionally(ex -> {
-        log.error("tick failed", ex);
-        return null;
-      });
+      actor.step(world, this::broadcastWorldSnapshot)
+          .exceptionally(ex -> {
+            log.error("tick failed", ex);
+            return null;
+          });
     } catch (Throwable t) {
       log.error("scheduling tick failed", t);
     }

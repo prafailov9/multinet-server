@@ -52,21 +52,22 @@ public class ServerTestHelper {
     serverExecutor.shutdownNow();
   }
 
-  public static void stopServerWhen(List<Instance> instances, Server server, ExecutorService exec)
-      throws IOException {
-    server.stop();
+  public static void stopServerWhen(List<Instance> instances,
+      Server server,
+      ExecutorService exec) throws IOException {
 
-    // run marker tasks to clean up the actor thread
+    // drain actor mailboxes first
     List<CompletableFuture<Void>> drains = instances.stream()
         .map(Instance::drain)
         .toList();
 
-    // wait until all actor tasks are done for all instances
     await()
         .ignoreExceptions()
         .until(() -> drains.stream().allMatch(CompletableFuture::isDone));
 
-    // assert world empty
+    // now stop server
+    server.stop();
+
     await()
         .pollDelay(Duration.ofMillis(100))
         .pollInterval(Duration.ofMillis(50))
@@ -81,7 +82,6 @@ public class ServerTestHelper {
 
     exec.shutdownNow();
   }
-
 
   public static void waitForPort(int port, long timeoutMillis) {
     await().atMost(timeoutMillis, MILLISECONDS).pollInterval(50, MILLISECONDS)

@@ -69,19 +69,12 @@ public class ServerBootstrapTest {
     instance = createInstance(defaultWorld, new ClientSessionManager(),
         new PacedRateClock(TICK_RATE), new BroadcastToAll(), Settings.multiplayer(BROADCAST_RATE)
     );
-
     Instances.registerInstance(instance);
-
     server = new TcpServer(PORT);
-    ServerTestHelper.startServer(server, serverExecutor, PORT);
-    Instances.registerInstance(instance);
   }
 
   @AfterEach
-  public void tearDown() throws IOException {
-    instance.stop();
-    server.stop();
-    serverExecutor.shutdownNow();
+  void tearDown() {
     IdSequenceGenerator.getInstance().resetAll();
     Instances.clear();
   }
@@ -89,20 +82,17 @@ public class ServerBootstrapTest {
   @Test
   void singleConnection_sendJoinCommand_immediateJoinSuccess() throws Exception {
     // autoStartOnPlayerJoin = true -> server will immediately start ticking
+    ServerTestHelper.startServer(server, serverExecutor, PORT);
     try (TestClient testClient = new TestClient("localhost", PORT)) {
       String clientName = "client-1";
 
       // join server
       ServerMessage actualJoinResponse = testClient.join(clientName, defaultWorld.getWorldName(),
           2);
-//      String actualJoinResponse = testClient.join(clientName, defaultWorld.getWorldName(), 2);
-      String expectedJoinResponse = "WELCOME " + clientName;
       // Verify success join
       log.info("[TEST]: Received JOIN response from server: {}", actualJoinResponse);
       assertEquals(ServerCmd.WELCOME, actualJoinResponse.type());
       assertEquals("client-1", actualJoinResponse.args().getFirst());
-//      assertEquals(expectedJoinResponse, actualJoinResponse,
-//          "Unexpected response from server for " + clientName);
     }
     // stop server
     stopServerWhen(instance, server, serverExecutor);
@@ -114,6 +104,7 @@ public class ServerBootstrapTest {
 
   @Test
   void singleConnection_sendMoveCommand_moveInTheWorldSuccess() throws Exception {
+    ServerTestHelper.startServer(server, serverExecutor, PORT);
     try (TestClient testClient = new TestClient("localhost", PORT)) {
       String clientName = "client-1";
 
@@ -153,6 +144,7 @@ public class ServerBootstrapTest {
 
   @Test
   void multipleClients_sendJoinCommand_welcomeMessageResponse() throws Exception {
+    ServerTestHelper.startServer(server, serverExecutor, PORT);
     int clientCount = 3;
     List<TestClient> clients = new ArrayList<>();
     try {
@@ -181,6 +173,7 @@ public class ServerBootstrapTest {
 
   @Test
   void multipleClients_sendMoveCommand_receiveWorldStateResponse() throws Exception {
+    ServerTestHelper.startServer(server, serverExecutor, PORT);
     int clientCount = 3;
     List<TestClient> clients = new ArrayList<>();
     try {
@@ -223,23 +216,26 @@ public class ServerBootstrapTest {
 
   @Test
   void multipleClients_joinDifferentWorlds_welcomeMessageResponse() throws Exception {
-    server = new TcpServer(PORT);
-    // Start the server in a background thread.
-    ServerTestHelper.startServer(server, serverExecutor, PORT);
-    // register second world
+
     var secondWorld = createWorldConnector("arena-y", 3, 3);
 
-    var secondInstance = createMultiplayerInstance(secondWorld,
+    var secondInstance = createMultiplayerInstance(
+        secondWorld,
         Settings.multiplayer(BROADCAST_RATE));
+
     Instances.registerInstance(secondInstance);
+
+    // NOW start server
+    server = new TcpServer(PORT);
+    ServerTestHelper.startServer(server, serverExecutor, PORT);
 
     try (TestClient c1 = new TestClient("localhost", PORT);
         TestClient c2 = new TestClient("localhost", PORT)) {
 
-      String w1 = defaultWorld.getWorldName(); // e.g., "arena-x"
-      String w2 = "arena-y";                    // make sure you registered a second world
+      String w1 = defaultWorld.getWorldName();
+      String w2 = "arena-y";
 
-      ServerMessage response1 = c1.join("client-1", w1, 2); // 2s is plenty now
+      ServerMessage response1 = c1.join("client-1", w1, 2);
       ServerMessage response2 = c2.join("client-2", w2, 2);
 
       assertEquals(ServerCmd.WELCOME, response1.type());
@@ -250,7 +246,6 @@ public class ServerBootstrapTest {
     }
 
     stopServerWhen(List.of(instance, secondInstance), server, serverExecutor);
-    assertEquals(0, defaultWorld.getCurrentEntities().size());
   }
 
   private GridWorldConnector createWorldConnector(String worldName, int width, int height) {
