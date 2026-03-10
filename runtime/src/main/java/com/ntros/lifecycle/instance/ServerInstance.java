@@ -136,6 +136,22 @@ public class ServerInstance extends AbstractInstance {
     return snapshot;
   }
 
+  /**
+   * TODO: replace with current broadcast
+   * private void broadcastWorldUpdate(Object snapshot) {
+   *     byte[] body  = encoder.encodeBody(snapshot);                       // JsonProtocolEncoder
+   *     StatePacket packet = new StatePacket(seq.incrementAndGet(), getWorldName(), body);
+   *     byte[] frame;
+   *     try {
+   *         frame = codec.encode(packet);                                  // PacketCodec
+   *     } catch (IOException e) {
+   *         log.error("state encode failed", e);
+   *         return;
+   *     }
+   *     broadcaster.publish(frame, sessionManager);                        // needs publish(byte[], ...)
+   * }
+   */
+
   private void broadcastWorldUpdate(Object snapshot) {
     String dataLine = encoder.encodeState(
         new StateFrame(PROTO_VER, getWorldName(), seq.incrementAndGet(), snapshot));

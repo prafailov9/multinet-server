@@ -1,4 +1,4 @@
-package com.ntros.packet;
+package com.ntros.codec.packet;
 
 public interface Packet {
 
