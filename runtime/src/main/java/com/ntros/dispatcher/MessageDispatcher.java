@@ -1,8 +1,7 @@
 package com.ntros.dispatcher;
 
-import com.ntros.command.CommandRegistry;
-import com.ntros.command.impl.Command;
-import com.ntros.command.impl.ErrorCommand;
+import com.ntros.command.utils.CommandRegistry;
+import com.ntros.command.Command;
 import com.ntros.protocol.Message;
 import com.ntros.protocol.response.ServerResponse;
 import com.ntros.lifecycle.session.Session;
@@ -23,8 +22,7 @@ public class MessageDispatcher implements Dispatcher {
 
 
   private Command getCommand(String commandName) {
-    Command command = CommandRegistry.get(commandName);
-    return (command == null) ? new ErrorCommand() : command;
+    return CommandRegistry.get(commandName);
 
   }
 

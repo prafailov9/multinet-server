@@ -163,8 +163,8 @@ public final class PacketCodec {
 
     if (nameLen > buf.remaining()) {
       throw new ProtocolViolationException(
-          "STATE worldNameLen (" + nameLen + ") exceeds remaining payload ("
-              + buf.remaining() + ")");
+          "STATE worldNameLen (" + nameLen + ") exceeds remaining payload (" + buf.remaining()
+              + ")");
     }
     byte[] nameBytes = new byte[nameLen];
     buf.get(nameBytes);
@@ -174,8 +174,6 @@ public final class PacketCodec {
 
     return new StatePacket(seq, new String(nameBytes, StandardCharsets.UTF_8), body);
   }
-
-  // -- ERROR ----------------------------------------------------------------
 
   private static ErrorPacket decodeError(byte[] payload) throws ProtocolViolationException {
     // minimum: errorCode(2) + msgLen(2) = 4 bytes
@@ -202,8 +200,6 @@ public final class PacketCodec {
     return new ErrorPacket(errorCode, new String(msgBytes, StandardCharsets.UTF_8));
   }
 
-  // -- WELCOME --------------------------------------------------------------
-
   private static WelcomePacket decodeWelcome(byte[] payload) throws ProtocolViolationException {
     if (payload.length < 4) {
       throw new ProtocolViolationException(
@@ -212,8 +208,6 @@ public final class PacketCodec {
     return new WelcomePacket(ByteBuffer.wrap(payload).getInt());
   }
 
-  // -- MOVE -----------------------------------------------------------------
-
   private static MovePacket decodeMove(byte[] payload) throws ProtocolViolationException {
     if (payload.length < 1) {
       throw new ProtocolViolationException("MOVE payload is empty");
@@ -221,17 +215,10 @@ public final class PacketCodec {
     return new MovePacket(payload[0]);
   }
 
-  // -------------------------------------------------------------------------
-  // Frame builder
-  // -------------------------------------------------------------------------
-
   /**
    * Builds a complete binary frame.
-   *
-   * <pre>
-   *   [ length:4 ][ version:1 ][ type:1 ][ flags:1 ][ reserved:1 ][ payload:N ]
-   *   length = 4 (header tail) + payload.length
-   * </pre>
+   * [ length:4 ][ version:1 ][ type:1 ][ flags:1 ][ reserved:1 ][ payload:N ]
+   * length = 4 (header tail) + payload.length
    */
   private static byte[] buildFrame(byte type, byte flags, byte[] payload) {
     int length = 4 + payload.length;       // header tail (4) + payload

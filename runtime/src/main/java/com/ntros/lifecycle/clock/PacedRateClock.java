@@ -6,7 +6,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * FixedRateBackpressureClock: scheduleAtFixedRate + *in-flight gate*.
@@ -28,7 +27,6 @@ public class PacedRateClock extends AbstractClock {
 
     private final AtomicBoolean inFlight = new AtomicBoolean(false);
     private final ExecutorService worker;
-    private final ReentrantLock workerLock = new ReentrantLock();
 
     public PacedRateClock(int initialTickRate) {
         this(initialTickRate,
@@ -54,39 +52,29 @@ public class PacedRateClock extends AbstractClock {
     @Override
     protected ScheduledFuture<?> schedule(Runnable lifecycleWrappedTask, long intervalMs) {
         // 'wrapper' already includes pause check, tick count, and listener callbacks
-        workerLock.lock();
-        try {
-            return scheduler.scheduleAtFixedRate(() -> {
-                if (isPaused()) {
-                    return;
-                }
-                // if a task is still being processed - return
-                if (!inFlight.compareAndSet(false, true)) {
-                    return; // drop this firing
-                }
+        return scheduler.scheduleAtFixedRate(() -> {
+            if (isPaused()) {
+                return;
+            }
+            // if a task is still being processed - return
+            if (!inFlight.compareAndSet(false, true)) {
+                return; // drop this firing
+            }
 
-                worker.execute(() -> {
-                    try {
-                        lifecycleWrappedTask.run();
-                    } finally {
-                        inFlight.set(false);
-                    }
-                });
-            }, 0, intervalMs, MILLISECONDS);
-        } finally {
-            workerLock.unlock();
-        }
+            worker.execute(() -> {
+                try {
+                    lifecycleWrappedTask.run();
+                } finally {
+                    inFlight.set(false);
+                }
+            });
+        }, 0, intervalMs, MILLISECONDS);
     }
 
     @Override
     public void shutdown() {
         super.shutdown();
-        workerLock.lock();
-        try {
-            worker.shutdownNow();
-        } finally {
-            workerLock.unlock();
-        }
+        worker.shutdownNow();
     }
 }
 

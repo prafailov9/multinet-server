@@ -16,7 +16,7 @@ import static org.mockito.Mockito.when;
 
 import com.ntros.event.sessionmanager.SessionManager;
 import com.ntros.lifecycle.instance.actor.Actor;
-import com.ntros.lifecycle.instance.actor.CommandActor;
+import com.ntros.lifecycle.instance.actor.WorldActor;
 import com.ntros.lifecycle.session.Session;
 import com.ntros.message.SessionContext;
 import com.ntros.model.world.connector.WorldConnector;
@@ -34,7 +34,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
-class CommandActorTest {
+class WorldActorTest {
 
   private final Runnable NO_OP_TASK = () -> {
   };
@@ -50,7 +50,7 @@ class CommandActorTest {
 
   @BeforeEach
   void setUp() {
-    actor = new CommandActor(true, "arena-1");
+    actor = new WorldActor(true, "arena-1");
   }
 
   @AfterEach

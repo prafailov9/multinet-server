@@ -1,4 +1,4 @@
-package com.ntros.command.impl;
+package com.ntros.command;
 
 import com.ntros.protocol.Message;
 import com.ntros.protocol.response.ServerResponse;

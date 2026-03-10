@@ -1,11 +1,11 @@
-package com.ntros.command.impl;
+package com.ntros.command;
 
 import com.ntros.protocol.Message;
 import com.ntros.protocol.response.ServerResponse;
 import com.ntros.lifecycle.session.Session;
 import java.util.Optional;
 
-public class StateCommand implements Command {
+public class OrchestratorCommand extends AbstractCommand {
 
   @Override
   public Optional<ServerResponse> execute(Message message, Session session) {

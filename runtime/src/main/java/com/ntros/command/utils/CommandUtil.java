@@ -1,4 +1,4 @@
-package com.ntros.command;
+package com.ntros.command.utils;
 
 import com.ntros.protocol.CommandType;
 import java.util.List;

@@ -2,7 +2,8 @@
   "permissions": {
     "allow": [
       "Bash(xargs grep -l \"Dynamic\\\\|AbstractDynamic\\\\|OpenWorld\\\\|DynamicWorld\")",
-      "Bash(xargs grep -l \"WorldConnector\\\\|WorldEngine\\\\|WorldOp\\\\|WorldState\\\\|WorldType\\\\|GridWorld\\\\|Snapshot\\\\|Protocol\\\\|StateFrame\\\\|encoder\")"
+      "Bash(xargs grep -l \"WorldConnector\\\\|WorldEngine\\\\|WorldOp\\\\|WorldState\\\\|WorldType\\\\|GridWorld\\\\|Snapshot\\\\|Protocol\\\\|StateFrame\\\\|encoder\")",
+      "Bash(mvn help:effective-pom -pl runtime -q)"
     ]
   }
 }

@@ -1,4 +1,4 @@
-package com.ntros.command.impl;
+package com.ntros.command;
 
 import com.ntros.message.SessionContext;
 import lombok.extern.slf4j.Slf4j;

@@ -1,4 +1,4 @@
-package com.ntros.command.impl;
+package com.ntros.command;
 
 import static com.ntros.protocol.CommandType.ERROR;
 import static com.ntros.protocol.CommandType.WELCOME;

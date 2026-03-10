@@ -4,8 +4,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReentrantLock;
-import java.util.function.Supplier;
 
 /**
  * Tick driver with a single-threaded scheduler and a small lifecycle.
@@ -31,12 +31,12 @@ public abstract class AbstractClock implements Clock {
     // The task to run on each tick
     protected Runnable currentTask;
 
-    private int tickRate;
+    private volatile int tickRate;
     private final AtomicBoolean paused = new AtomicBoolean(false);
-    private Clock.TickListener listener;
+    private volatile Clock.TickListener listener;
 
     // listener to observe tick start and end events
-    private long tickCount = 0;
+    private final AtomicLong tickCount = new AtomicLong(0);
 
     // reference to the tick task for management
     private ScheduledFuture<?> scheduledTaskFuture;
@@ -210,7 +210,7 @@ public abstract class AbstractClock implements Clock {
             }
 
             long start = System.nanoTime();
-            long n = ++tickCount;
+            long n = tickCount.incrementAndGet();
 
             Clock.TickListener l = listener;
             if (l != null) {

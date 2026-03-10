@@ -1,4 +1,4 @@
-package com.ntros.command.impl;
+package com.ntros.command;
 
 import static com.ntros.protocol.CommandType.ACK;
 
@@ -39,7 +39,6 @@ public final class DisconnectCommand extends AbstractCommand {
           log.warn("leaveAsync failed: {}", ex.toString());
           return null;
         });
-        ;
       }
       inst.removeSession(session);
     }

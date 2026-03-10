@@ -1,4 +1,4 @@
-package com.ntros.command.impl;
+package com.ntros.command;
 
 import com.ntros.lifecycle.instance.Instance;
 import com.ntros.lifecycle.instance.InstanceFactory;

@@ -22,7 +22,7 @@ import java.util.function.Supplier;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-public final class CommandActor implements Actor {
+public final class WorldActor implements Actor {
 
   private final ExecutorService control;
 
@@ -37,11 +37,11 @@ public final class CommandActor implements Actor {
    */
   private final ConcurrentHashMap<String, Direction> stagedMoves = new ConcurrentHashMap<>();
 
-  public CommandActor(String worldName) {
+  public WorldActor(String worldName) {
     this(true, worldName);
   }
 
-  public CommandActor(boolean runInBackground, String worldName) {
+  public WorldActor(boolean runInBackground, String worldName) {
     this.control = Executors.newSingleThreadExecutor(r -> {
       Thread t = new Thread(r, "actor-" + worldName + "-ctl");
       t.setDaemon(runInBackground);
