@@ -4,18 +4,20 @@ import com.ntros.event.sessionmanager.SessionManager;
 import com.ntros.lifecycle.session.Session;
 import lombok.extern.slf4j.Slf4j;
 
+/**
+ * Broadcasts a binary frame to every active session.
+ *
+ * <p>If delivery to a session throws, that session is detached immediately so that a single
+ * broken connection does not block or poison subsequent deliveries.
+ */
 @Slf4j
 public final class SessionsBroadcaster implements Broadcaster {
 
-  /**
-   * When publish() fails to send to a session, remove it from the SessionManager right there
-   * (best-effort), so you don’t keep trying every tick.
-   */
   @Override
-  public void publish(String payload, SessionManager sessions) {
+  public void publish(byte[] frame, SessionManager sessions) {
     for (Session s : sessions.getActiveSessions()) {
       try {
-        s.response(payload);
+        s.response(frame);
       } catch (Exception ex) {
         log.warn("broadcast failed, detaching session {}: {}",
             s.getSessionContext().getSessionId(), ex.toString());

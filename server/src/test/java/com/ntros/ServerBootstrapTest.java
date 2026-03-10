@@ -126,11 +126,9 @@ public class ServerBootstrapTest {
 
       String json = actualMoveResponse.args().getFirst();
       var parsedJson = new ObjectMapper().readTree(json);
-      assertTrue(parsedJson.has("data"));
-
-      var stateJson = parsedJson.get("data");
-      assertTrue(stateJson.has("entities"));
-      assertTrue(stateJson.get("entities").has("client-1"));
+      // GridSnapshot serialises as {"tiles":{...},"entities":{...}} — no "data" wrapper
+      assertTrue(parsedJson.has("entities"));
+      assertTrue(parsedJson.get("entities").has("client-1"));
 
     }
     // stop server
@@ -192,11 +190,9 @@ public class ServerBootstrapTest {
 
         String json = actualMoveResponse.args().getFirst();
         var parsedJson = new ObjectMapper().readTree(json);
-        assertTrue(parsedJson.has("data"));
-
-        var stateJson = parsedJson.get("data");
-        assertTrue(stateJson.has("entities"));
-        assertTrue(stateJson.get("entities").has("client-0"));
+        // GridSnapshot serialises as {"tiles":{...},"entities":{...}} — no "data" wrapper
+        assertTrue(parsedJson.has("entities"));
+        assertTrue(parsedJson.get("entities").has("client-0"));
 
       }
     } finally {

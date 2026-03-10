@@ -1,5 +1,6 @@
 package com.ntros.lifecycle.instance;
 
+import com.ntros.codec.packet.StatePacket;
 import com.ntros.event.broadcaster.Broadcaster;
 import com.ntros.event.sessionmanager.SessionManager;
 import com.ntros.lifecycle.clock.Clock;
@@ -11,44 +12,37 @@ import com.ntros.model.world.connector.WorldConnector;
 import com.ntros.model.world.protocol.CommandResult;
 import com.ntros.model.world.protocol.request.JoinRequest;
 import com.ntros.model.world.protocol.request.MoveRequest;
-import com.ntros.protocol.encoder.StateFrame;
+import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * Layer that allows the world to interact with clients. Unique per world connector + session
- * manager.
+ * Binds a world to its clients. Unique per world connector + session manager.
+ *
+ * <h3>Tick flow</h3>
+ * <ol>
+ *   <li>Clock fires on its scheduler thread → submits task to clock worker.</li>
+ *   <li>Clock worker calls {@link #tryWorldUpdate()} → submits step to actor thread via
+ *       {@code actor.step(world)} and blocks ({@code .join()}) until the step completes.</li>
+ *   <li>Actor thread: {@code applyMoves → world.update() → world.snapshot()} and resolves the
+ *       future with the snapshot. Snapshot is taken on the actor thread for consistency.</li>
+ *   <li>Clock worker resumes with the snapshot → encodes it as a binary {@link StatePacket} →
+ *       {@code broadcaster.publish(frame, ...)} → each session's send queue.</li>
+ *   <li>{@code inFlight} clears only after the full cycle (update + broadcast), so the clock
+ *       correctly drops ticks when the combined budget is exceeded.</li>
+ * </ol>
  */
-
 @Slf4j
 public class ServerInstance extends AbstractInstance {
 
-  /// --- Constants
-  private static final int PROTO_VER = 1;
   private final Actor actor;
 
   public ServerInstance(WorldConnector world, SessionManager sessionManager, Clock clock,
       Broadcaster broadcaster, Settings settings) {
     super(world, sessionManager, clock, broadcaster, settings);
-
     this.actor = Actors.create(world.getWorldName());
   }
 
-
-  /**
-   * Clock wakes Actor N times per second; Actor advances the world and broadcasts.
-   * <p>
-   * - Caller Thread(CT) calls instance.run(); * - flips clockTicking flag; calls clock.tick(); -
-   * clock.tick() just submits the task on the clock's internal scheduler and returns to
-   * instance.run()(still CT). World Update code is NOT run immediately. - At next tick the clock's
-   * scheduler thread runs the submitted task. - actor.step() submits its task to its internal
-   * executor thread (AT) and returns immediately to the clock scheduler thread(CST). - on AT, the
-   * submitted step runs: world update, state frame, publishing and completes the future from step()
-   * - During this time, the CT already finished the tick task(since it doesn't wait for Actor's
-   * future to complete) and is free to schedule the next tick.
-   *
-   * </p>
-   */
   @Override
   public void start() {
     if (tryTicking()) {
@@ -60,11 +54,6 @@ public class ServerInstance extends AbstractInstance {
     });
   }
 
-
-  /**
-   * Schedules a no-op on the actor so the returned future completes after all previously queued
-   * tasks (join/move/remove/leave)
-   */
   @Override
   public CompletableFuture<Void> drain() {
     if (!actor.isRunning()) {
@@ -95,67 +84,56 @@ public class ServerInstance extends AbstractInstance {
 
   @Override
   public void stop() {
-
     if (!clockTicking.get()) {
       return;
     }
-
     log.info("[{}] resetting…", getWorldName());
-
     try {
-
-      // 1 stop scheduling new ticks
-      clock.stop();
-      // 2 finish all actor work
-      drain().join();
-      // 3 shutdown sessions (may enqueue actor tasks)
-      sessionManager.shutdownAll();
-      // 4 drain again to process leave() operations
-      drain().join();
-      // 5 reset world state
-      world.reset();
+      clock.stop();               // 1. stop scheduling new ticks
+      drain().join();             // 2. finish in-flight actor work
+      sessionManager.shutdownAll(); // 3. shutdown sessions (may enqueue leave tasks)
+      drain().join();             // 4. drain leave operations
+      world.reset();              // 5. wipe world state
     } finally {
       clockTicking.set(false);
-      // 6 stop actor
-      actor.shutdown();
-      // 7 stop clock thread
-      clock.shutdown();
+      actor.shutdown();           // 6. stop actor executor
+      clock.shutdown();           // 7. stop clock threads
     }
   }
 
+  /**
+   * Runs on the clock worker thread. Blocks until the actor completes the step so that
+   * {@code world.snapshot()} is taken on the actor thread — guaranteeing consistency.
+   *
+   * @return the world snapshot captured by the actor, or {@code null} if the world hasn't started
+   */
   private Object tryWorldUpdate() {
-    Object snapshot = null;
     if (!hasWorldStarted()) {
       return null;
     }
     try {
-      snapshot = actor.step(world).join();
+      return actor.step(world).join();
     } catch (Throwable t) {
-      log.error("Tick failed", t);
+      log.error("[{}] tick failed: {}", getWorldName(), t.getMessage(), t);
+      return null;
     }
-    return snapshot;
   }
 
   /**
-   * TODO: replace with current broadcast
-   * private void broadcastWorldUpdate(Object snapshot) {
-   *     byte[] body  = encoder.encodeBody(snapshot);                       // JsonProtocolEncoder
-   *     StatePacket packet = new StatePacket(seq.incrementAndGet(), getWorldName(), body);
-   *     byte[] frame;
-   *     try {
-   *         frame = codec.encode(packet);                                  // PacketCodec
-   *     } catch (IOException e) {
-   *         log.error("state encode failed", e);
-   *         return;
-   *     }
-   *     broadcaster.publish(frame, sessionManager);                        // needs publish(byte[], ...)
-   * }
+   * Encodes the snapshot as a binary {@link StatePacket} and hands the frame to the broadcaster.
+   * Runs on the clock worker thread — off the actor, so the actor is free for the next tick.
    */
-
   private void broadcastWorldUpdate(Object snapshot) {
-    String dataLine = encoder.encodeState(
-        new StateFrame(PROTO_VER, getWorldName(), seq.incrementAndGet(), snapshot));
-    broadcaster.publish(dataLine, sessionManager);
+    if (snapshot == null) {
+      return;
+    }
+    byte[] body = encoder.encodeBody(snapshot);
+    try {
+      byte[] frame = CODEC.encode(new StatePacket(seq.incrementAndGet(), getWorldName(), body));
+      broadcaster.publish(frame, sessionManager);
+    } catch (IOException e) {
+      log.error("[{}] broadcastWorldUpdate encode failed: {}", getWorldName(), e.getMessage());
+    }
   }
 
   private boolean tryTicking() {
@@ -170,16 +148,12 @@ public class ServerInstance extends AbstractInstance {
   protected void configureClockListener() {
     this.clock.setListener(new Clock.TickListener() {
       @Override
-      public void onTickStart(long n) {
-        /* noop */
-        log.info("ON TICK START: tickCount={}", n);
-      }
+      public void onTickStart(long n) { /* noop */ }
 
       @Override
       public void onTickEnd(long n, long nanos) {
-        if (n % 120 == 0) { // sample
-          log.info("ON TICK END: [{}] tickCount={} duration={}µs", getWorldName(), n,
-              nanos / 1_000);
+        if (n % 120 == 0) {
+          log.info("[{}] tick={} duration={}µs", getWorldName(), n, nanos / 1_000);
         }
       }
     });

@@ -11,17 +11,19 @@ public interface Session extends Lifecycle, Shutdownable {
 
   SessionContext getSessionContext();
 
-
   /**
-   * Sends server response to client
-   *
-   * @param serverResponse - the generated server response from
+   * Sends a text command response to the client (legacy text-protocol path).
+   * The implementation appends {@code \n} before writing to the wire.
    */
   void response(String serverResponse);
 
-
   /**
-   * ends session
+   * Sends a pre-encoded binary frame to the client.
+   * The frame is written verbatim — no bytes are added by the implementation.
+   * Use this for all frames produced by {@link com.ntros.codec.PacketCodec}.
    */
+  void response(byte[] frame);
+
+  /** Signals the session to stop after completing the current message. */
   void shutdown();
 }

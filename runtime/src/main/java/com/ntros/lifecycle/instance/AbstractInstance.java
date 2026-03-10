@@ -1,5 +1,6 @@
 package com.ntros.lifecycle.instance;
 
+import com.ntros.codec.PacketCodec;
 import com.ntros.event.broadcaster.Broadcaster;
 import com.ntros.event.sessionmanager.SessionManager;
 import com.ntros.lifecycle.clock.Clock;
@@ -31,6 +32,12 @@ public abstract class AbstractInstance implements Instance {
   protected final Clock clock;
   protected final Broadcaster broadcaster;
   protected final ProtocolEncoder encoder;
+
+  /**
+   * Shared, stateless codec used by all instances to encode binary frames.
+   * {@link PacketCodec} has no mutable state so a single instance is safe to share.
+   */
+  protected static final PacketCodec CODEC = new PacketCodec();
 
   AbstractInstance(WorldConnector world, SessionManager sessionManager, Clock clock,
       Broadcaster broadcaster, Settings settings) {

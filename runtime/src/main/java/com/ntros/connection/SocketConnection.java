@@ -16,26 +16,22 @@ import lombok.extern.slf4j.Slf4j;
 
 /**
  * Wraps one client socket and abstracts network I/O.
- * <p>
- * Optimizations in this implementation:
- * <p>
- * 1. Buffered streams for faster IO
- * Avoids syscall per byte and reduces kernel transitions.
- * <p>
- * 2. Asynchronous send queue
- * Game/session threads never block on socket writes.
- * <p>
- * 3. Lock-free send scheduling
- * Uses CAS (AtomicBoolean) instead of synchronized.
- * <p>
- * 4. Burst draining sender
- * A single sender task drains the queue fully to reduce executor scheduling.
- * <p>
- * 5. Shared IO thread pool
- * Prevents one thread per connection which would not scale.
- * <p>
- * 6. Line-buffered receive with memory reuse
- * Avoids allocating new objects per byte.
+ *
+ * <h3>Optimizations</h3>
+ * <ol>
+ *   <li><b>Buffered streams</b> — avoids a syscall per byte.</li>
+ *   <li><b>Unified {@code byte[]} send queue</b> — both text and binary frames are pre-encoded to
+ *       bytes before enqueueing, so the drain loop is a single {@code output.write(byte[])} with
+ *       no string manipulation on the hot path.</li>
+ *   <li><b>Lock-free send scheduling</b> — CAS on {@link #sending} prevents concurrent drain
+ *       tasks without using {@code synchronized}.</li>
+ *   <li><b>Burst draining</b> — one sender task drains the full queue before releasing, reducing
+ *       executor scheduling overhead during broadcast bursts.</li>
+ *   <li><b>Shared IO thread pool</b> — {@link #SEND_POOL} is shared across all connections;
+ *       one drain task per connection at a time, not one thread per connection.</li>
+ *   <li><b>Line-buffered receive with buffer reuse</b> — {@link #lineBuffer} is reset and
+ *       reused each call; no per-byte allocation.</li>
+ * </ol>
  */
 @Slf4j
 public class SocketConnection implements Connection {
@@ -45,47 +41,34 @@ public class SocketConnection implements Connection {
   private static final int MAX_LINE_LENGTH = 8192;
 
   /**
-   * Shared IO thread pool.
-   * Important scalability optimization:
-   * Instead of creating a thread per connection (which would kill performance
-   * with thousands of clients), all connections share a small IO pool.
+   * Shared IO thread pool — one drain task per connection at a time, not one thread per connection.
    */
   private static final ExecutorService SEND_POOL =
       Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors() * 2);
 
   private final Socket socket;
-
-  /**
-   * Buffered streams drastically reduce the number of syscalls.
-   * Without buffering, each read/write can trigger a kernel call.
-   * With buffering, reads happen in chunks (8KB default).
-   */
   private final BufferedInputStream input;
   private final BufferedOutputStream output;
 
   /**
-   * Outgoing messages are queued so that game logic threads
-   * never block on network IO.
+   * Unified outgoing queue. Every element is a complete, wire-ready byte array:
+   * <ul>
+   *   <li>text messages: {@code (message + "\n").getBytes(UTF-8)}</li>
+   *   <li>binary frames: the raw frame from {@link com.ntros.codec.PacketCodec} (no suffix)</li>
+   * </ul>
+   * Pre-encoding strings at enqueue time keeps the drain loop allocation-free.
    */
-  private final BlockingQueue<String> sendQueue =
-      new LinkedBlockingQueue<>(MAX_QUEUE_SIZE);
+  private final BlockingQueue<byte[]> sendQueue = new LinkedBlockingQueue<>(MAX_QUEUE_SIZE);
 
-  /**
-   * Ensures only one sender task writes to the socket at a time.
-   * CAS is used instead of synchronized to avoid lock contention.
-   */
+  /** CAS gate — at most one drain task writes to the socket at a time. */
   private final AtomicBoolean sending = new AtomicBoolean(false);
 
-  /**
-   * Reusable buffer for reading lines from the socket.
-   * Avoids allocating new buffers on every receive() call.
-   */
+  /** Reused buffer for line reads — avoids per-call allocation. */
   private final ByteArrayOutputStream lineBuffer = new ByteArrayOutputStream(256);
 
   public SocketConnection(Socket socket) throws IOException {
     this.socket = socket;
     socket.setSoTimeout(MAX_TIMEOUT_MILLIS);
-
     this.input = new BufferedInputStream(socket.getInputStream());
     this.output = new BufferedOutputStream(socket.getOutputStream());
   }
@@ -100,26 +83,38 @@ public class SocketConnection implements Connection {
   }
 
   /**
-   * Enqueues a message to be sent to the client.
-   * This method is intentionally very lightweight:
-   * - No blocking IO
-   * - No locks
-   * - Just queue + scheduling
-   * This allows many threads to call send() concurrently.
+   * Enqueues {@code message + '\n'} encoded as UTF-8 bytes.
+   * If the queue is full the oldest element is dropped to make room.
    */
   @Override
   public void send(String message) {
-    // if queue full, drop stale messages
-    if (!sendQueue.offer(message)) {
-      log.info("Queue full: dropped serverResponse: {}", sendQueue.poll());
+    enqueue((message + "\n").getBytes(StandardCharsets.UTF_8));
+  }
+
+  /**
+   * Enqueues a pre-encoded binary frame verbatim — no bytes are added.
+   * If the queue is full the oldest element is dropped to make room.
+   */
+  @Override
+  public void send(byte[] frame) {
+    enqueue(frame);
+  }
+
+  /**
+   * Enqueues bytes, dropping the oldest queued frame if the queue is at capacity.
+   * State frames are superseded snapshots: losing an old one is always safe.
+   */
+  private void enqueue(byte[] bytes) {
+    if (!sendQueue.offer(bytes)) {
+      sendQueue.poll();     // drop the oldest stale frame
+      sendQueue.offer(bytes);
     }
     trySend();
   }
 
   /**
-   * Attempts to schedule a sender task.
-   * Only one sender task may run at a time.
-   * CAS prevents concurrent writers.
+   * Schedules a sender task if none is currently running.
+   * CAS on {@link #sending} guarantees at most one task drains the queue at a time.
    */
   private void trySend() {
     if (!sending.compareAndSet(false, true)) {
@@ -128,23 +123,14 @@ public class SocketConnection implements Connection {
     SEND_POOL.execute(() -> {
       try {
         while (true) {
-          String msg;
-          /**
-           * Drain the queue completely in a burst.
-           * This significantly reduces executor scheduling overhead
-           * when many messages are sent quickly.
-           */
-          while ((msg = sendQueue.poll()) != null) {
-            output.write((msg + "\n").getBytes(StandardCharsets.UTF_8));
+          byte[] frame;
+          // Drain the full queue in one burst to amortise executor scheduling overhead.
+          while ((frame = sendQueue.poll()) != null) {
+            output.write(frame);
           }
           output.flush();
-          /**
-           * Release sender ownership.
-           */
           sending.set(false);
-          /**
-           * If new messages arrived during flush(), attempt to continue.
-           */
+          // If new frames arrived during flush(), re-acquire and continue.
           if (sendQueue.isEmpty() || !sending.compareAndSet(false, true)) {
             return;
           }
@@ -157,56 +143,39 @@ public class SocketConnection implements Connection {
   }
 
   /**
-   * Reads a single line terminated by '\n'.
-   * <p>
-   * Optimization vs naive implementations:
-   * <p>
-   * - Uses buffered input stream
-   * - Reuses internal buffer
-   * - Avoids per-byte allocations
+   * Reads one newline-terminated line.
+   * Returns {@code "_TIMEOUT_"} on a socket read timeout, {@code null} on clean EOF.
    */
   @Override
   public String receive() {
-
     lineBuffer.reset();
-
     try {
-      int nextByte;
-      while ((nextByte = input.read()) != -1) {
-        if (nextByte == '\n') {
+      int b;
+      while ((b = input.read()) != -1) {
+        if (b == '\n') {
           break;
         }
-        if (nextByte != '\r') {
-          lineBuffer.write(nextByte);
+        if (b != '\r') {
+          lineBuffer.write(b);
         }
         if (lineBuffer.size() > MAX_LINE_LENGTH) {
           throw new IOException("Line too long");
         }
       }
-      if (nextByte == -1 && lineBuffer.size() == 0) {
+      if (b == -1 && lineBuffer.size() == 0) {
         return null;
       }
     } catch (SocketTimeoutException ex) {
       return "_TIMEOUT_";
     } catch (IOException ex) {
-
       if ("Connection reset".equals(ex.getMessage())) {
         log.info("[SocketConnection]: Connection reset.");
       } else {
-        log.error(
-            "[SocketConnection]: Failed to read line from socket ({}): {}",
-            getRemoteAddress(),
-            ex.getMessage(),
-            ex);
+        log.error("[SocketConnection]: Read error ({}): {}", getRemoteAddress(), ex.getMessage(), ex);
       }
       close();
     }
     return lineBuffer.toString(StandardCharsets.UTF_8);
-  }
-
-  @Override
-  public void sendFrame(String headerLine, byte[] body) {
-    throw new UnsupportedOperationException("Not implemented");
   }
 
   @Override
@@ -231,11 +200,8 @@ public class SocketConnection implements Connection {
         log.info("[SocketConnection]: Closed socket {}", getRemoteAddress());
       }
     } catch (IOException ex) {
-      log.error(
-          "[SocketConnection]: Error while closing socket ({}): {}",
-          getRemoteAddress(),
-          ex.getMessage(),
-          ex);
+      log.error("[SocketConnection]: Error closing socket ({}): {}",
+          getRemoteAddress(), ex.getMessage(), ex);
     }
   }
 

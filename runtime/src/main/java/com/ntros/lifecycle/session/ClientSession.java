@@ -74,13 +74,17 @@ public class ClientSession implements Session {
     }
   }
 
-  /**
-   * sends the server response to the client.
-   */
+  /** Sends a text command response (legacy text-protocol path). */
   @Override
   public void response(String serverResponse) {
-    log.info("{} received server response: {}. Sending to client...\n", this, serverResponse);
+    log.info("{} sending text response: {}", this, serverResponse);
     connection.send(serverResponse);
+  }
+
+  /** Sends a pre-encoded binary frame verbatim. */
+  @Override
+  public void response(byte[] frame) {
+    connection.send(frame);
   }
 
   @Override
