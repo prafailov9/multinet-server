@@ -1,7 +1,7 @@
 package com.ntros.model.world.engine.sim;
 
 import com.ntros.model.world.engine.sim.model.TrafficIntent;
-import com.ntros.model.world.protocol.response.CommandResult;
+import com.ntros.model.world.protocol.CommandResult;
 import com.ntros.model.world.state.TrafficState;
 
 /**

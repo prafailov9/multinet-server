@@ -3,7 +3,7 @@ package com.ntros.model.world.engine.solid;
 import static org.junit.jupiter.api.Assertions.*;
 
 import com.ntros.model.entity.sequence.IdSequenceGenerator;
-import com.ntros.model.world.protocol.response.CommandResult;
+import com.ntros.model.world.protocol.CommandResult;
 import com.ntros.model.world.protocol.request.JoinRequest;
 import com.ntros.model.world.state.solid.GridWorldState;
 import org.junit.jupiter.api.AfterEach;

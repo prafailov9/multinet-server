@@ -2,10 +2,9 @@ package com.ntros.model.world.connector;
 
 import com.ntros.model.entity.Entity;
 import com.ntros.model.entity.config.WorldCapabilities;
-import com.ntros.model.world.connector.ops.GridWorldOp;
 import com.ntros.model.world.connector.ops.WorldOp;
 import com.ntros.model.world.engine.sim.TrafficEngine;
-import com.ntros.model.world.protocol.response.CommandResult;
+import com.ntros.model.world.protocol.CommandResult;
 import com.ntros.model.world.state.TrafficState;
 import java.util.List;
 

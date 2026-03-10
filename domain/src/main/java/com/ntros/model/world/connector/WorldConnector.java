@@ -2,9 +2,8 @@ package com.ntros.model.world.connector;
 
 import com.ntros.model.entity.Entity;
 import com.ntros.model.entity.config.WorldCapabilities;
-import com.ntros.model.world.connector.ops.GridWorldOp;
 import com.ntros.model.world.connector.ops.WorldOp;
-import com.ntros.model.world.protocol.response.CommandResult;
+import com.ntros.model.world.protocol.CommandResult;
 import java.util.List;
 
 /**

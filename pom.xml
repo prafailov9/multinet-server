@@ -76,7 +76,7 @@
   <modules>
     <module>server</module>
     <module>domain</module>
-    <module>protocol</module>
+    <module>runtime</module>
   </modules>
   <packaging>pom</packaging>
 
