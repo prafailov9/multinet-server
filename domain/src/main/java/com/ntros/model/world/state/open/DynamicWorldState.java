@@ -1,19 +1,38 @@
 package com.ntros.model.world.state.open;
 
-import com.ntros.model.entity.dynamic.DynamicEntity;
-import com.ntros.model.entity.movement.Vector;
-import com.ntros.model.world.state.dimension.Dimension;
+import com.ntros.model.entity.movement.Vector3D;
+import com.ntros.model.entity.open.OpenWorldEntity;
+import com.ntros.model.world.state.dimension.Dimension3D;
 import java.util.Map;
 
+/**
+ * Mutable state container for a continuous 3D open world.
+ *
+ * <p>All maps are owned by the state object and mutated exclusively on the actor (engine) thread.
+ * The {@code moveIntents} map accumulates thrust vectors submitted by player sessions between
+ * ticks; the engine drains it during {@code applyIntents}.
+ */
 public interface DynamicWorldState {
 
-
+  /** Human-readable name of this world instance. */
   String worldName();
 
-  Dimension dimension();
+  /** World-type tag, always {@code "OPEN"}. */
+  String worldType();
 
-  Map<String, DynamicEntity> entities();
+  /** Bounding volume of the world. */
+  Dimension3D dimension();
 
-  Map<String, Vector> moveIntents();
+  /**
+   * Live entity registry. Key = {@link OpenWorldEntity#getName()}.
+   * Modified only by the engine.
+   */
+  Map<String, OpenWorldEntity> entities();
 
+  /**
+   * Pending movement intents queued since the last tick.
+   * Key = entity name; value = normalised thrust direction.
+   * Cleared by the engine at the end of each {@code applyIntents} call.
+   */
+  Map<String, Vector3D> moveIntents();
 }

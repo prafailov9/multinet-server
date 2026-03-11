@@ -10,7 +10,9 @@
       "Bash(xargs grep -l \"CommandResult\\\\|interface Command\\\\|abstract class\")",
       "Bash(xargs grep -n \".\")",
       "Bash(xargs grep -n \"registerSession\\\\|activeSessionsCount\\\\|sessionManager\")",
-      "Bash(xargs grep -l \".\")"
+      "Bash(xargs grep -l \".\")",
+      "Bash(mvn compile:*)",
+      "Bash(mvn test:*)"
     ]
   }
 }

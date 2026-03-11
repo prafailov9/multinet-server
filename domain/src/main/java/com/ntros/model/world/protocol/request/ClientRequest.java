@@ -1,6 +1,6 @@
 package com.ntros.model.world.protocol.request;
 
-public sealed interface ClientRequest permits JoinRequest, MoveRequest, CreateRequest,
-    RemoveRequest {
+public sealed interface ClientRequest permits JoinRequest, MoveRequest, OpenMoveRequest,
+    CreateRequest, RemoveRequest {
 
 }

@@ -1,29 +1,41 @@
 package com.ntros.model.world.state.open;
 
-import com.ntros.model.entity.dynamic.DynamicEntity;
-import com.ntros.model.entity.movement.Vector;
-import com.ntros.model.world.state.dimension.Dimension;
-import com.ntros.model.world.state.dimension.Dimension2D;
+import com.ntros.model.entity.movement.Vector3D;
+import com.ntros.model.entity.open.OpenWorldEntity;
+import com.ntros.model.world.state.dimension.Dimension3D;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+/**
+ * Concrete, mutable state for a continuous 3D open world.
+ *
+ * <p>Constructor accepts explicit width/height/depth so the bounding volume matches the
+ * {@link Dimension3D} used by the engine for boundary enforcement.
+ */
 public class OpenWorldState implements DynamicWorldState {
 
-  private final String worldName;
-  private final Dimension dimension;
-  private final Map<String, DynamicEntity> entities;
-  private final Map<String, Vector> movementIntents;
+  private final String     worldName;
+  private final Dimension3D dimension;
 
-  public OpenWorldState(String worldName, int width, int height) {
-    this.worldName = worldName;
-    this.dimension = new Dimension2D(width, height);
+  /** Entity registry — keyed by player name, preserving join order. */
+  private final Map<String, OpenWorldEntity> entities;
 
-    entities = new LinkedHashMap<>(); // preserve insertion order
-    movementIntents = new HashMap<>();
+  /**
+   * Thrust-direction intents accumulated between ticks.
+   * Keyed by entity name; values are the raw (possibly un-normalised) direction vectors
+   * as received from the client. The engine normalises them during {@code applyIntents}.
+   */
+  private final Map<String, Vector3D> movementIntents;
 
-
+  public OpenWorldState(String worldName, int width, int height, int depth) {
+    this.worldName  = worldName;
+    this.dimension  = new Dimension3D(width, height, depth);
+    this.entities        = new LinkedHashMap<>();
+    this.movementIntents = new HashMap<>();
   }
+
+  // ── DynamicWorldState ─────────────────────────────────────────────────────
 
   @Override
   public String worldName() {
@@ -31,19 +43,22 @@ public class OpenWorldState implements DynamicWorldState {
   }
 
   @Override
-  public Dimension dimension() {
+  public String worldType() {
+    return "OPEN";
+  }
+
+  @Override
+  public Dimension3D dimension() {
     return dimension;
   }
 
   @Override
-  public Map<String, DynamicEntity> entities() {
+  public Map<String, OpenWorldEntity> entities() {
     return entities;
   }
 
-
   @Override
-  public Map<String, Vector> moveIntents() {
+  public Map<String, Vector3D> moveIntents() {
     return movementIntents;
   }
-
 }
