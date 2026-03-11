@@ -57,10 +57,6 @@ class SocketConnectionTest {
     }
   }
 
-  // --------------------------------------------------
-  // RECEIVE TESTS
-  // --------------------------------------------------
-
   @Test
   void receive_singleLine_returnsMessage() throws Exception {
     OutputStream out = clientSocket.getOutputStream();
@@ -115,10 +111,6 @@ class SocketConnectionTest {
 
     assertEquals("X".repeat(8000), msg);
   }
-
-  // --------------------------------------------------
-  // SEND TESTS
-  // --------------------------------------------------
 
   @Test
   void send_singleMessage_writesToSocket() throws Exception {
@@ -177,10 +169,6 @@ class SocketConnectionTest {
     assertEquals(threads * messagesPerThread, received.size());
   }
 
-  // --------------------------------------------------
-  // BYTE RECEIVE TEST
-  // --------------------------------------------------
-
   @Test
   void receiveBytesExactly_readsExactLength() throws Exception {
 
@@ -201,10 +189,6 @@ class SocketConnectionTest {
     assertThrows(IOException.class, () -> connection.receiveBytesExactly(5));
   }
 
-  // --------------------------------------------------
-  // CLOSE TESTS
-  // --------------------------------------------------
-
   @Test
   void close_closesSocket() throws Exception {
 
@@ -217,70 +201,5 @@ class SocketConnectionTest {
   void isOpen_trueWhileConnected() throws Exception {
     assertTrue(connection.isOpen());
   }
-
-//  @Test
-//  void send_highVolume_stress() throws Exception {
-//    BufferedReader reader =
-//        new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
-//
-//    int producers = 8;
-//    int messagesPerProducer = 2000;
-//    int totalMessages = producers * messagesPerProducer;
-//
-//    ExecutorService producersPool = Executors.newFixedThreadPool(producers);
-//
-//    CountDownLatch startGate = new CountDownLatch(1);
-//    CountDownLatch done = new CountDownLatch(producers);
-//
-//    for (int p = 0; p < producers; p++) {
-//      int producerId = p;
-//
-//      producersPool.submit(() -> {
-//        try {
-//          startGate.await();
-//
-//          for (int i = 0; i < messagesPerProducer; i++) {
-//            connection.send("P" + producerId + "-" + i);
-//          }
-//
-//        } catch (Exception ignored) {
-//        } finally {
-//          done.countDown();
-//        }
-//      });
-//    }
-//
-//    // start all producers simultaneously
-//    startGate.countDown();
-//
-//    done.await();
-//    producersPool.shutdown();
-//
-//    clientSocket.setSoTimeout(2000);
-//
-//    List<String> received = new ArrayList<>();
-//    try {
-//      while (true) {
-//        received.add(reader.readLine());
-//      }
-//    } catch (SocketTimeoutException ignored) {
-//    }
-//    assertEquals(totalMessages, received.size());
-//
-//    // verify ordering per producer
-//    for (int p = 0; p < producers; p++) {
-//      int lastIndex = -1;
-//
-//      for (String msg : received) {
-//        if (msg.startsWith("P" + p + "-")) {
-//          int idx = Integer.parseInt(msg.substring(msg.indexOf('-') + 1));
-//          assertTrue(idx > lastIndex, "Out-of-order message for producer " + p);
-//          lastIndex = idx;
-//        }
-//      }
-//
-//      assertEquals(messagesPerProducer - 1, lastIndex);
-//    }
-//  }
 
 }

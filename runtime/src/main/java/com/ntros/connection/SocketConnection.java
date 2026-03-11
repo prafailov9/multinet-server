@@ -39,6 +39,7 @@ public class SocketConnection implements Connection {
   private static final int MAX_TIMEOUT_MILLIS = 5000;
   private static final int MAX_QUEUE_SIZE = 1024;
   private static final int MAX_LINE_LENGTH = 8192;
+  private static final int MAX_LINE_BUFFER_SIZE = 256;
 
   /**
    * Shared IO thread pool — one drain task per connection at a time, not one thread per connection.
@@ -68,7 +69,7 @@ public class SocketConnection implements Connection {
   /**
    * Reused buffer for line reads — avoids per-call allocation.
    */
-  private final ByteArrayOutputStream lineBuffer = new ByteArrayOutputStream(256);
+  private final ByteArrayOutputStream lineBuffer = new ByteArrayOutputStream(MAX_LINE_BUFFER_SIZE);
 
   public SocketConnection(Socket socket) throws IOException {
     this.socket = socket;

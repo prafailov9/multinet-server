@@ -30,7 +30,6 @@ public class TcpServer implements Server {
   @Override
   public void start() throws IOException {
     serverSocket = new ServerSocket();
-    serverSocket.setReuseAddress(true);  // allow quick rebind after close (avoids TIME_WAIT in tests)
     serverSocket.bind(new InetSocketAddress(port));
     log.info("Server accepting connections...");
 
@@ -40,15 +39,16 @@ public class TcpServer implements Server {
         Socket socket = serverSocket.accept();
 
         // once received, create connection + session
-        // process client input in separate thread, unblocks server loop
-        Thread.startVirtualThread(() -> startSession(socket))
-            .setName("session-" + socket.getPort());
+        // process client input in separate v-thread, unblocks server loop
+        Thread
+            .startVirtualThread(() -> startSession(socket))
+            .setName("session-vt-" + socket.getPort());
       } catch (SocketException ex) {
         if (!serverRunning) {
           log.info("Server socket closed, exiting accept() loop.");
           break;
         } else {
-          log.info("Unexpected exit accept loop: {}", ex.getMessage());
+          log.info("Unexpected exit in accept() loop: {}", ex.getMessage());
           throw ex; // unexpected error
         }
       }
@@ -85,7 +85,7 @@ public class TcpServer implements Server {
       Session session = new ClientSession(new SocketConnection(socket));
       session.start();
     } catch (Exception ex) {
-      log.error("Error occurred during connection handling:", ex);
+      log.error("Error occurred when creating client session:", ex);
     }
   }
 

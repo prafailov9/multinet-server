@@ -16,9 +16,9 @@ import com.ntros.model.entity.config.access.Settings;
 import com.ntros.model.world.connector.GridWorldConnector;
 import com.ntros.model.world.connector.WorldConnector;
 import com.ntros.model.world.state.solid.GridWorldState;
-import com.ntros.persistence.db.PersistenceContext;
 import com.ntros.persistence.db.ConnectionProvider;
 import com.ntros.persistence.db.DatabaseBuilder;
+import com.ntros.persistence.db.PersistenceContext;
 import com.ntros.persistence.model.WorldRecord;
 import com.ntros.server.Server;
 import com.ntros.server.TcpServer;
@@ -36,7 +36,7 @@ public class ServerBootstrap {
 
   // server updates 120 times per second
   private static final int TICK_RATE = 120;
-  // emits only 70 messages per second
+  // emits 70 messages per second
   private static final int BROADCAST_RATE = 70;
 
   public static void startServer() {
@@ -149,8 +149,8 @@ public class ServerBootstrap {
   }
 
   /**
-   * Registers a JVM shutdown hook that gracefully saves final terrain snapshots for all grid
-   * worlds and closes the database connection. This runs on Ctrl-C or a normal JVM exit.
+   * Registers a JVM shutdown hook. Graceful save of final terrain snapshots for all grid
+   * worlds and drops db. This runs on Ctrl-C or a normal JVM exit.
    */
   private static void registerShutdownHook(List<WorldConnector> worlds) {
     Runtime.getRuntime().addShutdownHook(Thread.ofVirtual().unstarted(() -> {

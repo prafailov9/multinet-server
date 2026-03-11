@@ -9,34 +9,37 @@ import lombok.extern.slf4j.Slf4j;
 public class ResponseServerMessageProcessor implements ServerMessageProcessor {
 
   @Override
-  public void processResponse(Message msg, Session session) {
-
-    // 1) Send WELCOME to the socket first (guarantee ordering).
-    session.response(msg.toString());
-    switch (msg.commandType()) {
-      case WELCOME -> {
-
-        // 2) Then attach the session to the instance so it starts receiving STATE.
-        var ctx = session.getSessionContext();
-        var instance = Instances.getInstance(ctx.getWorldName());
-        if (instance != null) {
-          instance.registerSession(session);
-        }
+  public void processResponse(Message serverResponse, Session session) {
+    switch (serverResponse.commandType()) {
+      case WELCOME -> onWelcome(serverResponse, session);
+      case ACK -> onAck(serverResponse, session);
+      default -> {
+        log.debug("Server message: {}", serverResponse);
+        session.response(serverResponse.toString());
       }
-
-      case ACK -> processAck(msg, session);
-      case ERROR -> session.response(msg.toString());
-      default -> log.debug("Server message: {}", msg);
     }
   }
 
-  private void processAck(Message msg, Session session) {
-    if (!msg.args().isEmpty() && "DISCONNECT".equals(msg.args().getFirst())) {
-      // We already removed the session from the instance in the command.
+
+  private void onWelcome(Message serverResponse, Session session) {
+    // 1. Send WELCOME to the socket first (guarantee ordering)
+    session.response(serverResponse.toString());
+
+    // 2. Then attach the session to the instance so it starts receiving STATE
+    var ctx = session.getSessionContext();
+    var instance = Instances.getInstance(ctx.getWorldName());
+    if (instance != null) {
+      instance.registerSession(session);
+    }
+  }
+
+  private void onAck(Message serverResponse, Session session) {
+    if (!serverResponse.args().isEmpty() && "DISCONNECT".equals(serverResponse.args().getFirst())) {
+      // session is already removed from the instance in the command.
       // Now close the socket / stop the session loop promptly.
       // signal to stop session on next loop
       session.stop();
     }
-
+    session.response(serverResponse.toString());
   }
 }

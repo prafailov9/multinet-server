@@ -27,7 +27,7 @@ public class RequestClientMessageProcessor implements ClientMessageProcessor {
   public Message process(String rawMessage, Session session) {
     if (rawMessage.startsWith(SESSION_FAILED_NOTIFIER)) {
       session.stop();
-      return Message.errorMsg("unexpected session failure. Removed session.");
+      return Message.errorMsg("unexpected session failure. Stopped session.");
     }
 
     Message message = messageParser.parse(rawMessage);

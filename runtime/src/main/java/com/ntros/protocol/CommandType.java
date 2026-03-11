@@ -2,7 +2,7 @@ package com.ntros.protocol;
 
 public enum CommandType {
   ///  CLIENT COMMANDS ///
-  // REGisters a new client with the server
+  // Registers a new client with the server
   REG,
   // AUTHs client with the server
   AUTHENTICATE,
