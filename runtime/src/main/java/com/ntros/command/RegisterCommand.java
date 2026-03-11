@@ -6,7 +6,7 @@ import static com.ntros.protocol.Message.registrationSuccess;
 import com.ntros.command.exception.RegisterCmdException;
 import com.ntros.lifecycle.session.Session;
 import com.ntros.message.SessionContext;
-import com.ntros.persistence.PersistenceContext;
+import com.ntros.persistence.db.PersistenceContext;
 import com.ntros.persistence.model.ClientRecord;
 import com.ntros.protocol.Message;
 import java.util.List;

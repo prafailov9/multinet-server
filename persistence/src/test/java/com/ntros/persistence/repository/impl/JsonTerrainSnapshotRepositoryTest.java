@@ -31,8 +31,6 @@ class JsonTerrainSnapshotRepositoryTest {
     repo = new JsonTerrainSnapshotRepository(tempDir);
   }
 
-  // ── exists ────────────────────────────────────────────────────────────────
-
   @Test
   void exists_noSnapshotYet_returnsFalse() {
     assertThat(repo.exists("arena-x")).isFalse();
@@ -43,8 +41,6 @@ class JsonTerrainSnapshotRepositoryTest {
     repo.save("arena-x", smallTerrain());
     assertThat(repo.exists("arena-x")).isTrue();
   }
-
-  // ── load ──────────────────────────────────────────────────────────────────
 
   @Test
   void load_noSnapshotYet_returnsEmpty() {
@@ -60,8 +56,6 @@ class JsonTerrainSnapshotRepositoryTest {
     Map<Position, TileType> loaded = repo.load("arena-x").orElseThrow();
     assertThat(loaded).containsExactlyInAnyOrderEntriesOf(terrain);
   }
-
-  // ── save ──────────────────────────────────────────────────────────────────
 
   @Test
   void save_overwritesPreviousSnapshot() {
@@ -92,10 +86,8 @@ class JsonTerrainSnapshotRepositoryTest {
     assertThat(loaded.get(Position.of(3, 0))).isEqualTo(TileType.TRAP);
   }
 
-  // ── multi-world isolation ─────────────────────────────────────────────────
-
   @Test
-  void save_differentWorlds_doNotInterfer() {
+  void save_differentWorlds_doNotInterfere() {
     repo.save("world-a", Map.of(Position.of(0, 0), TileType.WALL));
     repo.save("world-b", Map.of(Position.of(0, 0), TileType.WATER));
 
@@ -105,8 +97,6 @@ class JsonTerrainSnapshotRepositoryTest {
         .isEqualTo(TileType.WATER);
   }
 
-  // ── world name sanitisation ───────────────────────────────────────────────
-
   @Test
   void save_worldNameWithSpecialChars_isSanitisedToSafeFilename() {
     // World names with slashes or spaces should not create subdirectories or fail
@@ -115,10 +105,8 @@ class JsonTerrainSnapshotRepositoryTest {
     assertThat(repo.load("arena/1 test!")).isPresent();
   }
 
-  // ── large terrain roundtrip ───────────────────────────────────────────────
-
   @Test
-  void save_largeGridTerrain_roundtripsWithoutLoss() {
+  void save_largeGridTerrain_roundTripsWithoutLoss() {
     Map<Position, TileType> terrain = new LinkedHashMap<>();
     TileType[] types = TileType.values();
     int idx = 0;
@@ -134,8 +122,6 @@ class JsonTerrainSnapshotRepositoryTest {
     assertThat(loaded).hasSize(400);
     assertThat(loaded).containsExactlyInAnyOrderEntriesOf(terrain);
   }
-
-  // ── delete ────────────────────────────────────────────────────────────────
 
   @Test
   void delete_existingSnapshot_removesFile() {

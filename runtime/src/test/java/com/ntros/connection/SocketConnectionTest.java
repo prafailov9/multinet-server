@@ -98,7 +98,7 @@ class SocketConnectionTest {
   }
 
   @Test
-  void receive_returnsTimeoutToken() throws Exception {
+  void receive_returnsTimeoutToken() {
     String msg = connection.receive();
     assertEquals("_TIMEOUT_", msg);
   }
@@ -166,7 +166,7 @@ class SocketConnectionTest {
     }
 
     exec.shutdown();
-    exec.awaitTermination(5, TimeUnit.SECONDS);
+    var unused = exec.awaitTermination(1, TimeUnit.SECONDS);
 
     List<String> received = new ArrayList<>();
 

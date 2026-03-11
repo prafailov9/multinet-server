@@ -16,13 +16,10 @@ import com.ntros.model.entity.config.access.Settings;
 import com.ntros.model.world.connector.GridWorldConnector;
 import com.ntros.model.world.connector.WorldConnector;
 import com.ntros.model.world.state.solid.GridWorldState;
-import com.ntros.persistence.PersistenceContext;
+import com.ntros.persistence.db.PersistenceContext;
 import com.ntros.persistence.db.ConnectionProvider;
+import com.ntros.persistence.db.DatabaseBuilder;
 import com.ntros.persistence.model.WorldRecord;
-import com.ntros.persistence.repository.impl.JsonTerrainSnapshotRepository;
-import com.ntros.persistence.repository.impl.SqliteClientRepository;
-import com.ntros.persistence.repository.impl.SqlitePlayerRepository;
-import com.ntros.persistence.repository.impl.SqliteWorldRepository;
 import com.ntros.server.Server;
 import com.ntros.server.TcpServer;
 import java.io.IOException;
@@ -61,24 +58,16 @@ public class ServerBootstrap {
     }
   }
 
-  // ── Persistence wiring ────────────────────────────────────────────────────
-
   private static void initPersistence() {
-    ConnectionProvider.initialize(ConnectionProvider.DEFAULT_DB_PATH);
-
-    PersistenceContext.init(new SqliteClientRepository(),
-        new SqlitePlayerRepository(),
-        new SqliteWorldRepository(),
-        new JsonTerrainSnapshotRepository(Path.of("data/snapshots"))
-    );
+    DatabaseBuilder.createDatabase(ConnectionProvider.DEFAULT_DB_PATH, Path.of("data/snapshots"));
 
     // Hook: persist player stats on every disconnect
     LifecycleHooks.setOnPlayerLeave((playerName, worldName) -> {
       try {
         PersistenceContext.players().upsert(playerName);
         PersistenceContext.players().recordSessionEnd(playerName);
-        log.debug("[Persistence] Recorded session end for player '{}' in '{}'.",
-            playerName, worldName);
+        log.debug("[Persistence] Recorded session end for player '{}' in '{}'.", playerName,
+            worldName);
       } catch (Exception e) {
         log.error("[Persistence] Failed to persist disconnect for '{}': {}", playerName,
             e.getMessage(), e);
@@ -88,13 +77,10 @@ public class ServerBootstrap {
     log.info("[ServerBootstrap] Persistence layer initialised.");
   }
 
-  // ── World loading (with terrain restore) ─────────────────────────────────
-
   private static List<WorldConnector> loadWorlds() {
     WorldConverter converter = new WorldConverter();
     List<WorldConnector> worlds = new WorldConfigReader().readAll().stream()
-        .map(converter::toModelObject)
-        .toList();
+        .map(converter::toModelObject).toList();
 
     // Register world metadata and restore terrain for grid worlds
     for (WorldConnector connector : worlds) {
@@ -114,12 +100,9 @@ public class ServerBootstrap {
       // Determine depth: 0 for 2-D grid worlds, actual depth for 3-D open worlds
       int depth = 0; // grid worlds are 2D
 
-      WorldRecord record = new WorldRecord(
-          connector.getWorldName(),
-          connector.getWorldType(),
-          0, 0, depth,   // dimensions not critical in metadata; world config is the source of truth
-          Instant.now()
-      );
+      WorldRecord record = new WorldRecord(connector.getWorldName(), connector.getWorldType(), 0, 0,
+          depth,   // dimensions not critical in metadata; world config is the source of truth
+          Instant.now());
       PersistenceContext.worlds().registerIfAbsent(record);
     } catch (Exception e) {
       log.warn("[ServerBootstrap] Could not register world metadata for '{}': {}",
@@ -137,19 +120,16 @@ public class ServerBootstrap {
     }
 
     String worldName = connector.getWorldName();
-    PersistenceContext.terrain().load(worldName).ifPresentOrElse(
-        savedTerrain -> {
-          gridConnector.restoreTerrain(savedTerrain);
-          log.info("[ServerBootstrap] Restored terrain for '{}' ({} tiles).",
-              worldName, savedTerrain.size());
-        },
-        () -> {
-          // First startup: save the freshly generated terrain so future restarts are stable
-          var currentTerrain = ((GridWorldState) gridConnector.getState()).terrain();
-          PersistenceContext.terrain().save(worldName, currentTerrain);
-          log.info("[ServerBootstrap] Saved initial terrain for '{}'.", worldName);
-        }
-    );
+    PersistenceContext.terrain().load(worldName).ifPresentOrElse(savedTerrain -> {
+      gridConnector.restoreTerrain(savedTerrain);
+      log.info("[ServerBootstrap] Restored terrain for '{}' ({} tiles).", worldName,
+          savedTerrain.size());
+    }, () -> {
+      // First startup: save the freshly generated terrain so future restarts are stable
+      var currentTerrain = ((GridWorldState) gridConnector.getState()).terrain();
+      PersistenceContext.terrain().save(worldName, currentTerrain);
+      log.info("[ServerBootstrap] Saved initial terrain for '{}'.", worldName);
+    });
   }
 
   private static void initInstances(List<WorldConnector> worlds) {
@@ -187,7 +167,7 @@ public class ServerBootstrap {
           }
         }
       }
-      ConnectionProvider.close();
+      DatabaseBuilder.dropDatabase();
     }));
   }
 }

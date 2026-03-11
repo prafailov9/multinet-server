@@ -1,8 +1,12 @@
 package com.ntros.persistence.db;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
+import java.util.concurrent.atomic.AtomicInteger;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -17,12 +21,16 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public final class ConnectionProvider {
 
-  /** Default file path — relative to the working directory of the server process. */
+  /**
+   * Default file path — relative to the working directory of the server process.
+   */
   public static final String DEFAULT_DB_PATH = "data/multinet.db";
 
   private static volatile Connection connection;
+  private static AtomicInteger counter = new AtomicInteger(1);
 
-  private ConnectionProvider() {}
+  private ConnectionProvider() {
+  }
 
   /**
    * Opens (or creates) the SQLite database at {@code dbPath}, enables WAL journal mode for
@@ -31,16 +39,17 @@ public final class ConnectionProvider {
    * @param dbPath file-system path to the SQLite database file (e.g. {@code "data/multinet.db"})
    * @throws IllegalStateException if called more than once
    */
-  public static synchronized void initialize(String dbPath) {
+  static synchronized void initialize(String dbPath) {
+    log.info("[ConnectionProvider]: init started. Attempt: {}", counter.incrementAndGet());
     if (connection != null) {
       throw new IllegalStateException("ConnectionProvider already initialised.");
     }
     try {
       // Ensure the parent directory exists — skip for special in-memory paths (e.g. ":memory:")
       if (!dbPath.startsWith(":")) {
-        java.nio.file.Path path = java.nio.file.Paths.get(dbPath);
+        Path path = Paths.get(dbPath);
         if (path.getParent() != null) {
-          java.nio.file.Files.createDirectories(path.getParent());
+          Files.createDirectories(path.getParent());
         }
       }
 
@@ -70,8 +79,10 @@ public final class ConnectionProvider {
     return connection;
   }
 
-  /** Closes the connection. Safe to call multiple times. */
-  public static synchronized void close() {
+  /**
+   * Closes the connection. Safe to call multiple times.
+   */
+  static synchronized void close() {
     if (connection != null) {
       try {
         connection.close();
@@ -84,7 +95,9 @@ public final class ConnectionProvider {
     }
   }
 
-  /** Returns {@code true} if the connection has been initialised and is not closed. */
+  /**
+   * Returns {@code true} if the connection has been initialized and is not closed.
+   */
   public static boolean isOpen() {
     try {
       return connection != null && !connection.isClosed();

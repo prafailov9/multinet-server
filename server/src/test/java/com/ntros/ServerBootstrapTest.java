@@ -25,13 +25,7 @@ import com.ntros.model.world.connector.GridWorldConnector;
 import com.ntros.model.world.connector.WorldConnector;
 import com.ntros.model.world.engine.solid.GridWorldEngine;
 import com.ntros.model.world.state.solid.GridWorldState;
-import com.ntros.persistence.PersistenceContext;
-import com.ntros.persistence.db.ConnectionProvider;
 import com.ntros.persistence.db.DatabaseBuilder;
-import com.ntros.persistence.repository.impl.JsonTerrainSnapshotRepository;
-import com.ntros.persistence.repository.impl.SqliteClientRepository;
-import com.ntros.persistence.repository.impl.SqlitePlayerRepository;
-import com.ntros.persistence.repository.impl.SqliteWorldRepository;
 import com.ntros.server.TcpServer;
 import com.ntros.lifecycle.clock.Clock;
 import com.ntros.lifecycle.clock.PacedRateClock;
@@ -58,7 +52,7 @@ public class ServerBootstrapTest {
   private static final int TICK_RATE = 100;
   private static final int BROADCAST_RATE = 21;
   private static final Random SEEDED = new Random(10);
-
+  private static final int CMD_TIMEOUT_DEFAULT = 1;
   private static Path terrainDir;
 
   private final ExecutorService serverExecutor = Executors.newSingleThreadExecutor();
@@ -75,20 +69,16 @@ public class ServerBootstrapTest {
 
   @BeforeEach
   void setUp() {
-    // Initialise an in-memory SQLite database so commands that touch PersistenceContext work.
-    ConnectionProvider.initialize(":memory:");
-    PersistenceContext.init(new SqliteClientRepository(),
-        new SqlitePlayerRepository(),
-        new SqliteWorldRepository(),
-        new JsonTerrainSnapshotRepository(terrainDir)
-    );
+    // Initialize an in-memory SQLite database so commands that touch PersistenceContext work.
+    DatabaseBuilder.createDatabase(":memory:", terrainDir);
 
     // register the world instance(state + engine) with the tick server
     defaultWorld = createWorldConnector("arena-x", 3, 3);
+
+    // TODO: singlePlayer instances should use SingleBroadcaster
     instance = createSingleplayerInstance(defaultWorld, new ClientSessionManager(),
         new PacedRateClock(TICK_RATE), new SharedBroadcaster(),
-        Settings.multiplayer(BROADCAST_RATE)
-    );
+        Settings.multiplayer(BROADCAST_RATE));
     Instances.registerInstance(instance);
     server = new TcpServer(PORT);
   }
@@ -104,9 +94,7 @@ public class ServerBootstrapTest {
       server.stop();
     }
     // Tear down persistence so the next test can call PersistenceContext.init() again.
-    PersistenceContext.reset();
     DatabaseBuilder.dropDatabase();
-    ConnectionProvider.close();
   }
 
   @Test
@@ -115,7 +103,7 @@ public class ServerBootstrapTest {
     try (TestClient testClient = new TestClient("localhost", PORT)) {
       String clientName = "client-1";
       String pass = "123";
-      ServerMessage regResponse = testClient.register(clientName, pass, 2);
+      ServerMessage regResponse = testClient.register(clientName, pass, CMD_TIMEOUT_DEFAULT);
 
       assertEquals(REG_SUCCESS, regResponse.type());
       // Session ID is a positive long; avoid asserting exact value since the startServer
@@ -140,7 +128,7 @@ public class ServerBootstrapTest {
     try (TestClient testClient = new TestClient("localhost", PORT)) {
       String clientName = "client-1";
       String pass = "123";
-      ServerMessage regResponse = testClient.register(clientName, pass, 2);
+      ServerMessage regResponse = testClient.register(clientName, pass, CMD_TIMEOUT_DEFAULT);
       assertEquals(REG_SUCCESS, regResponse.type());
       // join server after reg
       ServerMessage actualJoinResponse = testClient.join(clientName, defaultWorld.getWorldName(),
@@ -164,7 +152,7 @@ public class ServerBootstrapTest {
     try (TestClient testClient = new TestClient("localhost", PORT)) {
       String clientName = "client-1";
       String pass = "123";
-      ServerMessage regResponse = testClient.register(clientName, pass, 2);
+      ServerMessage regResponse = testClient.register(clientName, pass, CMD_TIMEOUT_DEFAULT);
       assertEquals(REG_SUCCESS, regResponse.type());
       // join server
       ServerMessage actualJoinResponse = testClient.join(clientName, defaultWorld.getWorldName(),
@@ -179,7 +167,7 @@ public class ServerBootstrapTest {
       // send move command to server
       log.info("[SingleCon_MoveCommand]: Sending MOVE request to server...");
 
-      ServerMessage actualMoveResponse = testClient.move(clientName, "UP", 2);
+      ServerMessage actualMoveResponse = testClient.move(clientName, "UP", CMD_TIMEOUT_DEFAULT);
       // ticker will constantly stream the state, ack command is never sent or is lost between state broadcasts
       assertEquals(ServerCmd.STATE, actualMoveResponse.type());
 
@@ -210,11 +198,12 @@ public class ServerBootstrapTest {
         TestClient client = new TestClient("localhost", PORT);
         clients.add(client);
         // reg
-        ServerMessage regResponse = client.register(clientName, pass, 2);
+        ServerMessage regResponse = client.register(clientName, pass, CMD_TIMEOUT_DEFAULT);
         assertEquals(REG_SUCCESS, regResponse.type());
 
         // join
-        ServerMessage actualJoinResponse = client.join(clientName, defaultWorld.getWorldName(), 2);
+        ServerMessage actualJoinResponse = client.join(clientName, defaultWorld.getWorldName(),
+            CMD_TIMEOUT_DEFAULT);
         assertEquals(ServerCmd.WELCOME, actualJoinResponse.type());
         assertEquals(clientName, actualJoinResponse.args().getFirst());
       }
@@ -244,18 +233,17 @@ public class ServerBootstrapTest {
         TestClient client = new TestClient("localhost", PORT);
         clients.add(client);
         // reg first
-        ServerMessage regResponse = client.register(name, pass, 2);
+        ServerMessage regResponse = client.register(name, pass, CMD_TIMEOUT_DEFAULT);
         assertEquals(REG_SUCCESS, regResponse.type());
 
         // join
-        ServerMessage actualJoinResponse = client.join(name, defaultWorld.getWorldName(),
-            100);
+        ServerMessage actualJoinResponse = client.join(name, defaultWorld.getWorldName(), 100);
         assertEquals(ServerCmd.WELCOME, actualJoinResponse.type());
         assertEquals(name, actualJoinResponse.args().getFirst());
 
         // send move command to server
         log.info("[MultiConn_MoveCommand]: Sending MOVE request to server...");
-        ServerMessage actualMoveResponse = client.move(name, "UP", 5);
+        ServerMessage actualMoveResponse = client.move(name, "UP", CMD_TIMEOUT_DEFAULT);
         assertEquals(ServerCmd.STATE, actualMoveResponse.type());
 
         String json = actualMoveResponse.args().getFirst();
@@ -282,8 +270,7 @@ public class ServerBootstrapTest {
   @Test
   void multipleClients_joinDifferentWorlds_welcomeMessageResponse() throws Exception {
     var secondWorld = createWorldConnector("arena-y", 3, 3);
-    var secondInstance = createMultiplayerInstance(
-        secondWorld,
+    var secondInstance = createMultiplayerInstance(secondWorld,
         Settings.multiplayer(BROADCAST_RATE));
     Instances.registerInstance(secondInstance);
 
@@ -291,8 +278,8 @@ public class ServerBootstrapTest {
     server = new TcpServer(PORT);
     startServer(server, serverExecutor, PORT);
 
-    try (TestClient c1 = new TestClient("localhost", PORT);
-        TestClient c2 = new TestClient("localhost", PORT)) {
+    try (TestClient c1 = new TestClient("localhost", PORT); TestClient c2 = new TestClient(
+        "localhost", PORT)) {
 
       String client1 = "client-1";
       String client2 = "client-2";
@@ -301,14 +288,14 @@ public class ServerBootstrapTest {
       String w1 = defaultWorld.getWorldName();
       String w2 = "arena-y";
 
-      ServerMessage regResponse1 = c1.register(client1, pass1, 2);
-      ServerMessage regResponse2 = c2.register(client2, pass2, 2);
+      ServerMessage regResponse1 = c1.register(client1, pass1, CMD_TIMEOUT_DEFAULT);
+      ServerMessage regResponse2 = c2.register(client2, pass2, CMD_TIMEOUT_DEFAULT);
 
       assertEquals(REG_SUCCESS, regResponse1.type());
       assertEquals(REG_SUCCESS, regResponse2.type());
 
-      ServerMessage joinResponse1 = c1.join("client-1", w1, 2);
-      ServerMessage joinResponse2 = c2.join("client-2", w2, 2);
+      ServerMessage joinResponse1 = c1.join("client-1", w1, CMD_TIMEOUT_DEFAULT);
+      ServerMessage joinResponse2 = c2.join("client-2", w2, CMD_TIMEOUT_DEFAULT);
 
       assertEquals(ServerCmd.WELCOME, joinResponse1.type());
       assertEquals("client-1", joinResponse1.args().getFirst());
@@ -322,22 +309,18 @@ public class ServerBootstrapTest {
 
   private GridWorldConnector createWorldConnector(String worldName, int width, int height) {
     return new GridWorldConnector(new GridWorldState(worldName, width, height, SEEDED),
-        new GridWorldEngine(),
-        new WorldCapabilities(true, true,
-            false, true));
+        new GridWorldEngine(), new WorldCapabilities(true, true, false, true));
   }
 
   private ServerInstance createSingleplayerInstance(WorldConnector worldConnector,
-      SessionManager sessionManager,
-      Clock clock, Broadcaster broadcaster, Settings settings) {
+      SessionManager sessionManager, Clock clock, Broadcaster broadcaster, Settings settings) {
     return new ServerInstance(worldConnector, sessionManager, clock, broadcaster, settings);
   }
 
   private ServerInstance createMultiplayerInstance(WorldConnector worldConnector,
       Settings settings) {
     return new ServerInstance(worldConnector, new ClientSessionManager(),
-        new PacedRateClock(TICK_RATE),
-        new SharedBroadcaster(), settings);
+        new PacedRateClock(TICK_RATE), new SharedBroadcaster(), settings);
   }
 
 

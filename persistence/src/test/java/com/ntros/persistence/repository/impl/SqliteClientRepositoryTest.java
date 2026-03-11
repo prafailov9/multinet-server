@@ -3,7 +3,6 @@ package com.ntros.persistence.repository.impl;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 
-import com.ntros.persistence.db.ConnectionProvider;
 import com.ntros.persistence.model.ClientRecord;
 import com.ntros.persistence.repository.ClientRepository;
 import java.time.Instant;
