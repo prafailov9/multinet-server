@@ -11,7 +11,7 @@ import lombok.extern.slf4j.Slf4j;
  * broken connection does not block or poison subsequent deliveries.
  */
 @Slf4j
-public final class SessionsBroadcaster implements Broadcaster {
+public final class SharedBroadcaster implements Broadcaster {
 
   @Override
   public void publish(byte[] frame, SessionManager sessions) {

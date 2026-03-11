@@ -3,7 +3,7 @@ package com.ntros;
 
 import com.ntros.config.converter.WorldConverter;
 import com.ntros.config.reader.WorldConfigReader;
-import com.ntros.event.broadcaster.SessionsBroadcaster;
+import com.ntros.event.broadcaster.SharedBroadcaster;
 import com.ntros.event.sessionmanager.ClientSessionManager;
 import com.ntros.event.sessionmanager.SessionManager;
 import com.ntros.lifecycle.LifecycleHooks;
@@ -163,7 +163,7 @@ public class ServerBootstrap {
       }
 
       Instances.registerInstance(
-          new ServerInstance(world, sessionManager, clock, new SessionsBroadcaster(),
+          new ServerInstance(world, sessionManager, clock, new SharedBroadcaster(),
               Settings.multiplayer(BROADCAST_RATE)));
     }
   }

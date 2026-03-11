@@ -10,7 +10,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ntros.TestClient.ServerCmd;
 import com.ntros.TestClient.ServerMessage;
-import com.ntros.event.broadcaster.SessionsBroadcaster;
+import com.ntros.event.broadcaster.SharedBroadcaster;
 import com.ntros.event.broadcaster.Broadcaster;
 import com.ntros.event.sessionmanager.ClientSessionManager;
 import com.ntros.event.sessionmanager.SessionManager;
@@ -27,6 +27,7 @@ import com.ntros.model.world.engine.solid.GridWorldEngine;
 import com.ntros.model.world.state.solid.GridWorldState;
 import com.ntros.persistence.PersistenceContext;
 import com.ntros.persistence.db.ConnectionProvider;
+import com.ntros.persistence.db.DatabaseBuilder;
 import com.ntros.persistence.repository.impl.JsonTerrainSnapshotRepository;
 import com.ntros.persistence.repository.impl.SqliteClientRepository;
 import com.ntros.persistence.repository.impl.SqlitePlayerRepository;
@@ -85,7 +86,7 @@ public class ServerBootstrapTest {
     // register the world instance(state + engine) with the tick server
     defaultWorld = createWorldConnector("arena-x", 3, 3);
     instance = createSingleplayerInstance(defaultWorld, new ClientSessionManager(),
-        new PacedRateClock(TICK_RATE), new SessionsBroadcaster(),
+        new PacedRateClock(TICK_RATE), new SharedBroadcaster(),
         Settings.multiplayer(BROADCAST_RATE)
     );
     Instances.registerInstance(instance);
@@ -104,6 +105,7 @@ public class ServerBootstrapTest {
     }
     // Tear down persistence so the next test can call PersistenceContext.init() again.
     PersistenceContext.reset();
+    DatabaseBuilder.dropDatabase();
     ConnectionProvider.close();
   }
 
@@ -113,7 +115,7 @@ public class ServerBootstrapTest {
     try (TestClient testClient = new TestClient("localhost", PORT)) {
       String clientName = "client-1";
       String pass = "123";
-      ServerMessage regResponse = testClient.reg(clientName, pass, 2);
+      ServerMessage regResponse = testClient.register(clientName, pass, 2);
 
       assertEquals(REG_SUCCESS, regResponse.type());
       // Session ID is a positive long; avoid asserting exact value since the startServer
@@ -137,8 +139,10 @@ public class ServerBootstrapTest {
     startServer(server, serverExecutor, PORT);
     try (TestClient testClient = new TestClient("localhost", PORT)) {
       String clientName = "client-1";
-
-      // join server
+      String pass = "123";
+      ServerMessage regResponse = testClient.register(clientName, pass, 2);
+      assertEquals(REG_SUCCESS, regResponse.type());
+      // join server after reg
       ServerMessage actualJoinResponse = testClient.join(clientName, defaultWorld.getWorldName(),
           2);
       // Verify success join
@@ -159,7 +163,9 @@ public class ServerBootstrapTest {
     startServer(server, serverExecutor, PORT);
     try (TestClient testClient = new TestClient("localhost", PORT)) {
       String clientName = "client-1";
-
+      String pass = "123";
+      ServerMessage regResponse = testClient.register(clientName, pass, 2);
+      assertEquals(REG_SUCCESS, regResponse.type());
       // join server
       ServerMessage actualJoinResponse = testClient.join(clientName, defaultWorld.getWorldName(),
           2);
@@ -200,10 +206,15 @@ public class ServerBootstrapTest {
     try {
       for (int i = 0; i < clientCount; i++) {
         String clientName = "client-" + i;
+        String pass = "123";
         TestClient client = new TestClient("localhost", PORT);
         clients.add(client);
+        // reg
+        ServerMessage regResponse = client.register(clientName, pass, 2);
+        assertEquals(REG_SUCCESS, regResponse.type());
+
+        // join
         ServerMessage actualJoinResponse = client.join(clientName, defaultWorld.getWorldName(), 2);
-//        String expectedJoinResponse = "WELCOME " + clientName;
         assertEquals(ServerCmd.WELCOME, actualJoinResponse.type());
         assertEquals(clientName, actualJoinResponse.args().getFirst());
       }
@@ -228,17 +239,23 @@ public class ServerBootstrapTest {
     List<TestClient> clients = new ArrayList<>();
     try {
       for (int i = 0; i < clientCount; i++) {
-        String clientName = "client-" + i;
+        String name = "client-" + i;
+        String pass = "123";
         TestClient client = new TestClient("localhost", PORT);
         clients.add(client);
-        ServerMessage actualJoinResponse = client.join(clientName, defaultWorld.getWorldName(),
+        // reg first
+        ServerMessage regResponse = client.register(name, pass, 2);
+        assertEquals(REG_SUCCESS, regResponse.type());
+
+        // join
+        ServerMessage actualJoinResponse = client.join(name, defaultWorld.getWorldName(),
             100);
         assertEquals(ServerCmd.WELCOME, actualJoinResponse.type());
-        assertEquals(clientName, actualJoinResponse.args().getFirst());
+        assertEquals(name, actualJoinResponse.args().getFirst());
 
         // send move command to server
         log.info("[MultiConn_MoveCommand]: Sending MOVE request to server...");
-        ServerMessage actualMoveResponse = client.move(clientName, "UP", 5);
+        ServerMessage actualMoveResponse = client.move(name, "UP", 5);
         assertEquals(ServerCmd.STATE, actualMoveResponse.type());
 
         String json = actualMoveResponse.args().getFirst();
@@ -264,13 +281,10 @@ public class ServerBootstrapTest {
 
   @Test
   void multipleClients_joinDifferentWorlds_welcomeMessageResponse() throws Exception {
-
     var secondWorld = createWorldConnector("arena-y", 3, 3);
-
     var secondInstance = createMultiplayerInstance(
         secondWorld,
         Settings.multiplayer(BROADCAST_RATE));
-
     Instances.registerInstance(secondInstance);
 
     // NOW start server
@@ -280,17 +294,27 @@ public class ServerBootstrapTest {
     try (TestClient c1 = new TestClient("localhost", PORT);
         TestClient c2 = new TestClient("localhost", PORT)) {
 
+      String client1 = "client-1";
+      String client2 = "client-2";
+      String pass1 = "pass1";
+      String pass2 = "pass2";
       String w1 = defaultWorld.getWorldName();
       String w2 = "arena-y";
 
-      ServerMessage response1 = c1.join("client-1", w1, 2);
-      ServerMessage response2 = c2.join("client-2", w2, 2);
+      ServerMessage regResponse1 = c1.register(client1, pass1, 2);
+      ServerMessage regResponse2 = c2.register(client2, pass2, 2);
 
-      assertEquals(ServerCmd.WELCOME, response1.type());
-      assertEquals("client-1", response1.args().getFirst());
+      assertEquals(REG_SUCCESS, regResponse1.type());
+      assertEquals(REG_SUCCESS, regResponse2.type());
 
-      assertEquals(ServerCmd.WELCOME, response2.type());
-      assertEquals("client-2", response2.args().getFirst());
+      ServerMessage joinResponse1 = c1.join("client-1", w1, 2);
+      ServerMessage joinResponse2 = c2.join("client-2", w2, 2);
+
+      assertEquals(ServerCmd.WELCOME, joinResponse1.type());
+      assertEquals("client-1", joinResponse1.args().getFirst());
+
+      assertEquals(ServerCmd.WELCOME, joinResponse2.type());
+      assertEquals("client-2", joinResponse2.args().getFirst());
     }
 
     stopServerWhen(List.of(instance, secondInstance), server, serverExecutor);
@@ -313,7 +337,7 @@ public class ServerBootstrapTest {
       Settings settings) {
     return new ServerInstance(worldConnector, new ClientSessionManager(),
         new PacedRateClock(TICK_RATE),
-        new SessionsBroadcaster(), settings);
+        new SharedBroadcaster(), settings);
   }
 
 

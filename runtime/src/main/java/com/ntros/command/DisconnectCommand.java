@@ -1,7 +1,9 @@
 package com.ntros.command;
 
 import static com.ntros.protocol.CommandType.ACK;
+import static com.ntros.protocol.Message.errorMsg;
 
+import com.ntros.command.exception.DisconnectCmdException;
 import com.ntros.lifecycle.LifecycleHooks;
 import com.ntros.lifecycle.instance.Instance;
 import com.ntros.lifecycle.instance.Instances;
@@ -19,17 +21,17 @@ public final class DisconnectCommand extends AbstractCommand {
 
   @Override
   public Message execute(Message msg, Session session) {
-    SessionContext ctx = session.getSessionContext();
-    String worldName = ctx.getWorldName();
+    try {
+      SessionContext ctx = session.getSessionContext();
+      checkNotAuth(ctx);
+      String worldName = ctx.getWorldName();
 
-    Message ack = new Message(ACK, List.of("DISCONNECT"));
-
-    if (worldName == null) {
-      clearContext(ctx);
-      return ack;
-    }
-    Instance inst = Instances.getInstance(worldName);
-    if (inst != null) {
+      // if client not in a world, just clear and return
+      if (worldName == null) {
+        clearContext(ctx);
+        return new Message(ACK, List.of("DISCONNECT"));
+      }
+      Instance inst = getInstance(worldName);
       String entityId = ctx.getEntityId();
       if (entityId != null && !entityId.isBlank()) {
         // Fire persistence / analytics hook BEFORE clearing context so hooks can read player name
@@ -40,10 +42,13 @@ public final class DisconnectCommand extends AbstractCommand {
         });
       }
       inst.removeSession(session);
-    }
 
-    clearContext(ctx);
-    return ack;
+      clearContext(ctx);
+      return new Message(ACK, List.of("DISCONNECT"));
+    } catch (DisconnectCmdException ex) {
+      log.error("Error during Disconnect: {}", ex.getMessage(), ex);
+      return errorMsg(ex.getMessage());
+    }
   }
 
   /**
@@ -53,6 +58,20 @@ public final class DisconnectCommand extends AbstractCommand {
     ctx.setWorldId(null);
     ctx.setEntityId(null);
     ctx.setRole(null);
+  }
+
+  private void checkNotAuth(SessionContext sessionContext) {
+    if (!sessionContext.isAuthenticated()) {
+      throw new DisconnectCmdException("Client already disconnected");
+    }
+  }
+
+  private Instance getInstance(String world) {
+    Instance inst = Instances.getInstance(world);
+    if (inst == null) {
+      throw new DisconnectCmdException(String.format("Instance not exist for world: %s", world));
+    }
+    return inst;
   }
 
 }

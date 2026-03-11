@@ -1,7 +1,7 @@
 package com.ntros.command;
 
 import static com.ntros.protocol.Message.ack;
-import static com.ntros.protocol.Message.error;
+import static com.ntros.protocol.Message.errorMsg;
 
 import com.ntros.lifecycle.instance.Instance;
 import com.ntros.lifecycle.instance.InstanceFactory;
@@ -34,7 +34,7 @@ public class CreateCommand extends AbstractCommand {
     SessionContext sessionContext = session.getSessionContext();
 
     if (!sessionContext.isAuthenticated()) {
-      return Message.error("User not authenticated");
+      return Message.errorMsg("User not authenticated");
     }
     Message msg;
     try {
@@ -50,7 +50,7 @@ public class CreateCommand extends AbstractCommand {
       msg = ack(sessionContext.getSessionId());
     } catch (IllegalArgumentException ex) {
       log.error("Command failed. Could not create world", ex);
-      msg = error(ex.getMessage());
+      msg = errorMsg(ex.getMessage());
     }
 
     return msg;

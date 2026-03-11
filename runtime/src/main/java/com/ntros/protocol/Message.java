@@ -26,7 +26,7 @@ public record Message(CommandType commandType, List<String> args) {
     args = List.copyOf(args); // ensure immutability
   }
 
-  public static Message welcome(String playerName) {
+  public static Message welcomeMsg(String playerName) {
     return new Message(WELCOME, List.of(playerName));
   }
 
@@ -47,8 +47,12 @@ public record Message(CommandType commandType, List<String> args) {
     return new Message(REG_SUCCESS, List.of(String.valueOf(sessionId), clientName));
   }
 
-  public static Message error(String err) {
+  public static Message errorMsg(String err) {
     return new Message(ERROR, List.of(err));
+  }
+
+  public static Message errorMsg(String err, String id) {
+    return new Message(ERROR, List.of(err, id));
   }
 
   /**

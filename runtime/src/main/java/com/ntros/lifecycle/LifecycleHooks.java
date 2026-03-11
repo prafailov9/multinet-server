@@ -17,29 +17,19 @@ import lombok.extern.slf4j.Slf4j;
  *
  * <h3>Thread safety</h3>
  * Hooks are registered once at startup (before any session is created) and read many times
- * thereafter. {@code volatile} fields guarantee visibility without requiring synchronisation on
+ * thereafter. {@code volatile} fields guarantee visibility without requiring synchronization on
  * the hot path.
  */
 @Slf4j
 public final class LifecycleHooks {
 
-  /**
-   * Called whenever a player leaves a world.
-   *
-   * <p>Arguments: {@code (playerName, worldName)}.
-   * Default: no-op.
-   */
-  private static volatile BiConsumer<String, String> onPlayerLeave = (name, world) -> {};
+  private static volatile BiConsumer<String, String> onPlayerLeave = (name, world) -> {
+  };
 
-  private LifecycleHooks() {}
+  private LifecycleHooks() {
+  }
 
-  // ── Registration (called once from ServerBootstrap) ───────────────────────
-
-  /**
-   * Replaces the {@code onPlayerLeave} hook.
-   *
-   * @param hook {@code (playerName, worldName)} consumer; must not be {@code null}
-   */
+  //Registration (called once from ServerBootstrap)
   public static void setOnPlayerLeave(BiConsumer<String, String> hook) {
     if (hook == null) {
       throw new IllegalArgumentException("onPlayerLeave hook must not be null.");
@@ -47,7 +37,7 @@ public final class LifecycleHooks {
     onPlayerLeave = hook;
   }
 
-  // ── Fire points (called from runtime commands) ────────────────────────────
+  // ── Fire points (called from runtime commands)
 
   /**
    * Fires the {@code onPlayerLeave} hook. Safe to call even before the hook has been configured
@@ -66,8 +56,11 @@ public final class LifecycleHooks {
     }
   }
 
-  /** Resets all hooks to their default no-ops — intended for tests only. */
+  /**
+   * Resets all hooks to their default no-ops — intended for tests only.
+   */
   public static void reset() {
-    onPlayerLeave = (name, world) -> {};
+    onPlayerLeave = (name, world) -> {
+    };
   }
 }

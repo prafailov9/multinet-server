@@ -6,16 +6,10 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import lombok.extern.slf4j.Slf4j;
 
-/**
- * Test-only helper for managing the in-memory SQLite database lifecycle and running
- * arbitrary SQL scripts (e.g. to clear table data between subtests).
- *
- * Use {@link #runScript} when a test needs to clear one or more tables mid-test.
- */
 @Slf4j
-public final class TestDbHelper {
+public final class DatabaseBuilder {
 
-  private TestDbHelper() {
+  private DatabaseBuilder() {
   }
 
   /**
@@ -39,18 +33,7 @@ public final class TestDbHelper {
     }
   }
 
-  /**
-   * Executes a single SQL statement against the shared test connection.
-   *
-   * <p>Typical usage:
-   * <pre>
-   * TestDbHelper.runScript("DELETE FROM players");
-   * TestDbHelper.runScript("DELETE FROM worlds");
-   * </pre>
-   *
-   * @param sql any valid SQL statement (DDL or DML)
-   * @throws RuntimeException wrapping the underlying {@link SQLException} on failure
-   */
+
   public static void runScript(String sql) {
     try (Statement st = ConnectionProvider.connection().createStatement()) {
       st.executeUpdate(sql);

@@ -39,13 +39,7 @@ public final class PersistenceContext {
   private PersistenceContext() {
   }
 
-  /**
-   * Initialises the context with all three repositories. Must be called exactly once during
-   * server startup, before any command or hook tries to access a repository.
-   *
-   * @throws IllegalStateException if called more than once
-   */
-  public static synchronized void init(ClientRepository clientRepository,
+  public static synchronized void init(ClientRepository clients,
       PlayerRepository players,
       WorldRepository worlds,
       TerrainSnapshotRepository terrain) {
@@ -53,6 +47,7 @@ public final class PersistenceContext {
     if (playerRepository != null) {
       throw new IllegalStateException("PersistenceContext already initialised.");
     }
+    clientRepository = clients;
     playerRepository = players;
     worldRepository = worlds;
     terrainRepository = terrain;

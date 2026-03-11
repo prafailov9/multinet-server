@@ -18,7 +18,7 @@ public class AuthCommand extends AbstractCommand {
   public Message execute(Message message, Session session) {
     SessionContext sessionContext = session.getSessionContext();
     if (sessionContext.isAuthenticated()) {
-      return Message.error("User already authenticated");
+      return Message.errorMsg("User already authenticated");
     }
 
     sessionContext.setAuthenticated(true);

@@ -1,6 +1,6 @@
 package com.ntros.lifecycle.instance;
 
-import com.ntros.event.broadcaster.SessionsBroadcaster;
+import com.ntros.event.broadcaster.SharedBroadcaster;
 import com.ntros.event.broadcaster.SingleBroadcaster;
 import com.ntros.event.broadcaster.Broadcaster;
 import com.ntros.event.sessionmanager.ClientSessionManager;
@@ -25,12 +25,8 @@ public final class InstanceFactory {
 
   public static Instance createInstance(Session session, boolean isShared,
       WorldConnector worldConnector) {
-    Broadcaster broadcaster;
-    if (isShared) {
-      broadcaster = new SessionsBroadcaster();
-    } else {
-      broadcaster = new SingleBroadcaster(session.getSessionContext().getEntityId());
-    }
+    Broadcaster broadcaster = isShared ? new SharedBroadcaster()
+        : new SingleBroadcaster(session.getSessionContext().getEntityId());
 
     Instance inst = new ServerInstance(worldConnector, new ClientSessionManager(),
         new FixedRateClock(120), broadcaster,
@@ -46,7 +42,7 @@ public final class InstanceFactory {
 
     Settings cfg = Settings.multiplayerJoinable();
     Instance inst = new ServerInstance(connector, sessions, new FixedRateClock(30),
-        new SessionsBroadcaster(), cfg);
+        new SharedBroadcaster(), cfg);
     INST.put(name, inst);
     return inst;
   }

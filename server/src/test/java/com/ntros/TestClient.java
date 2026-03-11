@@ -52,12 +52,12 @@ public class TestClient implements Closeable {
     this.out = socket.getOutputStream();
   }
 
-  public ServerMessage reg(String clientName, String password, int timeoutSeconds) {
+  public ServerMessage register(String clientName, String password, int timeoutSeconds) {
     sendText("REG " + clientName + " " + password);
     return readUntilTypes(timeoutSeconds, ServerCmd.REG_SUCCESS, ServerCmd.ERROR);
   }
 
-  public ServerMessage auth(String clientName, int timeoutSeconds) {
+  public ServerMessage authenticate(String clientName, int timeoutSeconds) {
     sendText("AUTH " + clientName + " ");
     return readUntilTypes(timeoutSeconds, ServerCmd.WELCOME, ServerCmd.ERROR);
   }
