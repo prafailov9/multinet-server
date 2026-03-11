@@ -52,6 +52,16 @@ public class TestClient implements Closeable {
     this.out = socket.getOutputStream();
   }
 
+  public ServerMessage reg(String clientName, String password, int timeoutSeconds) {
+    sendText("REG " + clientName + " " + password);
+    return readUntilTypes(timeoutSeconds, ServerCmd.REG_SUCCESS, ServerCmd.ERROR);
+  }
+
+  public ServerMessage auth(String clientName, int timeoutSeconds) {
+    sendText("AUTH " + clientName + " ");
+    return readUntilTypes(timeoutSeconds, ServerCmd.WELCOME, ServerCmd.ERROR);
+  }
+
   public ServerMessage join(String clientName, String worldName, int timeoutSeconds) {
     sendText("JOIN " + clientName + " " + worldName);
     return readUntilTypes(timeoutSeconds, ServerCmd.WELCOME, ServerCmd.ERROR);
@@ -183,7 +193,7 @@ public class TestClient implements Closeable {
 
   // ---- test-only helpers ----
 
-  enum ServerCmd { WELCOME, ERROR, STATE, ACK, UNKNOWN }
+  enum ServerCmd { WELCOME, ERROR, STATE, ACK, REG_SUCCESS, UNKNOWN }
 
   record ServerMessage(ServerCmd type, List<String> args, String raw) {
 
@@ -197,11 +207,12 @@ public class TestClient implements Closeable {
       String tail = sp < 0 ? "" : trimmed.substring(sp + 1);
 
       ServerCmd cmd = switch (head) {
-        case "WELCOME" -> ServerCmd.WELCOME;
-        case "ERROR"   -> ServerCmd.ERROR;
-        case "STATE"   -> ServerCmd.STATE;
-        case "ACK"     -> ServerCmd.ACK;
-        default        -> ServerCmd.UNKNOWN;
+        case "WELCOME"     -> ServerCmd.WELCOME;
+        case "ERROR"       -> ServerCmd.ERROR;
+        case "STATE"       -> ServerCmd.STATE;
+        case "ACK"         -> ServerCmd.ACK;
+        case "REG_SUCCESS" -> ServerCmd.REG_SUCCESS;
+        default            -> ServerCmd.UNKNOWN;
       };
 
       List<String> args = (cmd == ServerCmd.STATE)

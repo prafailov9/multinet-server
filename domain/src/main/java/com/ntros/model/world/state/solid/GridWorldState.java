@@ -50,7 +50,34 @@ public class GridWorldState implements GridState {
     terrainMap = new HashMap<>();
 
     generateTerrain();
+  }
 
+  /**
+   * Restoration constructor — uses a pre-built terrain map instead of generating a new one.
+   *
+   * <p>Used by the persistence layer to recreate stable terrain across server restarts:
+   * {@code ServerBootstrap} loads the saved terrain from the snapshot repository and passes it
+   * here, so players always see the same map layout.
+   *
+   * @param worldName    unique world name
+   * @param width        number of columns (must match the saved terrain)
+   * @param height       number of rows (must match the saved terrain)
+   * @param savedTerrain pre-built terrain map loaded from a snapshot; must not be null
+   */
+  public GridWorldState(String worldName, int width, int height,
+      Map<Position, TileType> savedTerrain) {
+    this.worldName = worldName;
+    this.width = width;
+    this.height = height;
+    this.rng = ThreadLocalRandom.current(); // unused but kept for uniformity
+    this.dimension = new Dimension2D(width, height);
+
+    entityMap = new LinkedHashMap<>();
+    positionMap = new HashMap<>();
+    moveIntentMap = new HashMap<>();
+    terrainMap = new HashMap<>(Objects.requireNonNull(savedTerrain, "savedTerrain"));
+
+    log.info("Restored terrain for world '{}' ({} tiles).", worldName, terrainMap.size());
   }
 
 

@@ -6,16 +6,27 @@ import com.ntros.config.reader.WorldConfigReader;
 import com.ntros.event.broadcaster.SessionsBroadcaster;
 import com.ntros.event.sessionmanager.ClientSessionManager;
 import com.ntros.event.sessionmanager.SessionManager;
+import com.ntros.lifecycle.LifecycleHooks;
 import com.ntros.lifecycle.clock.Clock;
 import com.ntros.lifecycle.clock.FixedRateClock;
 import com.ntros.lifecycle.clock.PacedRateClock;
 import com.ntros.lifecycle.instance.Instances;
 import com.ntros.lifecycle.instance.ServerInstance;
 import com.ntros.model.entity.config.access.Settings;
+import com.ntros.model.world.connector.GridWorldConnector;
 import com.ntros.model.world.connector.WorldConnector;
+import com.ntros.model.world.state.solid.GridWorldState;
+import com.ntros.persistence.PersistenceContext;
+import com.ntros.persistence.db.ConnectionProvider;
+import com.ntros.persistence.model.WorldRecord;
+import com.ntros.persistence.repository.impl.JsonTerrainSnapshotRepository;
+import com.ntros.persistence.repository.impl.SqlitePlayerRepository;
+import com.ntros.persistence.repository.impl.SqliteWorldRepository;
 import com.ntros.server.Server;
 import com.ntros.server.TcpServer;
 import java.io.IOException;
+import java.nio.file.Path;
+import java.time.Instant;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 
@@ -33,24 +44,139 @@ public class ServerBootstrap {
   public static void startServer() {
     log.info("Starting server on port {}", PORT);
 
+    initPersistence();
+
     // load default worlds from worlds.yml and init instances
     List<WorldConnector> worlds = loadWorlds();
     initInstances(worlds);
-    Server server = new TcpServer(PORT);
 
+    registerShutdownHook(worlds);
+
+    Server server = new TcpServer(PORT);
     try {
       server.start();
     } catch (IOException ex) {
       log.error("Server failed: {}", ex.getMessage());
-
     }
-
   }
+
+  // ── Persistence wiring ────────────────────────────────────────────────────
+
+  private static void initPersistence() {
+    ConnectionProvider.initialize(ConnectionProvider.DEFAULT_DB_PATH);
+
+    PersistenceContext.init(
+        new SqlitePlayerRepository(),
+        new SqliteWorldRepository(),
+        new JsonTerrainSnapshotRepository(Path.of("data/snapshots"))
+    );
+
+    // Hook: persist player stats on every disconnect
+    LifecycleHooks.setOnPlayerLeave((playerName, worldName) -> {
+      try {
+        PersistenceContext.players().upsert(playerName);
+        PersistenceContext.players().recordSessionEnd(playerName);
+        log.debug("[Persistence] Recorded session end for player '{}' in '{}'.",
+            playerName, worldName);
+      } catch (Exception e) {
+        log.error("[Persistence] Failed to persist disconnect for '{}': {}", playerName,
+            e.getMessage(), e);
+      }
+    });
+
+    log.info("[ServerBootstrap] Persistence layer initialised.");
+  }
+
+  // ── World loading (with terrain restore) ─────────────────────────────────
 
   private static List<WorldConnector> loadWorlds() {
     WorldConverter converter = new WorldConverter();
-    return new WorldConfigReader().readAll().stream().map(converter::toModelObject).toList();
+    List<WorldConnector> worlds = new WorldConfigReader().readAll().stream()
+        .map(converter::toModelObject)
+        .toList();
+
+    // Register world metadata and restore terrain for grid worlds
+    for (WorldConnector connector : worlds) {
+      registerWorldMetadata(connector);
+      restoreTerrainIfGridWorld(connector);
+    }
+
+    return worlds;
   }
+
+  /**
+   * Saves world metadata to the database the first time a world is seen.
+   * Subsequent startups are idempotent (row already exists).
+   */
+  private static void registerWorldMetadata(WorldConnector connector) {
+    try {
+      // Determine depth: 0 for 2-D grid worlds, actual depth for 3-D open worlds
+      int depth = 0; // grid worlds are 2D
+
+      WorldRecord record = new WorldRecord(
+          connector.getWorldName(),
+          connector.getWorldType(),
+          0, 0, depth,   // dimensions not critical in metadata; world config is the source of truth
+          Instant.now()
+      );
+      PersistenceContext.worlds().registerIfAbsent(record);
+    } catch (Exception e) {
+      log.warn("[ServerBootstrap] Could not register world metadata for '{}': {}",
+          connector.getWorldName(), e.getMessage());
+    }
+  }
+
+  /**
+   * For grid-world connectors: if a terrain snapshot exists on disk, replace the freshly
+   * generated terrain with the saved one so the map is stable across restarts.
+   */
+  private static void restoreTerrainIfGridWorld(WorldConnector connector) {
+    if (!(connector instanceof GridWorldConnector gridConnector)) {
+      return; // open worlds / traffic sims don't have tile terrain to restore
+    }
+
+    String worldName = connector.getWorldName();
+    PersistenceContext.terrain().load(worldName).ifPresentOrElse(
+        savedTerrain -> {
+          gridConnector.restoreTerrain(savedTerrain);
+          log.info("[ServerBootstrap] Restored terrain for '{}' ({} tiles).",
+              worldName, savedTerrain.size());
+        },
+        () -> {
+          // First startup: save the freshly generated terrain so future restarts are stable
+          var currentTerrain = ((GridWorldState) gridConnector.getState()).terrain();
+          PersistenceContext.terrain().save(worldName, currentTerrain);
+          log.info("[ServerBootstrap] Saved initial terrain for '{}'.", worldName);
+        }
+    );
+  }
+
+  // ── Shutdown hook ─────────────────────────────────────────────────────────
+
+  /**
+   * Registers a JVM shutdown hook that gracefully saves final terrain snapshots for all grid
+   * worlds and closes the database connection. This runs on Ctrl-C or a normal JVM exit.
+   */
+  private static void registerShutdownHook(List<WorldConnector> worlds) {
+    Runtime.getRuntime().addShutdownHook(Thread.ofVirtual().unstarted(() -> {
+      log.info("[ServerBootstrap] Shutdown hook: saving terrain snapshots...");
+      for (WorldConnector connector : worlds) {
+        if (connector instanceof GridWorldConnector gridConnector) {
+          try {
+            var terrain = ((GridWorldState) gridConnector.getState()).terrain();
+            PersistenceContext.terrain().save(connector.getWorldName(), terrain);
+            log.info("[ServerBootstrap] Saved terrain for '{}'.", connector.getWorldName());
+          } catch (Exception e) {
+            log.error("[ServerBootstrap] Failed to save terrain for '{}': {}",
+                connector.getWorldName(), e.getMessage(), e);
+          }
+        }
+      }
+      ConnectionProvider.close();
+    }));
+  }
+
+  // ── Instance initialisation ───────────────────────────────────────────────
 
   private static void initInstances(List<WorldConnector> worlds) {
     for (WorldConnector world : worlds) {
@@ -67,5 +193,4 @@ public class ServerBootstrap {
               Settings.multiplayer(BROADCAST_RATE)));
     }
   }
-
 }

@@ -26,6 +26,7 @@ import com.ntros.model.world.state.solid.GridWorldState;
 import com.ntros.server.TcpServer;
 import com.ntros.lifecycle.clock.Clock;
 import com.ntros.lifecycle.clock.PacedRateClock;
+import java.io.IOException;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
@@ -75,6 +76,30 @@ public class ServerBootstrapTest {
   void tearDown() {
     IdSequenceGenerator.getInstance().resetAll();
     Instances.clear();
+  }
+
+  @Test
+  public void singleConn_regInSystem_Success() throws IOException {
+    ServerTestHelper.startServer(server, serverExecutor, PORT);
+    try (TestClient testClient = new TestClient("localhost", PORT)) {
+      String clientName = "client-1";
+      String pass = "123";
+      ServerMessage regResponse = testClient.reg(clientName, pass, 2);
+
+      assertEquals(ServerCmd.REG_SUCCESS, regResponse.type());
+      // Session ID is a positive long; avoid asserting exact value since the startServer
+      // port-probe connection consumes at least one ID before the test client connects.
+      assertTrue(Long.parseLong(regResponse.args().getFirst()) > 0, "sessionId must be positive");
+      assertEquals("client-1", regResponse.args().getLast());
+
+    }
+
+    // stop server
+    stopServerWhen(instance, server, serverExecutor);
+
+    List<Entity> entities = defaultWorld.getCurrentEntities();
+    // verify cleanup success
+    assertEquals(0, entities.size());
   }
 
   @Test
@@ -251,15 +276,15 @@ public class ServerBootstrapTest {
 
   private ServerInstance createSingleplayerInstance(WorldConnector worldConnector,
       SessionManager sessionManager,
-      Clock clock, Broadcaster broadcaster, Settings policy) {
-    return new ServerInstance(worldConnector, sessionManager, clock, broadcaster, policy);
+      Clock clock, Broadcaster broadcaster, Settings settings) {
+    return new ServerInstance(worldConnector, sessionManager, clock, broadcaster, settings);
   }
 
   private ServerInstance createMultiplayerInstance(WorldConnector worldConnector,
-      Settings policy) {
+      Settings settings) {
     return new ServerInstance(worldConnector, new ClientSessionManager(),
         new PacedRateClock(TICK_RATE),
-        new SessionsBroadcaster(), policy);
+        new SessionsBroadcaster(), settings);
   }
 
 

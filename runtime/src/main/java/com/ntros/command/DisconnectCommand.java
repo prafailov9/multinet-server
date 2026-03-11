@@ -2,6 +2,7 @@ package com.ntros.command;
 
 import static com.ntros.protocol.CommandType.ACK;
 
+import com.ntros.lifecycle.LifecycleHooks;
 import com.ntros.lifecycle.instance.Instance;
 import com.ntros.lifecycle.instance.Instances;
 import com.ntros.lifecycle.session.Session;
@@ -31,6 +32,8 @@ public final class DisconnectCommand extends AbstractCommand {
     if (inst != null) {
       String entityId = ctx.getEntityId();
       if (entityId != null && !entityId.isBlank()) {
+        // Fire persistence / analytics hook BEFORE clearing context so hooks can read player name
+        LifecycleHooks.firePlayerLeave(entityId, worldName);
         inst.leaveAsync(session).exceptionally(ex -> {
           log.warn("leaveAsync failed: {}", ex.toString());
           return null;

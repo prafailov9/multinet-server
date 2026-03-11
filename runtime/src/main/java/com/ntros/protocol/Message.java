@@ -3,6 +3,7 @@ package com.ntros.protocol;
 import static com.ntros.protocol.CommandType.ACK;
 import static com.ntros.protocol.CommandType.AUTH_SUCCESS;
 import static com.ntros.protocol.CommandType.ERROR;
+import static com.ntros.protocol.CommandType.REG_SUCCESS;
 import static com.ntros.protocol.CommandType.WELCOME;
 
 import java.util.List;
@@ -36,7 +37,14 @@ public record Message(CommandType commandType, List<String> args) {
 
   public static Message authSuccess(long sessionId) {
     return new Message(AUTH_SUCCESS, List.of(String.valueOf(sessionId)));
+  }
 
+  public static Message registrationSuccess(long sessionId) {
+    return new Message(REG_SUCCESS, List.of(String.valueOf(sessionId)));
+  }
+
+  public static Message registrationSuccess(long sessionId, String clientName) {
+    return new Message(REG_SUCCESS, List.of(String.valueOf(sessionId), clientName));
   }
 
   public static Message error(String err) {

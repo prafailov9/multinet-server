@@ -4,12 +4,14 @@ import static com.ntros.command.utils.CommandUtil.AUTH;
 import static com.ntros.command.utils.CommandUtil.DISCONNECT;
 import static com.ntros.command.utils.CommandUtil.JOIN;
 import static com.ntros.command.utils.CommandUtil.MOVE;
+import static com.ntros.command.utils.CommandUtil.REG;
 
 import com.ntros.command.AuthCommand;
 import com.ntros.command.Command;
 import com.ntros.command.DisconnectCommand;
 import com.ntros.command.JoinCommand;
 import com.ntros.command.MoveCommand;
+import com.ntros.command.RegisterCommand;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 
@@ -21,6 +23,7 @@ public final class CommandRegistry {
   static {
     COMMAND_MAP = Map.of(JOIN, new JoinCommand(),
         AUTH, new AuthCommand(),
+        REG, new RegisterCommand(),
         MOVE, new MoveCommand(),
         DISCONNECT, new DisconnectCommand());
   }

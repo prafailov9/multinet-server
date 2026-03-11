@@ -63,7 +63,7 @@ public final class InstanceFactory {
     return inst;
   }
 
-  public static Instance createLife(String name, String ownerUserId,
+  public static Instance createGameOfLifeWorld(String name, String ownerUserId,
       SessionManager sessions) {
     // If you have a LifeEngine/State, plug it here; otherwise reuse grid placeholder
     WorldConnector connector = new GridWorldConnector(new GridWorldState(name, 256, 256),

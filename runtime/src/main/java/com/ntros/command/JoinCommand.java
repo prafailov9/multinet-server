@@ -1,5 +1,6 @@
 package com.ntros.command;
 
+import static com.ntros.model.entity.config.access.Visibility.PRIVATE;
 import static com.ntros.protocol.CommandType.ERROR;
 
 import com.ntros.lifecycle.instance.Instance;
@@ -9,7 +10,6 @@ import com.ntros.lifecycle.instance.ServerInstance;
 import com.ntros.lifecycle.session.Session;
 import com.ntros.message.SessionContext;
 import com.ntros.model.entity.config.access.Settings;
-import com.ntros.model.entity.config.access.Visibility;
 import com.ntros.model.world.protocol.WorldResult;
 import com.ntros.model.world.protocol.request.JoinRequest;
 import com.ntros.protocol.Message;
@@ -36,9 +36,9 @@ public class JoinCommand extends AbstractCommand {
 
     Settings settings = instance.getSettings();
     // is not owner
-    if (settings.visibility() == Visibility.PRIVATE) {
+    if (settings.visibility() == PRIVATE) {
       var owner = InstanceFactory.ownerOf(instance.getWorldName()).orElse(null);
-      if (owner != null && !owner.equals(sessionContext.getUserId())) {
+      if (owner != null && !owner.equals(sessionContext.getUsername())) {
         return new Message(ERROR,
             List.of(String.format("WORLD_PRIVATE. instance:%s, player: %s", instance.getWorldName(),
                 player)));

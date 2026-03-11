@@ -74,9 +74,10 @@
   <groupId>com.ntros</groupId>
   <modelVersion>4.0.0</modelVersion>
   <modules>
-    <module>server</module>
     <module>domain</module>
     <module>runtime</module>
+    <module>persistence</module>
+    <module>server</module>
   </modules>
   <packaging>pom</packaging>
 

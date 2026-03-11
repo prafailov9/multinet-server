@@ -2,6 +2,8 @@ package com.ntros.protocol;
 
 public enum CommandType {
   ///  CLIENT COMMANDS ///
+  // REGisters a new client with the server
+  REG,
   // AUTHs client with the server
   AUTHENTICATE,
   // JOIN a multiplayer world
@@ -19,7 +21,9 @@ public enum CommandType {
   ORCHESTRATE,
 
   ///  SERVER COMMANDS ///
- // Auth success
+  // Registration Success
+  REG_SUCCESS,
+  // Auth success
   AUTH_SUCCESS,
   // Server broadcasts it's current world STATE
   STATE,

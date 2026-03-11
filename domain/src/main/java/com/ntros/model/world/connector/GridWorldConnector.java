@@ -11,6 +11,8 @@ import com.ntros.model.world.protocol.WorldResult;
 import com.ntros.model.world.state.GridSnapshot;
 import com.ntros.model.world.state.GridSnapshot.EntityView;
 import com.ntros.model.world.state.solid.GridWorldState;
+import com.ntros.model.entity.movement.Position;
+import com.ntros.model.world.protocol.TileType;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -97,6 +99,32 @@ public class GridWorldConnector implements WorldConnector {
   @Override
   public void reset() {
     engine.reset(state);
+  }
+
+  // ── Persistence helpers ───────────────────────────────────────────────────
+
+  /**
+   * Returns the underlying {@link GridWorldState} for read-only access by the persistence layer
+   * (e.g. to save the current terrain snapshot on shutdown).
+   */
+  public GridWorldState getState() {
+    return state;
+  }
+
+  /**
+   * Replaces the world's terrain with a previously persisted snapshot.
+   *
+   * <p>Intended to be called once, during server startup, before any player joins.
+   * Clears the randomly-generated terrain that was produced by the constructor and loads the
+   * stable, saved version so players always see the same map layout.
+   *
+   * @param savedTerrain terrain map loaded from the snapshot repository; must not be null
+   */
+  public void restoreTerrain(Map<Position, TileType> savedTerrain) {
+    state.terrain().clear();
+    state.terrain().putAll(savedTerrain);
+    log.info("[GridWorldConnector] Restored terrain for '{}' ({} tiles).",
+        state.worldName(), savedTerrain.size());
   }
 }
 

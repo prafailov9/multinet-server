@@ -12,7 +12,7 @@ public class SessionContext {
   // Transport/session-level
   private final long sessionId;            // immutable, set at session creation
   private final AtomicBoolean authenticated = new AtomicBoolean(false);
-  private volatile String userId;                   // set during AUTH (username/account)
+  private volatile String username;                   // set during AUTH (username/account)
 
   // World-level
   private volatile String worldId;                  // set during JOIN
