@@ -1,13 +1,10 @@
 package com.ntros.command;
 
-import com.ntros.message.SessionContext;
-import com.ntros.model.world.protocol.WorldResult;
-import com.ntros.protocol.CommandType;
-import com.ntros.protocol.Message;
-import com.ntros.protocol.response.ServerResponse;
+import static com.ntros.protocol.Message.authSuccess;
+
 import com.ntros.lifecycle.session.Session;
-import java.util.List;
-import java.util.Optional;
+import com.ntros.message.SessionContext;
+import com.ntros.protocol.Message;
 
 /**
  * Class to authenticate the client with the server without joining or creating a world
@@ -18,10 +15,10 @@ public class AuthCommand extends AbstractCommand {
   private static final String NOT_IN_WORLD = "NOT_IN_WORLD";
 
   @Override
-  public Optional<ServerResponse> execute(Message message, Session session) {
+  public Message execute(Message message, Session session) {
     SessionContext sessionContext = session.getSessionContext();
     if (sessionContext.isAuthenticated()) {
-      return Optional.of(ServerResponse.ofError(message, "User already authenticated"));
+      return Message.error("User already authenticated");
     }
 
     sessionContext.setAuthenticated(true);
@@ -31,9 +28,7 @@ public class AuthCommand extends AbstractCommand {
       sessionContext.setEntityId(CLIENT_AUTHENTICATED);
       sessionContext.setWorldId(NOT_IN_WORLD);
     }
-    return Optional.of(
-        ServerResponse.ofSuccess(new Message(CommandType.AUTH_SUCCESS, List.of()),
-            new WorldResult(true, sessionContext.getEntityId(),
-                sessionContext.getWorldName(), "User successfully authenticated")));
+
+    return authSuccess(sessionContext.getSessionId());
   }
 }

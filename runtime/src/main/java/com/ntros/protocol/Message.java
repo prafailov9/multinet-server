@@ -1,5 +1,10 @@
 package com.ntros.protocol;
 
+import static com.ntros.protocol.CommandType.ACK;
+import static com.ntros.protocol.CommandType.AUTH_SUCCESS;
+import static com.ntros.protocol.CommandType.ERROR;
+import static com.ntros.protocol.CommandType.WELCOME;
+
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -18,6 +23,24 @@ public record Message(CommandType commandType, List<String> args) {
       throw new IllegalArgumentException("Argument list cannot be empty.");
     }
     args = List.copyOf(args); // ensure immutability
+  }
+
+  public static Message welcome(String playerName) {
+    return new Message(WELCOME, List.of(playerName));
+  }
+
+  public static Message ack(long sessionId) {
+    return new Message(ACK, List.of(String.valueOf(sessionId)));
+
+  }
+
+  public static Message authSuccess(long sessionId) {
+    return new Message(AUTH_SUCCESS, List.of(String.valueOf(sessionId)));
+
+  }
+
+  public static Message error(String err) {
+    return new Message(ERROR, List.of(err));
   }
 
   /**

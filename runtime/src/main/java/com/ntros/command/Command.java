@@ -1,12 +1,10 @@
 package com.ntros.command;
 
-import com.ntros.protocol.Message;
-import com.ntros.protocol.response.ServerResponse;
 import com.ntros.lifecycle.session.Session;
-import java.util.Optional;
+import com.ntros.protocol.Message;
 
 public interface Command {
 
-  Optional<ServerResponse> execute(Message message, Session session);
+  Message execute(Message message, Session session);
 
 }

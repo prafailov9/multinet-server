@@ -26,13 +26,13 @@ public interface Instance extends Lifecycle, Pausable {
 
   CompletableFuture<Void> leaveAsync(Session session);
 
-  // --- Session lifecycle (called from response pipeline) ---
+  WorldConnector getWorldConnector();
 
   Settings getSettings();
 
-  WorldConnector getWorldConnector();
-
   String getWorldName();
+
+  // --- Session lifecycle (called from response pipeline) ---
 
   void registerSession(Session session);
 

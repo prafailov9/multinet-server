@@ -180,10 +180,13 @@ public final class WorldActor implements Actor {
 
   private void enqueueStagedMoves(WorldConnector world) {
     if (!stagedMoves.isEmpty()) {
-      for (var e : stagedMoves.entrySet()) {
-        world.apply(new MoveOp(new MoveRequest(e.getKey(), e.getValue())));
+      try {
+        for (var e : stagedMoves.entrySet()) {
+          world.apply(new MoveOp(new MoveRequest(e.getKey(), e.getValue())));
+        }
+      } finally {
+        stagedMoves.clear();
       }
-      stagedMoves.clear();
     }
   }
 

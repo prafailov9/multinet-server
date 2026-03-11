@@ -1,5 +1,8 @@
 package com.ntros.command;
 
+import static com.ntros.protocol.Message.ack;
+import static com.ntros.protocol.Message.error;
+
 import com.ntros.lifecycle.instance.Instance;
 import com.ntros.lifecycle.instance.InstanceFactory;
 import com.ntros.lifecycle.instance.Instances;
@@ -12,7 +15,6 @@ import com.ntros.model.world.connector.WorldConnector;
 import com.ntros.model.world.engine.solid.GridWorldEngine;
 import com.ntros.protocol.Message;
 import com.ntros.model.world.protocol.WorldType;
-import com.ntros.protocol.response.ServerResponse;
 import com.ntros.model.world.state.WorldStateFactory;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
@@ -28,14 +30,13 @@ public class CreateCommand extends AbstractCommand {
   private static final int WORLD_WIDTH = 3;
 
   @Override
-  public Optional<ServerResponse> execute(Message message, Session session) {
+  public Message execute(Message message, Session session) {
     SessionContext sessionContext = session.getSessionContext();
 
     if (!sessionContext.isAuthenticated()) {
-      return Optional.of(ServerResponse.ofError(message, "User not authenticated"));
+      return Message.error("User not authenticated");
     }
-
-    ServerResponse serverResponse;
+    Message msg;
     try {
       // Create a world and instance and register them in their in-memory caches.
       WorldConnector worldConnector = createWorld(message);
@@ -46,15 +47,13 @@ public class CreateCommand extends AbstractCommand {
       Instance instance = InstanceFactory.createInstance(session, isShared, worldConnector);
       Instances.registerInstance(instance);
 
-      serverResponse = ServerResponse.ofSuccess(
-          String.valueOf(sessionContext.getSessionId()),
-          worldConnector.getWorldName(), "World Created");
+      msg = ack(sessionContext.getSessionId());
     } catch (IllegalArgumentException ex) {
       log.error("Command failed. Could not create world", ex);
-      serverResponse = ServerResponse.ofError(message, ex.getMessage());
+      msg = error(ex.getMessage());
     }
 
-    return Optional.of(serverResponse);
+    return msg;
   }
 
   private WorldConnector createWorld(Message message) {

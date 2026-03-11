@@ -1,14 +1,16 @@
 package com.ntros.command;
 
-import com.ntros.protocol.Message;
-import com.ntros.protocol.response.ServerResponse;
 import com.ntros.lifecycle.session.Session;
-import java.util.Optional;
+import com.ntros.protocol.Message;
 
+/**
+ * For Game Of Life, other single-player orchestrator world types
+ */
 public class OrchestratorCommand extends AbstractCommand {
 
   @Override
-  public Optional<ServerResponse> execute(Message message, Session session) {
-    return Optional.empty();
+  public Message execute(Message message, Session session) {
+    // TODO: implement
+    return null;
   }
 }

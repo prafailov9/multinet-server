@@ -1,7 +1,6 @@
 package com.ntros.command;
 
 import static com.ntros.protocol.CommandType.ERROR;
-import static com.ntros.protocol.CommandType.WELCOME;
 
 import com.ntros.lifecycle.instance.Instance;
 import com.ntros.lifecycle.instance.InstanceFactory;
@@ -12,15 +11,10 @@ import com.ntros.message.SessionContext;
 import com.ntros.model.entity.config.access.Settings;
 import com.ntros.model.entity.config.access.Visibility;
 import com.ntros.model.world.protocol.WorldResult;
-import com.ntros.protocol.Message;
 import com.ntros.model.world.protocol.request.JoinRequest;
-import com.ntros.protocol.response.ServerResponse;
+import com.ntros.protocol.Message;
 import java.time.OffsetDateTime;
 import java.util.List;
-import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -30,53 +24,47 @@ import lombok.extern.slf4j.Slf4j;
 public class JoinCommand extends AbstractCommand {
 
   @Override
-  public Optional<ServerResponse> execute(Message message, Session session) {
+  public Message execute(Message message, Session session) {
     SessionContext sessionContext = session.getSessionContext();
     String player = resolvePlayer(message);
 
     Instance instance = resolveInstance(message);
     if (instance == null) {
       log.error("instance does not exist. Full client message: {}", message);
-      // TODO: change Command return types to CommandResult(vo package)
-      return Optional.of(error("WORLD_NOT_FOUND", player, null));
+      return new Message(ERROR, List.of(String.format("WORLD_NOT_FOUND for player: %s", player)));
     }
 
     Settings settings = instance.getSettings();
+    // is not owner
     if (settings.visibility() == Visibility.PRIVATE) {
       var owner = InstanceFactory.ownerOf(instance.getWorldName()).orElse(null);
       if (owner != null && !owner.equals(sessionContext.getUserId())) {
-        return Optional.of(error("WORLD_PRIVATE", player, instance.getWorldName()));
+        return new Message(ERROR,
+            List.of(String.format("WORLD_PRIVATE. instance:%s, player: %s", instance.getWorldName(),
+                player)));
       }
     }
+    // is world full
     if (settings.maxPlayers() == 1 && instance.isRunning() && instance instanceof ServerInstance wi
         && wi.getActiveSessionsCount() >= 1) {
-      return Optional.of(error("WORLD_BUSY", player, instance.getWorldName()));
+      return new Message(ERROR,
+          List.of(String.format("WORLD_BUSY. instance:%s, player: %s", instance.getWorldName(),
+              player)));
     }
 
-    CompletableFuture<WorldResult> fut = instance.joinAsync(new JoinRequest(player));
-    instance.startIfNeededForJoin();
-
-    WorldResult result;
-    try {
-      result = fut.get(750, TimeUnit.MILLISECONDS);
-    } catch (TimeoutException te) {
-      return Optional.of(error("JOIN_TIMEOUT", player, instance.getWorldName()));
-    } catch (Exception e) {
-      return Optional.of(error("JOIN_FAILED", player, instance.getWorldName()));
+    // TODO: make Command abstraction fully async.
+    // try join
+    WorldResult result = instance.joinAsync(new JoinRequest(player)).join();
+    if (result.success()) {
+      sessionContext.setEntityId(result.playerName());
+      sessionContext.setWorldId(result.worldName());
+      sessionContext.setAuthenticated(true);
+      sessionContext.setJoinedAt(OffsetDateTime.now());
+      return Message.welcome(result.playerName());
     }
-
-    if (!result.success()) {
-      return Optional.of(error(result.reason(), player, instance.getWorldName()));
-    }
-
-    sessionContext.setEntityId(result.playerName());
-    sessionContext.setWorldId(result.worldName());
-    sessionContext.setJoinedAt(OffsetDateTime.now());
-    sessionContext.setAuthenticated(true);
-
-    return Optional.of(
-        new ServerResponse(new Message(WELCOME, List.of(result.playerName())), result));
+    return new Message(ERROR, List.of(result.reason()));
   }
+
 
   protected String resolvePlayer(Message message) {
     String playerName = message.args().getFirst();
@@ -94,11 +82,6 @@ public class JoinCommand extends AbstractCommand {
       throw new IllegalArgumentException("Message missing world-name argument");
     }
     return Instances.getInstance(worldName);
-  }
-
-  private ServerResponse error(String code, String player, String world) {
-    return new ServerResponse(new Message(ERROR, List.of(code)),
-        WorldResult.failed(player, world, code));
   }
 
 }

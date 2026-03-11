@@ -13,7 +13,7 @@ import com.ntros.lifecycle.session.process.ResponseServerMessageProcessor;
 import com.ntros.lifecycle.session.process.ServerMessageProcessor;
 import com.ntros.message.SessionContext;
 import com.ntros.model.entity.sequence.IdSequenceGenerator;
-import com.ntros.protocol.response.ServerResponse;
+import com.ntros.protocol.Message;
 import java.util.concurrent.atomic.AtomicReference;
 import lombok.extern.slf4j.Slf4j;
 
@@ -58,13 +58,13 @@ public class ClientSession implements Session {
           continue;
         }
         try {
-          ServerResponse serverResponse = clientMessageProcessor.process(rawMessage, this);
+          Message serverResponse = clientMessageProcessor.process(rawMessage, this);
           log.info("SESSION: Received response from server: {}", serverResponse);
 
           serverMessageProcessor.processResponse(serverResponse, this);
         } catch (Exception ex) {
           log.error("Error: {}", sessionContext.getSessionId(), ex);
-          ServerResponse failedResponse = clientMessageProcessor.process("SESSION_FAILED", this);
+          Message failedResponse = clientMessageProcessor.process("SESSION_FAILED", this);
           log.error("Processed session_failed response: {}", failedResponse);
         }
       }
@@ -74,14 +74,18 @@ public class ClientSession implements Session {
     }
   }
 
-  /** Sends a text command response (legacy text-protocol path). */
+  /**
+   * Sends a text command response (legacy text-protocol path).
+   */
   @Override
   public void response(String serverResponse) {
     log.info("{} sending text response: {}", this, serverResponse);
     connection.send(serverResponse);
   }
 
-  /** Sends a pre-encoded binary frame verbatim. */
+  /**
+   * Sends a pre-encoded binary frame verbatim.
+   */
   @Override
   public void response(byte[] frame) {
     connection.send(frame);

@@ -3,7 +3,14 @@
     "allow": [
       "Bash(xargs grep -l \"Dynamic\\\\|AbstractDynamic\\\\|OpenWorld\\\\|DynamicWorld\")",
       "Bash(xargs grep -l \"WorldConnector\\\\|WorldEngine\\\\|WorldOp\\\\|WorldState\\\\|WorldType\\\\|GridWorld\\\\|Snapshot\\\\|Protocol\\\\|StateFrame\\\\|encoder\")",
-      "Bash(mvn help:effective-pom -pl runtime -q)"
+      "Bash(mvn help:effective-pom -pl runtime -q)",
+      "Bash(xargs grep -l \"joinAsync\\\\|JoinCommand\\\\|ResponseServerMessage\\\\|SessionsBroadcast\\\\|CommandActor\\\\|ServerInstance\")",
+      "Bash(xargs cat)",
+      "Bash(xargs grep -n \"dispatch\\\\|Optional\")",
+      "Bash(xargs grep -l \"CommandResult\\\\|interface Command\\\\|abstract class\")",
+      "Bash(xargs grep -n \".\")",
+      "Bash(xargs grep -n \"registerSession\\\\|activeSessionsCount\\\\|sessionManager\")",
+      "Bash(xargs grep -l \".\")"
     ]
   }
 }

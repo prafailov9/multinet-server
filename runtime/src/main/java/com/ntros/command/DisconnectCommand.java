@@ -2,15 +2,12 @@ package com.ntros.command;
 
 import static com.ntros.protocol.CommandType.ACK;
 
-import com.ntros.lifecycle.instance.Instances;
 import com.ntros.lifecycle.instance.Instance;
-import com.ntros.message.SessionContext;
-import com.ntros.model.world.protocol.WorldResult;
-import com.ntros.protocol.Message;
-import com.ntros.protocol.response.ServerResponse;
+import com.ntros.lifecycle.instance.Instances;
 import com.ntros.lifecycle.session.Session;
+import com.ntros.message.SessionContext;
+import com.ntros.protocol.Message;
 import java.util.List;
-import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -20,16 +17,15 @@ import lombok.extern.slf4j.Slf4j;
 public final class DisconnectCommand extends AbstractCommand {
 
   @Override
-  public Optional<ServerResponse> execute(Message msg, Session session) {
+  public Message execute(Message msg, Session session) {
     SessionContext ctx = session.getSessionContext();
     String worldName = ctx.getWorldName();
 
-    ServerResponse ack = new ServerResponse(new Message(ACK, List.of("DISCONNECT")),
-        WorldResult.succeeded(ctx.getUserId(), worldName, "user disconnecting"));
+    Message ack = new Message(ACK, List.of("DISCONNECT"));
 
     if (worldName == null) {
       clearContext(ctx);
-      return Optional.of(ack);
+      return ack;
     }
     Instance inst = Instances.getInstance(worldName);
     if (inst != null) {
@@ -44,7 +40,7 @@ public final class DisconnectCommand extends AbstractCommand {
     }
 
     clearContext(ctx);
-    return Optional.of(ack);
+    return ack;
   }
 
   /**

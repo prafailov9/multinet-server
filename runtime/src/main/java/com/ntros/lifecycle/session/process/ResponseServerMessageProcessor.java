@@ -1,17 +1,15 @@
 package com.ntros.lifecycle.session.process;
 
 import com.ntros.lifecycle.instance.Instances;
-import com.ntros.protocol.Message;
-import com.ntros.protocol.response.ServerResponse;
 import com.ntros.lifecycle.session.Session;
+import com.ntros.protocol.Message;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class ResponseServerMessageProcessor implements ServerMessageProcessor {
 
   @Override
-  public void processResponse(ServerResponse response, Session session) {
-    Message msg = response.serverMessage();
+  public void processResponse(Message msg, Session session) {
 
     // 1) Send WELCOME to the socket first (guarantee ordering).
     session.response(msg.toString());

@@ -2,13 +2,9 @@ package com.ntros.lifecycle.session.process;
 
 import com.ntros.dispatcher.Dispatcher;
 import com.ntros.dispatcher.MessageDispatcher;
-import com.ntros.protocol.CommandType;
-import com.ntros.protocol.Message;
-import com.ntros.model.world.protocol.WorldResult;
-import com.ntros.protocol.response.ServerResponse;
-import com.ntros.parser.MessageParser;
 import com.ntros.lifecycle.session.Session;
-import java.util.List;
+import com.ntros.parser.MessageParser;
+import com.ntros.protocol.Message;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -28,13 +24,10 @@ public class RequestClientMessageProcessor implements ClientMessageProcessor {
    * Processing the raw network message from the client
    */
   @Override
-  public ServerResponse process(String rawMessage, Session session) {
+  public Message process(String rawMessage, Session session) {
     if (rawMessage.startsWith(SESSION_FAILED_NOTIFIER)) {
       session.stop();
-      return ServerResponse.ofError(
-          new Message(CommandType.ERROR, List.of("unexpected session failure. Removed session.")),
-          WorldResult.failed(session.getSessionContext().getUserId(),
-              session.getSessionContext().getWorldName(), "Session failed"));
+      return Message.error("unexpected session failure. Removed session.");
     }
 
     Message message = messageParser.parse(rawMessage);

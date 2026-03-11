@@ -65,7 +65,27 @@ public class ServerInstance extends AbstractInstance {
 
   @Override
   public CompletableFuture<WorldResult> joinAsync(JoinRequest req) {
-    return actor.join(world, req);
+    // check if clock and actor running
+    // if yes: do join
+    // if no: check settings.autoStart == true and currentSession.size == 0
+    // if yes: do join
+    // no: reject join command
+    if (isInstanceLive()) {
+      return actor.join(world, req);
+    }
+    if (settings.autoStartOnPlayerJoin() && sessionManager.activeSessionsCount() == 0) {
+      // Submit the join task FIRST so it is at the head of the actor queue,
+      // then start the clock. This guarantees [joinTask → stepTask] ordering in
+      // the actor's single-threaded executor: the entity is added before the first
+      // step snapshot is taken, even when initialDelay=0 fires immediately.
+      CompletableFuture<WorldResult> joinFuture = actor.join(world, req);
+      start();
+      return joinFuture;
+    }
+    return CompletableFuture.completedFuture(WorldResult.failed(req.playerName(), getWorldName(),
+        String.format(
+            " JOIN required instance start. Not allowed base on settings.autoJoin=false. Instance settings: %s",
+            settings)));
   }
 
   @Override
@@ -108,7 +128,7 @@ public class ServerInstance extends AbstractInstance {
    * @return the world snapshot captured by the actor, or {@code null} if the world hasn't started
    */
   private Object tryWorldUpdate() {
-    if (!hasWorldStarted()) {
+    if (!isInstanceLive()) {
       return null;
     }
     try {
@@ -140,7 +160,7 @@ public class ServerInstance extends AbstractInstance {
     return !clockTicking.compareAndSet(false, true);
   }
 
-  private boolean hasWorldStarted() {
+  private boolean isInstanceLive() {
     return clockTicking.get() && actor.isRunning();
   }
 
