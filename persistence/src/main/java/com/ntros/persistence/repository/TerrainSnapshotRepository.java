@@ -34,4 +34,12 @@ public interface TerrainSnapshotRepository {
    * Returns {@code true} if a snapshot file exists for {@code worldName}.
    */
   boolean exists(String worldName);
+
+  /**
+   * Deletes the terrain snapshot for {@code worldName}. No-op if no snapshot exists.
+   *
+   * <p>Used by the shutdown hook when a world is decommissioned, and in tests to reset
+   * file state between scenarios.
+   */
+  void delete(String worldName);
 }

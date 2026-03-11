@@ -25,7 +25,7 @@ class GridWorldOpEngineTest {
     //setup
     String expectedPlayerName = "cl1";
     String expectedWorldName = "arena-x";
-    long expectedPlayerId = 1;
+    long expectedPlayerId = 0L; // matches IdSequenceGenerator.START_AT
     String expectedSuccessReason = String.format(
         "Player %s successfully joined world %s with ID: %d", expectedPlayerName, expectedWorldName,
         expectedPlayerId);

@@ -77,6 +77,7 @@ public class SqliteWorldRepository implements WorldRepository {
     return result;
   }
 
+
   // ── Helper ────────────────────────────────────────────────────────────────
 
   private static WorldRecord map(ResultSet rs) throws SQLException {
@@ -91,6 +92,6 @@ public class SqliteWorldRepository implements WorldRepository {
   }
 
   private static Connection conn() {
-    return ConnectionProvider.get();
+    return ConnectionProvider.connection();
   }
 }

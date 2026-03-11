@@ -12,7 +12,7 @@ import lombok.extern.slf4j.Slf4j;
  * repositories is correct — and WAL mode ensures concurrent readers don't block it.
  *
  * <p>Call {@link #initialize(String)} once at server startup (before any repo is used), then
- * obtain the shared connection via {@link #get()}.
+ * obtain the shared connection via {@link #connection()}.
  */
 @Slf4j
 public final class ConnectionProvider {
@@ -62,7 +62,7 @@ public final class ConnectionProvider {
   /**
    * Returns the shared connection. Throws if {@link #initialize} has not been called.
    */
-  public static Connection get() {
+  public static Connection connection() {
     if (connection == null) {
       throw new IllegalStateException(
           "ConnectionProvider not initialised — call initialize(dbPath) first.");

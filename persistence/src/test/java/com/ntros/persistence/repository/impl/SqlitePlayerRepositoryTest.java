@@ -17,22 +17,19 @@ import org.junit.jupiter.api.Test;
  * <p>Each test gets a fresh database via {@code ":memory:"}, so tests are fully isolated and
  * leave no files on disk.
  */
-class SqlitePlayerRepositoryTest {
+class SqlitePlayerRepositoryTest extends AbstractRepositoryTest {
 
   private PlayerRepository repo;
 
   @BeforeEach
   void setUp() {
-    ConnectionProvider.initialize(":memory:");
     repo = new SqlitePlayerRepository();
   }
 
   @AfterEach
   void tearDown() {
-    ConnectionProvider.close();
+    repo = null;
   }
-
-  // ── upsert ────────────────────────────────────────────────────────────────
 
   @Test
   void upsert_newPlayer_persistsWithZeroStats() {

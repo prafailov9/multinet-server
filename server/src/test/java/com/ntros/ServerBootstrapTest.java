@@ -1,7 +1,9 @@
 package com.ntros;
 
 
+import static com.ntros.ServerTestHelper.startServer;
 import static com.ntros.ServerTestHelper.stopServerWhen;
+import static com.ntros.TestClient.ServerCmd.REG_SUCCESS;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -23,10 +25,18 @@ import com.ntros.model.world.connector.GridWorldConnector;
 import com.ntros.model.world.connector.WorldConnector;
 import com.ntros.model.world.engine.solid.GridWorldEngine;
 import com.ntros.model.world.state.solid.GridWorldState;
+import com.ntros.persistence.PersistenceContext;
+import com.ntros.persistence.db.ConnectionProvider;
+import com.ntros.persistence.repository.impl.JsonTerrainSnapshotRepository;
+import com.ntros.persistence.repository.impl.SqliteClientRepository;
+import com.ntros.persistence.repository.impl.SqlitePlayerRepository;
+import com.ntros.persistence.repository.impl.SqliteWorldRepository;
 import com.ntros.server.TcpServer;
 import com.ntros.lifecycle.clock.Clock;
 import com.ntros.lifecycle.clock.PacedRateClock;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
@@ -48,21 +58,31 @@ public class ServerBootstrapTest {
   private static final int BROADCAST_RATE = 21;
   private static final Random SEEDED = new Random(10);
 
+  private static Path terrainDir;
+
   private final ExecutorService serverExecutor = Executors.newSingleThreadExecutor();
   private TcpServer server;
   private Instance instance;
   private WorldConnector defaultWorld;
 
   @BeforeAll
-  static void awaitDefaults() {
+  static void classSetUp() throws IOException {
     Awaitility.setDefaultPollInterval(Duration.ofMillis(25));
     Awaitility.setDefaultTimeout(Duration.ofSeconds(2));
+    terrainDir = Files.createTempDirectory("test-terrain-");
   }
 
   @BeforeEach
   void setUp() {
-    // register the world instance(state + engine) with the tick server
+    // Initialise an in-memory SQLite database so commands that touch PersistenceContext work.
+    ConnectionProvider.initialize(":memory:");
+    PersistenceContext.init(new SqliteClientRepository(),
+        new SqlitePlayerRepository(),
+        new SqliteWorldRepository(),
+        new JsonTerrainSnapshotRepository(terrainDir)
+    );
 
+    // register the world instance(state + engine) with the tick server
     defaultWorld = createWorldConnector("arena-x", 3, 3);
     instance = createSingleplayerInstance(defaultWorld, new ClientSessionManager(),
         new PacedRateClock(TICK_RATE), new SessionsBroadcaster(),
@@ -73,20 +93,29 @@ public class ServerBootstrapTest {
   }
 
   @AfterEach
-  void tearDown() {
+  void tearDown() throws IOException {
     IdSequenceGenerator.getInstance().resetAll();
     Instances.clear();
+    // Safety net: ensure the server is always stopped, even if the test body threw
+    // before reaching stopServerWhen() (e.g. ConditionTimeoutException).
+    // TcpServer.stop() is idempotent — safe to call if already stopped.
+    if (server != null) {
+      server.stop();
+    }
+    // Tear down persistence so the next test can call PersistenceContext.init() again.
+    PersistenceContext.reset();
+    ConnectionProvider.close();
   }
 
   @Test
   public void singleConn_regInSystem_Success() throws IOException {
-    ServerTestHelper.startServer(server, serverExecutor, PORT);
+    startServer(server, serverExecutor, PORT);
     try (TestClient testClient = new TestClient("localhost", PORT)) {
       String clientName = "client-1";
       String pass = "123";
       ServerMessage regResponse = testClient.reg(clientName, pass, 2);
 
-      assertEquals(ServerCmd.REG_SUCCESS, regResponse.type());
+      assertEquals(REG_SUCCESS, regResponse.type());
       // Session ID is a positive long; avoid asserting exact value since the startServer
       // port-probe connection consumes at least one ID before the test client connects.
       assertTrue(Long.parseLong(regResponse.args().getFirst()) > 0, "sessionId must be positive");
@@ -105,7 +134,7 @@ public class ServerBootstrapTest {
   @Test
   void singleConnection_sendJoinCommand_immediateJoinSuccess() throws Exception {
     // autoStartOnPlayerJoin = true -> server will immediately start ticking
-    ServerTestHelper.startServer(server, serverExecutor, PORT);
+    startServer(server, serverExecutor, PORT);
     try (TestClient testClient = new TestClient("localhost", PORT)) {
       String clientName = "client-1";
 
@@ -127,7 +156,7 @@ public class ServerBootstrapTest {
 
   @Test
   void singleConnection_sendMoveCommand_moveInTheWorldSuccess() throws Exception {
-    ServerTestHelper.startServer(server, serverExecutor, PORT);
+    startServer(server, serverExecutor, PORT);
     try (TestClient testClient = new TestClient("localhost", PORT)) {
       String clientName = "client-1";
 
@@ -165,7 +194,7 @@ public class ServerBootstrapTest {
 
   @Test
   void multipleClients_sendJoinCommand_welcomeMessageResponse() throws Exception {
-    ServerTestHelper.startServer(server, serverExecutor, PORT);
+    startServer(server, serverExecutor, PORT);
     int clientCount = 3;
     List<TestClient> clients = new ArrayList<>();
     try {
@@ -194,7 +223,7 @@ public class ServerBootstrapTest {
 
   @Test
   void multipleClients_sendMoveCommand_receiveWorldStateResponse() throws Exception {
-    ServerTestHelper.startServer(server, serverExecutor, PORT);
+    startServer(server, serverExecutor, PORT);
     int clientCount = 3;
     List<TestClient> clients = new ArrayList<>();
     try {
@@ -246,7 +275,7 @@ public class ServerBootstrapTest {
 
     // NOW start server
     server = new TcpServer(PORT);
-    ServerTestHelper.startServer(server, serverExecutor, PORT);
+    startServer(server, serverExecutor, PORT);
 
     try (TestClient c1 = new TestClient("localhost", PORT);
         TestClient c2 = new TestClient("localhost", PORT)) {

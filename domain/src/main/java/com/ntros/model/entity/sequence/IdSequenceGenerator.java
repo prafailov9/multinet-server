@@ -5,7 +5,7 @@ import java.util.concurrent.atomic.AtomicLong;
 
 public final class IdSequenceGenerator {
 
-  private static final long START_AT = 1L;
+  private static final long START_AT = 0L;
 
   // Make them instance fields to match the singleton model (cleaner)
   private final AtomicLong sessionSeq = new AtomicLong(START_AT);

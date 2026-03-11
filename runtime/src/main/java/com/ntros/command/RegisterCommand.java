@@ -3,6 +3,7 @@ package com.ntros.command;
 import static com.ntros.protocol.Message.error;
 
 import com.ntros.lifecycle.session.Session;
+import com.ntros.persistence.PersistenceContext;
 import com.ntros.protocol.Message;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
@@ -30,6 +31,8 @@ public class RegisterCommand extends AbstractCommand {
     if (username.isBlank()) {
       return error("Blank username given");
     }
+
+    var record = PersistenceContext.players().upsert(username);
     // TODO: once persistence added: save player
     ctx.setAuthenticated(true);
     ctx.setUsername(username);

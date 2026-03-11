@@ -9,6 +9,11 @@
       <groupId>com.ntros</groupId>
       <version>1.0-SNAPSHOT</version>
     </dependency>
+    <dependency>
+      <artifactId>persistence</artifactId>
+      <groupId>com.ntros</groupId>
+      <version>1.0-SNAPSHOT</version>
+    </dependency>
   </dependencies>
 
   <modelVersion>4.0.0</modelVersion>

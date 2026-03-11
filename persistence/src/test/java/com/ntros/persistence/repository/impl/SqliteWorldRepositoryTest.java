@@ -14,19 +14,18 @@ import org.junit.jupiter.api.Test;
 /**
  * Unit tests for {@link SqliteWorldRepository} using an in-memory SQLite database.
  */
-class SqliteWorldRepositoryTest {
+class SqliteWorldRepositoryTest extends AbstractRepositoryTest {
 
   private WorldRepository repo;
 
   @BeforeEach
   void setUp() {
-    ConnectionProvider.initialize(":memory:");
     repo = new SqliteWorldRepository();
   }
 
   @AfterEach
   void tearDown() {
-    ConnectionProvider.close();
+    repo = null;
   }
 
   // ── registerIfAbsent ──────────────────────────────────────────────────────
@@ -91,4 +90,5 @@ class SqliteWorldRepositoryTest {
     assertThat(all.get(0).name()).isEqualTo("world-a");
     assertThat(all.get(1).name()).isEqualTo("world-b");
   }
+
 }

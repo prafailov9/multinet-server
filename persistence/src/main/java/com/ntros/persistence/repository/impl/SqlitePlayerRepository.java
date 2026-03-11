@@ -21,40 +21,36 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class SqlitePlayerRepository implements PlayerRepository {
 
-  // ── upsert ────────────────────────────────────────────────────────────────
-
   @Override
-  public PlayerRecord upsert(String name) {
+  public PlayerRecord upsert(String playerName) {
     // Check if player exists first
-    Optional<PlayerRecord> existing = findByName(name);
+    Optional<PlayerRecord> existing = findByName(playerName);
     if (existing.isPresent()) {
       // Update last_seen only
       try (PreparedStatement ps = conn().prepareStatement(
           "UPDATE players SET last_seen = ? WHERE name = ?")) {
         ps.setString(1, Instant.now().toString());
-        ps.setString(2, name);
+        ps.setString(2, playerName);
         ps.executeUpdate();
       } catch (SQLException e) {
-        throw new RuntimeException("Failed to update player: " + name, e);
+        throw new RuntimeException("Failed to update player: " + playerName, e);
       }
-      return findByName(name).orElseThrow();
+      return findByName(playerName).orElseThrow();
     }
 
     // Insert new player
     try (PreparedStatement ps = conn().prepareStatement(
         "INSERT INTO players (name, total_moves, total_sessions, last_seen) VALUES (?, 0, 0, ?)")) {
-      ps.setString(1, name);
+      ps.setString(1, playerName);
       ps.setString(2, Instant.now().toString());
       ps.executeUpdate();
-      log.info("[PlayerRepository] New player persisted: '{}'.", name);
+      log.info("[PlayerRepository] New player persisted: '{}'.", playerName);
     } catch (SQLException e) {
-      throw new RuntimeException("Failed to insert player: " + name, e);
+      throw new RuntimeException("Failed to insert player: " + playerName, e);
     }
 
-    return findByName(name).orElseThrow();
+    return findByName(playerName).orElseThrow();
   }
-
-  // ── findByName ────────────────────────────────────────────────────────────
 
   @Override
   public Optional<PlayerRecord> findByName(String name) {
@@ -71,8 +67,6 @@ public class SqlitePlayerRepository implements PlayerRepository {
     }
     return Optional.empty();
   }
-
-  // ── incrementMoves ────────────────────────────────────────────────────────
 
   @Override
   public void incrementMoves(String name, int delta) {
@@ -92,8 +86,6 @@ public class SqlitePlayerRepository implements PlayerRepository {
     }
   }
 
-  // ── recordSessionEnd ──────────────────────────────────────────────────────
-
   @Override
   public void recordSessionEnd(String name) {
     try (PreparedStatement ps = conn().prepareStatement(
@@ -109,11 +101,9 @@ public class SqlitePlayerRepository implements PlayerRepository {
     }
   }
 
-  // ── Helper ────────────────────────────────────────────────────────────────
-
   private static PlayerRecord map(ResultSet rs) throws SQLException {
     String lastSeenStr = rs.getString("last_seen");
-    Instant lastSeen   = lastSeenStr != null ? Instant.parse(lastSeenStr) : null;
+    Instant lastSeen = lastSeenStr != null ? Instant.parse(lastSeenStr) : null;
     return new PlayerRecord(
         rs.getLong("id"),
         rs.getString("name"),
@@ -124,6 +114,6 @@ public class SqlitePlayerRepository implements PlayerRepository {
   }
 
   private static Connection conn() {
-    return ConnectionProvider.get();
+    return ConnectionProvider.connection();
   }
 }

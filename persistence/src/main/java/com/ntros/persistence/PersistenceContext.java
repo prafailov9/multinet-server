@@ -1,8 +1,12 @@
 package com.ntros.persistence;
 
+import com.ntros.persistence.db.ConnectionProvider;
+import com.ntros.persistence.repository.ClientRepository;
 import com.ntros.persistence.repository.PlayerRepository;
 import com.ntros.persistence.repository.TerrainSnapshotRepository;
 import com.ntros.persistence.repository.WorldRepository;
+import java.sql.SQLException;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * Static registry for persistence repositories.
@@ -23,13 +27,17 @@ import com.ntros.persistence.repository.WorldRepository;
  * PersistenceContext.players().upsert("alice");
  * </pre>
  */
+@Slf4j
 public final class PersistenceContext {
 
-  private static volatile PlayerRepository          playerRepository;
-  private static volatile WorldRepository           worldRepository;
+  private static volatile ClientRepository clientRepository;
+
+  private static volatile PlayerRepository playerRepository;
+  private static volatile WorldRepository worldRepository;
   private static volatile TerrainSnapshotRepository terrainRepository;
 
-  private PersistenceContext() {}
+  private PersistenceContext() {
+  }
 
   /**
    * Initialises the context with all three repositories. Must be called exactly once during
@@ -37,46 +45,80 @@ public final class PersistenceContext {
    *
    * @throws IllegalStateException if called more than once
    */
-  public static synchronized void init(
-      PlayerRepository          players,
-      WorldRepository           worlds,
+  public static synchronized void init(ClientRepository clientRepository,
+      PlayerRepository players,
+      WorldRepository worlds,
       TerrainSnapshotRepository terrain) {
 
     if (playerRepository != null) {
       throw new IllegalStateException("PersistenceContext already initialised.");
     }
-    playerRepository  = players;
-    worldRepository   = worlds;
+    playerRepository = players;
+    worldRepository = worlds;
     terrainRepository = terrain;
   }
 
-  /** Returns the player repository. Throws if not initialised. */
+  public static ClientRepository clients() {
+    assertInit();
+    return clientRepository;
+  }
+
   public static PlayerRepository players() {
     assertInit();
     return playerRepository;
   }
 
-  /** Returns the world registry repository. Throws if not initialised. */
   public static WorldRepository worlds() {
     assertInit();
     return worldRepository;
   }
 
-  /** Returns the terrain snapshot repository. Throws if not initialised. */
   public static TerrainSnapshotRepository terrain() {
     assertInit();
     return terrainRepository;
   }
 
-  /** Returns {@code true} once {@link #init} has been called. */
   public static boolean isInitialised() {
     return playerRepository != null;
   }
 
-  /** Resets the context — intended for use in tests only. */
+  /**
+   * Deletes all data managed by the persistence layer — <strong>intended for testing only</strong>.
+   *
+   * <p>Wipes every row from {@code players}, {@code worlds}, {@code clients}, and
+   * {@code sessions}, then deletes all terrain snapshot files. The database schema (table
+   * definitions) and the snapshot directory itself are preserved; only the data is removed.
+   *
+   * <p>Must be called after {@link #init}. After this call the database is in the same state as a
+   * freshly initialised, empty installation.
+   */
+  public static synchronized void clearAll() {
+    assertInit();
+    // Repos that own a deleteAll() implementation
+    // sessions and clients tables have no repo wired into PersistenceContext — clear directly
+    clearTable("sessions");
+    clearTable("clients");
+    log.info("[PersistenceContext] All persistence data cleared.");
+  }
+
+  /**
+   * Truncates a single table via the shared connection.
+   */
+  private static void clearTable(String table) {
+    try (var st = ConnectionProvider.connection().createStatement()) {
+      int rows = st.executeUpdate("DELETE FROM " + table);
+      log.debug("[PersistenceContext] Cleared table '{}' ({} rows).", table, rows);
+    } catch (SQLException e) {
+      throw new RuntimeException("Failed to clear table: " + table, e);
+    }
+  }
+
+  /**
+   * Resets the context — intended for use in tests only.
+   */
   public static synchronized void reset() {
-    playerRepository  = null;
-    worldRepository   = null;
+    playerRepository = null;
+    worldRepository = null;
     terrainRepository = null;
   }
 

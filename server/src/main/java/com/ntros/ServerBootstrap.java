@@ -20,6 +20,7 @@ import com.ntros.persistence.PersistenceContext;
 import com.ntros.persistence.db.ConnectionProvider;
 import com.ntros.persistence.model.WorldRecord;
 import com.ntros.persistence.repository.impl.JsonTerrainSnapshotRepository;
+import com.ntros.persistence.repository.impl.SqliteClientRepository;
 import com.ntros.persistence.repository.impl.SqlitePlayerRepository;
 import com.ntros.persistence.repository.impl.SqliteWorldRepository;
 import com.ntros.server.Server;
@@ -65,7 +66,7 @@ public class ServerBootstrap {
   private static void initPersistence() {
     ConnectionProvider.initialize(ConnectionProvider.DEFAULT_DB_PATH);
 
-    PersistenceContext.init(
+    PersistenceContext.init(new SqliteClientRepository(),
         new SqlitePlayerRepository(),
         new SqliteWorldRepository(),
         new JsonTerrainSnapshotRepository(Path.of("data/snapshots"))
@@ -151,33 +152,6 @@ public class ServerBootstrap {
     );
   }
 
-  // ── Shutdown hook ─────────────────────────────────────────────────────────
-
-  /**
-   * Registers a JVM shutdown hook that gracefully saves final terrain snapshots for all grid
-   * worlds and closes the database connection. This runs on Ctrl-C or a normal JVM exit.
-   */
-  private static void registerShutdownHook(List<WorldConnector> worlds) {
-    Runtime.getRuntime().addShutdownHook(Thread.ofVirtual().unstarted(() -> {
-      log.info("[ServerBootstrap] Shutdown hook: saving terrain snapshots...");
-      for (WorldConnector connector : worlds) {
-        if (connector instanceof GridWorldConnector gridConnector) {
-          try {
-            var terrain = ((GridWorldState) gridConnector.getState()).terrain();
-            PersistenceContext.terrain().save(connector.getWorldName(), terrain);
-            log.info("[ServerBootstrap] Saved terrain for '{}'.", connector.getWorldName());
-          } catch (Exception e) {
-            log.error("[ServerBootstrap] Failed to save terrain for '{}': {}",
-                connector.getWorldName(), e.getMessage(), e);
-          }
-        }
-      }
-      ConnectionProvider.close();
-    }));
-  }
-
-  // ── Instance initialisation ───────────────────────────────────────────────
-
   private static void initInstances(List<WorldConnector> worlds) {
     for (WorldConnector world : worlds) {
       SessionManager sessionManager = new ClientSessionManager();
@@ -192,5 +166,28 @@ public class ServerBootstrap {
           new ServerInstance(world, sessionManager, clock, new SessionsBroadcaster(),
               Settings.multiplayer(BROADCAST_RATE)));
     }
+  }
+
+  /**
+   * Registers a JVM shutdown hook that gracefully saves final terrain snapshots for all grid
+   * worlds and closes the database connection. This runs on Ctrl-C or a normal JVM exit.
+   */
+  private static void registerShutdownHook(List<WorldConnector> worlds) {
+    Runtime.getRuntime().addShutdownHook(Thread.ofVirtual().unstarted(() -> {
+      log.info("[ServerBootstrap] Shutdown hook: saving terrain snapshots...");
+      for (WorldConnector connector : worlds) {
+        if (connector instanceof GridWorldConnector gridConnector) {
+          try {
+            var terrain = gridConnector.getState().terrain();
+            PersistenceContext.terrain().save(connector.getWorldName(), terrain);
+            log.info("[ServerBootstrap] Saved terrain for '{}'.", connector.getWorldName());
+          } catch (Exception e) {
+            log.error("[ServerBootstrap] Failed to save terrain for '{}': {}",
+                connector.getWorldName(), e.getMessage(), e);
+          }
+        }
+      }
+      ConnectionProvider.close();
+    }));
   }
 }

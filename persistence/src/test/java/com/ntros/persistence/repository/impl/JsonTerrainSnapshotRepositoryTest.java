@@ -135,7 +135,25 @@ class JsonTerrainSnapshotRepositoryTest {
     assertThat(loaded).containsExactlyInAnyOrderEntriesOf(terrain);
   }
 
-  // ── helpers ───────────────────────────────────────────────────────────────
+  // ── delete ────────────────────────────────────────────────────────────────
+
+  @Test
+  void delete_existingSnapshot_removesFile() {
+    repo.save("arena-x", smallTerrain());
+    assertThat(repo.exists("arena-x")).isTrue();
+
+    repo.delete("arena-x");
+
+    assertThat(repo.exists("arena-x")).isFalse();
+    assertThat(repo.load("arena-x")).isEmpty();
+  }
+
+  @Test
+  void delete_nonExistentSnapshot_isNoOp() {
+    // Must not throw
+    repo.delete("ghost-world");
+    assertThat(repo.exists("ghost-world")).isFalse();
+  }
 
   private static Map<Position, TileType> smallTerrain() {
     Map<Position, TileType> m = new LinkedHashMap<>();

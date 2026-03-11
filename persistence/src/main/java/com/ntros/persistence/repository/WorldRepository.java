@@ -29,4 +29,5 @@ public interface WorldRepository {
    * Returns all registered worlds, ordered by {@code created_at}.
    */
   List<WorldRecord> findAll();
+
 }

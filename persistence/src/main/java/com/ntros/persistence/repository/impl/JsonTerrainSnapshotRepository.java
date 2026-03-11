@@ -87,7 +87,7 @@ public class JsonTerrainSnapshotRepository implements TerrainSnapshotRepository 
       Map<Position, TileType> terrain = new LinkedHashMap<>(payload.terrain().size());
       payload.terrain().forEach((key, tileName) -> {
         String[] parts = key.split(",");
-        Position pos  = Position.of(Integer.parseInt(parts[0]), Integer.parseInt(parts[1]));
+        Position pos = Position.of(Integer.parseInt(parts[0]), Integer.parseInt(parts[1]));
         TileType tile = TileType.valueOf(tileName);
         terrain.put(pos, tile);
       });
@@ -104,6 +104,20 @@ public class JsonTerrainSnapshotRepository implements TerrainSnapshotRepository 
   @Override
   public boolean exists(String worldName) {
     return Files.exists(fileFor(worldName));
+  }
+
+  // ── delete ────────────────────────────────────────────────────────────────
+
+  @Override
+  public void delete(String worldName) {
+    try {
+      boolean deleted = Files.deleteIfExists(fileFor(worldName));
+      if (deleted) {
+        log.info("[TerrainSnapshotRepository] Deleted snapshot for '{}'.", worldName);
+      }
+    } catch (IOException e) {
+      throw new RuntimeException("Failed to delete terrain snapshot for: " + worldName, e);
+    }
   }
 
   // ── Helpers ───────────────────────────────────────────────────────────────

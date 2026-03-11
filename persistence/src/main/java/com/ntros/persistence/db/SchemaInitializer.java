@@ -19,11 +19,22 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 final class SchemaInitializer {
 
-  private SchemaInitializer() {}
+  private SchemaInitializer() {
+  }
 
   static void run(Connection conn) throws SQLException {
     try (Statement st = conn.createStatement()) {
-      // ── players ────────────────────────────────────────────────────────────
+      st.execute("""
+          CREATE TABLE IF NOT EXISTS clients (
+            client_id     INTEGER PRIMARY KEY,
+            session_id     INTEGER NOT NULL DEFAULT 0,
+            username      TEXT NOT NULL UNIQUE,
+            password      TEXT NOT NULL UNIQUE,
+            created_at    TEXT,
+            updated_at    TEXT
+          )
+          """);
+
       st.execute("""
           CREATE TABLE IF NOT EXISTS players (
             id               INTEGER PRIMARY KEY,
@@ -34,7 +45,6 @@ final class SchemaInitializer {
           )
           """);
 
-      // ── worlds ─────────────────────────────────────────────────────────────
       st.execute("""
           CREATE TABLE IF NOT EXISTS worlds (
             name       TEXT    PRIMARY KEY,
@@ -46,7 +56,6 @@ final class SchemaInitializer {
           )
           """);
 
-      // ── sessions ───────────────────────────────────────────────────────────
       st.execute("""
           CREATE TABLE IF NOT EXISTS sessions (
             id          INTEGER PRIMARY KEY AUTOINCREMENT,

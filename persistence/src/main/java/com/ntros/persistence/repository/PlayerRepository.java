@@ -41,4 +41,5 @@ public interface PlayerRepository {
    * @param name player name
    */
   void recordSessionEnd(String name);
+
 }

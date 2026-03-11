@@ -6,6 +6,7 @@ import com.ntros.lifecycle.instance.Instances;
 import com.ntros.lifecycle.session.ClientSession;
 import com.ntros.lifecycle.session.Session;
 import java.io.IOException;
+import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
@@ -28,7 +29,9 @@ public class TcpServer implements Server {
 
   @Override
   public void start() throws IOException {
-    serverSocket = new ServerSocket(port);
+    serverSocket = new ServerSocket();
+    serverSocket.setReuseAddress(true);  // allow quick rebind after close (avoids TIME_WAIT in tests)
+    serverSocket.bind(new InetSocketAddress(port));
     log.info("Server accepting connections...");
 
     while (serverRunning) {
