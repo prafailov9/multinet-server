@@ -23,10 +23,11 @@ public final class WorldSeedLoader {
    * runtime and are skipped.
    */
   static final List<WorldRecord> DEFAULT_WORLDS = List.of(
-      world("arena-x-multi", "GRID", 9,    12,   true,  true,  false, true),
-      world("arena-y-multi", "GRID", 7,    7,    true,  true,  false, true),
-      world("gol-small",     "GOL",  18,   18,   true,  true,  false, true),
-      world("gol-big",       "GOL",  1024, 1024, false, true,  true,  true)
+      world("arena-x-multi", "GRID", 9, 12, true, true, false, true),
+      world("arena-y-multi", "GRID", 7, 7, true, true, false, true),
+      world("gol-small", "GOL", 18, 18, false, true, true, true),
+      world("gol-mid", "GOL", 256, 256, false, true, true, true),
+      world("gol-big", "GOL", 1024, 1024, false, true, true, true)
   );
 
   private WorldSeedLoader() {
