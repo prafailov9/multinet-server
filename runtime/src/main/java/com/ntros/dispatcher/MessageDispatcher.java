@@ -13,7 +13,7 @@ public class MessageDispatcher implements Dispatcher {
 
   @Override
   public Optional<Message> dispatch(Message message, Session session) {
-    log.info("Received parsed message: {}", message);
+    log.info("Received validated message: {}", message);
     Command command = getCommand(message.commandType().name());
     return Optional.of(command.execute(message, session));
   }

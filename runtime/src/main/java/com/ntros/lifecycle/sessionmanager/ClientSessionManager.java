@@ -27,14 +27,14 @@ public class ClientSessionManager implements SessionManager {
   public void register(Session session) {
     sessions.add(session);
     sessionMap.put(session.getSessionContext().getSessionId(), session);
-    log.info("Registered session: {}", session.getSessionContext().getSessionId());
+    log.info("Registered session: {}\n", session.getSessionContext().getSessionId());
   }
 
   @Override
   public void remove(Session session) {
     sessions.remove(session);
     sessionMap.remove(session.getSessionContext().getSessionId());
-    log.info("Removed session: {}", session.getSessionContext().getSessionId());
+    log.info("Removed session: {}\n", session.getSessionContext().getSessionId());
   }
 
   @Override

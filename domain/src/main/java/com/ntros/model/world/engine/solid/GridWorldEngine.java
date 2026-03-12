@@ -182,9 +182,8 @@ public class GridWorldEngine implements WorldEngine {
 
   private void addEntity(StaticEntity entity, GridState worldState) {
     worldState.entities().put(entity.getName(), entity);
-    float x = (float) entity.getPosition().getX();
-    float y = (float) entity.getPosition().getY();
-    worldState.takenPositions().put(Vector4.of(x, y, 0, 0), entity.getName());
+    worldState.takenPositions()
+        .put(Vector4.of2dGridPosition(entity.getPosition()), entity.getName());
     log.info("Added entity: {}", entity);
   }
 

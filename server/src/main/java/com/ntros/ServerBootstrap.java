@@ -113,8 +113,8 @@ public class ServerBootstrap {
     if (!(connector instanceof GridWorldConnector gridConnector)) {
       return; // open worlds / traffic sims don't have tile terrain to restore
     }
-
     String worldName = connector.getWorldName();
+    log.info("[ServerBootstrap] Started restoring terrain for '{}'.", worldName);
     PersistenceContext.terrain().load(worldName).ifPresentOrElse(savedTerrain -> {
       gridConnector.restoreTerrain(savedTerrain);
       log.info("[ServerBootstrap] Restored terrain for '{}' ({} tiles).", worldName,
@@ -137,9 +137,13 @@ public class ServerBootstrap {
         clock = new FixedRateClock(TICK_RATE);
       }
 
+      // orchestrated worlds (GoL etc.) require an ORCHESTRATE command to seed them before ticking
+      Settings settings = world.getCapabilities().supportsOrchestrator()
+          ? Settings.multiplayerOrchestrator(BROADCAST_RATE)
+          : Settings.multiplayer(BROADCAST_RATE);
+
       Instances.registerInstance(
-          new ServerInstance(world, sessionManager, clock, new SharedBroadcaster(),
-              Settings.multiplayer(BROADCAST_RATE)));
+          new ServerInstance(world, sessionManager, clock, new SharedBroadcaster(), settings));
     }
   }
 

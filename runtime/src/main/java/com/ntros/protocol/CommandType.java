@@ -32,5 +32,6 @@ public enum CommandType {
   // in response to any failed CLIENT command
   ERROR,
   // in response to any client ACTION
-  ACK
+  ACK,
+  ORCHESTRATE_SUCCESS
 }

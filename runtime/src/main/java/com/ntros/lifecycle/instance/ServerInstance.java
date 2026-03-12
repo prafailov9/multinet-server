@@ -47,6 +47,7 @@ public class ServerInstance extends AbstractInstance {
   @Override
   public void start() {
     if (tryTicking()) {
+      log.info("[ServerInstance]: Instance already started");
       return;
     }
     clock.tick(() -> {
@@ -67,10 +68,10 @@ public class ServerInstance extends AbstractInstance {
   @Override
   public CompletableFuture<WorldResult> joinAsync(JoinRequest req) {
     // check if clock and actor running
-    // if yes: do join
-    // if no: check settings.autoStart == true and currentSession.size == 0
-    // if yes: do join
-    // no: reject join command
+    // - yes: do join
+    // - no: check settings.autoStart == true and currentSession.size == 0
+    //       - yes: do join
+    //       - no: reject join command
     if (isInstanceLive()) {
       return actor.join(world, req);
     }
@@ -90,13 +91,31 @@ public class ServerInstance extends AbstractInstance {
   }
 
   @Override
-  public CompletableFuture<WorldResult> storeMoveAsync(MoveRequest req) {
-    return actor.stageMove(world, req);
+  public CompletableFuture<WorldResult> orchestrateAsync(OrchestrateRequest req) {
+    // valid req if instance is orchestrated
+    if (!settings.requiresOrchestrator()) {
+      return CompletableFuture.completedFuture(
+          WorldResult.failed(req.action().name(), getWorldName(),
+              String.format(
+                  " ORCHESTRATE requires  an orchestrator instance. Current instance settings don't allow orchestration. Instance settings: %s",
+                  settings)));
+    }
+
+    if (!isInstanceLive()) {
+      // Submit orchestrate first so it lands at the head of the actor queue (world gets seeded
+      // before the first step snapshot is taken), then start the clock — same ordering guarantee
+      // as joinAsync.
+      CompletableFuture<WorldResult> future = actor.orchestrate(world, req);
+      start();
+      return future;
+    }
+
+    return actor.orchestrate(world, req);
   }
 
   @Override
-  public CompletableFuture<WorldResult> orchestrateAsync(OrchestrateRequest req) {
-    return actor.orchestrate(world, req);
+  public CompletableFuture<WorldResult> storeMoveAsync(MoveRequest req) {
+    return actor.stageMove(world, req);
   }
 
   @Override
@@ -178,7 +197,7 @@ public class ServerInstance extends AbstractInstance {
 
       @Override
       public void onTickEnd(long n, long nanos) {
-        if (n % 120 == 0) {
+        if (n % 60 == 0) {
           log.info("[{}] tick={} duration={}µs", getWorldName(), n, nanos / 1_000);
         }
       }

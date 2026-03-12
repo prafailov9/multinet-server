@@ -72,4 +72,17 @@ public record Settings(
     );
   }
 
+  /**
+   * Multiplayer world that requires an orchestrator to seed / control it (e.g. Game-of-Life).
+   * Players may join to observe, but the clock only starts when an ORCHESTRATE command arrives.
+   */
+  public static Settings multiplayerOrchestrator(int broadcastHz) {
+    return new Settings(
+        100, true, Visibility.PUBLIC, true,
+        broadcastHz,
+        120, 10, 30,
+        false, null
+    );
+  }
+
 }

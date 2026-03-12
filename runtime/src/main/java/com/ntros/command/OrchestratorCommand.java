@@ -32,16 +32,10 @@ public class OrchestratorCommand extends AbstractCommand {
 
   @Override
   public Message execute(Message message, Session session) {
+    log.info("[OrchestratorCommand]: received orchestration message: {}", message);
     try {
       SessionContext ctx = session.getSessionContext();
-      if (!ctx.isAuthenticated()) {
-        return errorMsg("Not authenticated.");
-      }
-
       List<String> args = message.args();
-      if (args == null || args.isEmpty()) {
-        return errorMsg("ORCHESTRATE requires a sub-command (SEED, RANDOM, TOGGLE, CLEAR).");
-      }
 
       OrchestrateRequest req = parseRequest(args);
       String worldName = ctx.getWorldName();
@@ -51,6 +45,7 @@ public class OrchestratorCommand extends AbstractCommand {
         return errorMsg("World not found: " + worldName);
       }
 
+      // submit on actor, session-vt proceeds
       WorldResult result = instance.orchestrateAsync(req).join();
       if (result.success()) {
         return ack(ctx.getSessionId());
@@ -76,28 +71,17 @@ public class OrchestratorCommand extends AbstractCommand {
         yield new OrchestrateRequest(OrchestrateAction.SEED, cells, 0f);
       }
       case "RANDOM" -> {
-        if (args.size() < 2) {
-          throw new IllegalArgumentException("RANDOM requires a density argument (0.0–1.0).");
-        }
         float density = Float.parseFloat(args.get(1));
-        if (density < 0f || density > 1f) {
-          throw new IllegalArgumentException(
-              "Density must be in [0.0, 1.0], got: " + density);
-        }
         yield OrchestrateRequest.randomSeed(density);
       }
       case "TOGGLE" -> {
-        if (args.size() < 3) {
-          throw new IllegalArgumentException("TOGGLE requires x and y arguments.");
-        }
         int x = Integer.parseInt(args.get(1));
         int y = Integer.parseInt(args.get(2));
         yield new OrchestrateRequest(OrchestrateAction.TOGGLE, List.of(Position.of(x, y)), 0f);
       }
       case "CLEAR" -> OrchestrateRequest.clear();
       default -> throw new IllegalArgumentException(
-          "Unknown ORCHESTRATE sub-command: " + sub
-              + ". Valid: SEED, RANDOM, TOGGLE, CLEAR");
+          "Unknown ORCHESTRATE sub-command: " + sub + ". Valid: SEED, RANDOM, TOGGLE, CLEAR");
     };
   }
 

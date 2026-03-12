@@ -3,6 +3,9 @@ package com.ntros.messageprocessing.client.validation;
 import com.ntros.lifecycle.session.Session;
 import com.ntros.lifecycle.session.SessionContext;
 import com.ntros.messageprocessing.client.validation.exception.MessageValidationException;
+import com.ntros.model.entity.movement.cell.Position;
+import com.ntros.model.world.protocol.request.OrchestrateAction;
+import com.ntros.model.world.protocol.request.OrchestrateRequest;
 import com.ntros.persistence.db.PersistenceContext;
 import com.ntros.protocol.Message;
 import java.util.List;
@@ -36,9 +39,7 @@ public class ClientCommandValidator implements CommandValidator {
         ctx.toString());
 
     check(() -> message.args().size() > 3,
-        "[Validator.Register]: Too many arguments for REG command: %s",
-        message.toWireFormat()
-    );
+        "[Validator.Register]: Too many arguments for REG command: %s", message.toWireFormat());
   }
 
   private void onAuthenticate(Message message, Session session) {
@@ -46,9 +47,7 @@ public class ClientCommandValidator implements CommandValidator {
     check(ctx::isAuthenticated, "[Validator.Auth]: Client: %s already authenticated",
         ctx.toString());
     check(() -> message.args().size() > 3,
-        "[Validator.Auth]: Too many arguments for AUTH command: %s",
-        message.toWireFormat()
-    );
+        "[Validator.Auth]: Too many arguments for AUTH command: %s", message.toWireFormat());
 
   }
 
@@ -82,11 +81,9 @@ public class ClientCommandValidator implements CommandValidator {
    */
   private void onMove(Message message, Session session) {
     SessionContext ctx = session.getSessionContext();
-    check(() -> !ctx.isAuthenticated(),
-        "[Validator.Move]: Client: %s must be authenticated",
+    check(() -> !ctx.isAuthenticated(), "[Validator.Move]: Client: %s must be authenticated",
         ctx.toString());
-    check(() -> message.args().size() != 5,
-        "[Validator.Move]: Invalid argument count: %s",
+    check(() -> message.args().size() != 5, "[Validator.Move]: Invalid argument count: %s",
         message.toWireFormat());
 
     try {
@@ -96,25 +93,19 @@ public class ClientCommandValidator implements CommandValidator {
       float dz = Float.parseFloat(args.get(2));
       float dw = Float.parseFloat(args.get(3));
 
-      check(() ->
-              Float.isNaN(dx) || Float.isNaN(dy) || Float.isNaN(dz) || Float.isNaN(dw) ||
-                  Float.isInfinite(dx) || Float.isInfinite(dy) || Float.isInfinite(dz)
-                  || Float.isInfinite(dw),
-          "[Validator.Move]: Invalid float values: %s",
+      check(() -> Float.isNaN(dx) || Float.isNaN(dy) || Float.isNaN(dz) || Float.isNaN(dw)
+              || Float.isInfinite(dx) || Float.isInfinite(dy) || Float.isInfinite(dz)
+              || Float.isInfinite(dw), "[Validator.Move]: Invalid float values: %s",
           message.toWireFormat());
 
       check(() -> Math.abs(dx) > 1 || Math.abs(dy) > 1 || Math.abs(dz) > 1 || Math.abs(dw) > 1,
-          "[Validator.Move]: Movement too large: %s",
-          message.toWireFormat());
+          "[Validator.Move]: Movement too large: %s", message.toWireFormat());
 
       check(() -> dx == 0f && dy == 0f && dz == 0f && dw == 0f,
-          "[Validator.Move]: Zero movement not allowed: %s",
-          message.toWireFormat());
+          "[Validator.Move]: Zero movement not allowed: %s", message.toWireFormat());
 
     } catch (NumberFormatException e) {
-      throw new MessageValidationException(
-          "[Validator.Move]: Movement values must be floats"
-      );
+      throw new MessageValidationException("[Validator.Move]: Movement values must be floats");
     }
   }
 
@@ -126,19 +117,50 @@ public class ClientCommandValidator implements CommandValidator {
 
   private void onOrchestrate(Message message, Session session) {
     // must be auth, at least 2 arguments in message
+    // TODO: fix validation for orchestrate
     SessionContext ctx = session.getSessionContext();
+    List<String> args = message.args();
+
     check(() -> !ctx.isAuthenticated(), "[Validator.Orchestrate]: Client: %s must be authenticated",
         ctx.toString());
 
-    check(() -> message.args().size() < 2,
-        "[Validator.Orchestrate]: Client: %s must be authenticated",
-        ctx.toString());
+    check(() -> args == null || args.isEmpty(),
+        "[Validator.Orchestrate]: No arguments provided. Full message: ", message.toWireFormat());
+
+    // validate subcommand
+    String sub = args.getFirst().toUpperCase();
+
+    switch (sub) {
+      case "RANDOM" -> {
+        check(() -> args.size() < 2, "RANDOM requires a density argument (0.0–1.0). Message: %s",
+            message.toWireFormat());
+        float density = Float.parseFloat(args.get(1));
+        check(() -> density < 0f || density > 1f,
+            "Density must be in [0.0, 1.0], got: " + density + ". Message: %s",
+            message.toWireFormat());
+      }
+      case "TOGGLE" -> {
+        check(() -> args.size() < 3, "TOGGLE requires x and y arguments. Message: %s",
+            message.toWireFormat());
+      }
+      case "CLEAR" -> OrchestrateRequest.clear();
+      default -> throw new MessageValidationException(
+          "Unknown ORCHESTRATE sub-command: " + sub + ". Valid: SEED, RANDOM, TOGGLE, CLEAR");
+    }
+
   }
 
   private void check(Supplier<Boolean> consumer, String err, String errArg) {
     if (consumer.get()) {
       log.error(err);
       throw new MessageValidationException(String.format(err, errArg));
+    }
+  }
+
+  private void check(Supplier<Boolean> consumer, String err) {
+    if (consumer.get()) {
+      log.error(err);
+      throw new MessageValidationException(err);
     }
   }
 
