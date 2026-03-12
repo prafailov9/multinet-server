@@ -26,7 +26,7 @@ final class SchemaInitializer {
     try (Statement st = conn.createStatement()) {
       st.execute("""
           CREATE TABLE IF NOT EXISTS clients (
-            client_id     INTEGER PRIMARY KEY,
+            client_id     INTEGER PRIMARY KEY AUTOINCREMENT,
             session_id     INTEGER NOT NULL DEFAULT 0,
             username      TEXT NOT NULL UNIQUE,
             password      TEXT,

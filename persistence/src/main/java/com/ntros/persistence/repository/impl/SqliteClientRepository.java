@@ -23,7 +23,9 @@ public class SqliteClientRepository implements ClientRepository {
   private static final String INSERT_CLIENT_QUERY = "INSERT INTO clients (session_id, username, password, created_at, updated_at) VALUES (?, ?, ?, ?, ?)";
 
 
-  private static final String COLUMNS = "client_id, session_id, username, password, created_at, updated_at";
+  private static final String SELECT_COLUMNS = "client_id, session_id, username, password, created_at, updated_at";
+  private static final String INSERT_COLUMNS = "session_id, username, password, created_at, updated_at";
+
 
   @Override
   public Optional<ClientRecord> findByUsername(String username) {
@@ -94,7 +96,7 @@ public class SqliteClientRepository implements ClientRepository {
   public List<ClientRecord> findAll() {
     List<ClientRecord> result = new ArrayList<>();
     try (PreparedStatement ps = connection().prepareStatement(
-        "SELECT " + COLUMNS + " FROM clients ORDER BY created_at")) {
+        "SELECT " + SELECT_COLUMNS + " FROM clients ORDER BY created_at")) {
       try (ResultSet rs = ps.executeQuery()) {
         while (rs.next()) {
           result.add(map(rs));
@@ -114,7 +116,7 @@ public class SqliteClientRepository implements ClientRepository {
     }
 
     try (PreparedStatement ps = connection().prepareStatement(
-        "INSERT INTO clients (" + COLUMNS + ") VALUES (?, ?, ?, ?, ?)")) {
+        "INSERT INTO clients (" + INSERT_COLUMNS + ") VALUES (?, ?, ?, ?, ?)")) {
       setStatementParams(ps, client);
 
       ps.executeUpdate();
