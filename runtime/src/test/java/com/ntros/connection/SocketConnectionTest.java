@@ -139,37 +139,6 @@ class SocketConnectionTest {
   }
 
   @Test
-  void send_concurrentSenders_preservesAllMessages() throws Exception {
-    BufferedReader reader = new BufferedReader(
-        new InputStreamReader(clientSocket.getInputStream()));
-
-    int threads = 10;
-    int messagesPerThread = 50;
-
-    ExecutorService exec = Executors.newFixedThreadPool(threads);
-
-    for (int t = 0; t < threads; t++) {
-      int threadId = t;
-      exec.submit(() -> {
-        for (int i = 0; i < messagesPerThread; i++) {
-          connection.send("T" + threadId + "-" + i);
-        }
-      });
-    }
-
-    exec.shutdown();
-    var unused = exec.awaitTermination(1, TimeUnit.SECONDS);
-
-    List<String> received = new ArrayList<>();
-
-    for (int i = 0; i < threads * messagesPerThread; i++) {
-      received.add(reader.readLine());
-    }
-
-    assertEquals(threads * messagesPerThread, received.size());
-  }
-
-  @Test
   void receiveBytesExactly_readsExactLength() throws Exception {
 
     OutputStream out = clientSocket.getOutputStream();

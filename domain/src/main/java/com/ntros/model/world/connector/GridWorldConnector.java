@@ -2,22 +2,15 @@ package com.ntros.model.world.connector;
 
 import com.ntros.model.entity.Entity;
 import com.ntros.model.entity.config.WorldCapabilities;
-import com.ntros.model.entity.movement.vectors.Vector4;
 import com.ntros.model.world.connector.ops.JoinOp;
 import com.ntros.model.world.connector.ops.MoveOp;
+import com.ntros.model.world.connector.ops.OrchestrateOp;
 import com.ntros.model.world.connector.ops.RemoveOp;
 import com.ntros.model.world.connector.ops.WorldOp;
-import com.ntros.model.world.connector.ops.OrchestrateOp;
 import com.ntros.model.world.engine.solid.WorldEngine;
 import com.ntros.model.world.protocol.WorldResult;
-import com.ntros.model.world.state.GridSnapshot;
-import com.ntros.model.world.state.GridSnapshot.EntityView;
 import com.ntros.model.world.state.solid.GridWorldState;
-import com.ntros.model.entity.movement.cell.Position;
-import com.ntros.model.world.protocol.TileType;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -58,24 +51,7 @@ public class GridWorldConnector implements WorldConnector {
    */
   @Override
   public Object snapshot() {
-    // tiles: "x,y" -> tile type name — EMPTY tiles are excluded.
-    // The client treats absent keys as EMPTY, so omitting them keeps the
-    // JSON payload small (critical for large GoL worlds that are mostly empty).
-    Map<String, String> tiles = new LinkedHashMap<>();
-    state.terrain().forEach((pos, tile) -> {
-      if (tile != TileType.EMPTY) {
-        tiles.put((int) pos.getX() + "," + (int) pos.getY(), tile.name());
-      }
-    });
-
-    // entities: "entityName" -> {x,y}
-    Map<String, EntityView> ents = new LinkedHashMap<>();
-    state.entities().forEach((name, entity) -> {
-      ents.put(name,
-          new EntityView(entity.getPosition().getX(), entity.getPosition().getY()));
-    });
-
-    return new GridSnapshot(tiles, ents);
+    return engine.snapshot(state);
   }
 
   @Override
@@ -127,11 +103,11 @@ public class GridWorldConnector implements WorldConnector {
    *
    * @param savedTerrain terrain map loaded from the snapshot repository; must not be null
    */
-  public void restoreTerrain(Map<Vector4, TileType> savedTerrain) {
-    state.terrain().clear();
-    state.terrain().putAll(savedTerrain);
-    log.info("[GridWorldConnector] Restored terrain for '{}' ({} tiles).",
-        state.worldName(), savedTerrain.size());
-  }
+//  public void restoreTerrain(Map<Vector4, TileType> savedTerrain) {
+//    state.terrain().clear();
+//    state.terrain().putAll(savedTerrain);
+//    log.info("[GridWorldConnector] Restored terrain for '{}' ({} tiles).",
+//        state.worldName(), savedTerrain.size());
+//  }
 }
 

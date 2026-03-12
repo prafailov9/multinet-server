@@ -47,6 +47,8 @@ public interface WorldEngine {
    */
   String serialize(GridState state);
 
+  Object snapshot(GridState state);
+
   String serializeOneLine(GridState state);
 
   void reset(GridState state);

@@ -45,7 +45,7 @@ import lombok.extern.slf4j.Slf4j;
  * {@code takenPositions} and do not block any GoL cell from changing state.
  */
 @Slf4j
-public class GameOfLifeEngine extends AbstractGridEngine {
+public class GridGolEngine extends AbstractGridEngine {
 
   // ── WorldEngine – tick ────────────────────────────────────────────────────
 
@@ -121,7 +121,6 @@ public class GameOfLifeEngine extends AbstractGridEngine {
   public String serialize(GridState state) {
     return buildJson(state, false);
   }
-
 
   @Override
   public String serializeOneLine(GridState state) {

@@ -97,35 +97,38 @@ public class ServerBootstrap {
     List<WorldConnector> worlds = new ArrayList<>();
     for (WorldRecord record : PersistenceContext.worlds().findAll()) {
       WorldConnector connector = converter.toModelObject(record);
-      if (!"GOL".equalsIgnoreCase(record.engineType())) {
-        restoreTerrainIfGridWorld(connector);
-      }
+
+      // restore-terrain is brittle currently. Needs rework
+      // TODO: restore terrain only if player requests that specific world again(lazy-loading)
+//      if (!"GOL".equalsIgnoreCase(record.engineType())) {
+//        restoreTerrainIfGridWorld(connector);
+//      }
       worlds.add(connector);
     }
     return worlds;
   }
 
-  /**
-   * For grid-world connectors: if a terrain snapshot exists on disk, replace the freshly
-   * generated terrain with the saved one so the map is stable across restarts.
-   */
-  private static void restoreTerrainIfGridWorld(WorldConnector connector) {
-    if (!(connector instanceof GridWorldConnector gridConnector)) {
-      return; // open worlds / traffic sims don't have tile terrain to restore
-    }
-    String worldName = connector.getWorldName();
-    log.info("[ServerBootstrap] Started restoring terrain for '{}'.", worldName);
-    PersistenceContext.terrain().load(worldName).ifPresentOrElse(savedTerrain -> {
-      gridConnector.restoreTerrain(savedTerrain);
-      log.info("[ServerBootstrap] Restored terrain for '{}' ({} tiles).", worldName,
-          savedTerrain.size());
-    }, () -> {
-      // First startup: save the freshly generated terrain so future restarts are stable
-      var currentTerrain = (gridConnector.getState()).terrain();
-      PersistenceContext.terrain().save(worldName, currentTerrain);
-      log.info("[ServerBootstrap] Saved initial terrain for '{}'.", worldName);
-    });
-  }
+//  /**
+//   * For grid-world connectors: if a terrain snapshot exists on disk, replace the freshly
+//   * generated terrain with the saved one so the map is stable across restarts.
+//   */
+//  private static void restoreTerrainIfGridWorld(WorldConnector connector) {
+//    if (!(connector instanceof GridWorldConnector gridConnector)) {
+//      return; // open worlds / traffic sims don't have tile terrain to restore
+//    }
+//    String worldName = connector.getWorldName();
+//    log.info("[ServerBootstrap] Started restoring terrain for '{}'.", worldName);
+//    PersistenceContext.terrain().load(worldName).ifPresentOrElse(savedTerrain -> {
+//      gridConnector.restoreTerrain(savedTerrain);
+//      log.info("[ServerBootstrap] Restored terrain for '{}' ({} tiles).", worldName,
+//          savedTerrain.size());
+//    }, () -> {
+//      // First startup: save the freshly generated terrain so future restarts are stable
+//      var currentTerrain = (gridConnector.getState()).terrain();
+//      PersistenceContext.terrain().save(worldName, currentTerrain);
+//      log.info("[ServerBootstrap] Saved initial terrain for '{}'.", worldName);
+//    });
+//  }
 
   private static void initInstances(List<WorldConnector> worlds) {
     for (WorldConnector world : worlds) {
