@@ -17,11 +17,15 @@ import com.ntros.model.world.connector.WorldConnector;
 import com.ntros.persistence.db.ConnectionProvider;
 import com.ntros.persistence.db.DatabaseBuilder;
 import com.ntros.persistence.db.PersistenceContext;
+import com.ntros.persistence.model.WorldRecord;
 import com.ntros.server.Server;
 import com.ntros.server.TcpServer;
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -82,20 +86,22 @@ public class ServerBootstrap {
   /**
    * Seeds default worlds into the DB (first startup only), then loads all world records and
    * converts each to a live {@link WorldConnector}.
+   *
+   * <p>GoL worlds always start blank and are seeded at runtime via ORCHESTRATE commands —
+   * terrain snapshots are skipped for them.
    */
   private static List<WorldConnector> loadWorlds() {
     WorldSeedLoader.seedIfEmpty();
 
     WorldConverter converter = new WorldConverter();
-    List<WorldConnector> worlds = PersistenceContext.worlds().findAll().stream()
-        .map(converter::toModelObject)
-        .toList();
-
-    // Restore persisted terrain snapshots for grid worlds
-    for (WorldConnector connector : worlds) {
-      restoreTerrainIfGridWorld(connector);
+    List<WorldConnector> worlds = new ArrayList<>();
+    for (WorldRecord record : PersistenceContext.worlds().findAll()) {
+      WorldConnector connector = converter.toModelObject(record);
+      if (!"GOL".equalsIgnoreCase(record.engineType())) {
+        restoreTerrainIfGridWorld(connector);
+      }
+      worlds.add(connector);
     }
-
     return worlds;
   }
 
@@ -144,8 +150,16 @@ public class ServerBootstrap {
   private static void registerShutdownHook(List<WorldConnector> worlds) {
     Runtime.getRuntime().addShutdownHook(Thread.ofVirtual().unstarted(() -> {
       log.info("[ServerBootstrap] Shutdown hook: saving terrain snapshots...");
+
+      // Terrain snapshots are only meaningful for GRID worlds — GoL worlds always restart blank.
+      Set<String> golNames = PersistenceContext.worlds().findAll().stream()
+          .filter(r -> "GOL".equalsIgnoreCase(r.engineType()))
+          .map(WorldRecord::name)
+          .collect(Collectors.toSet());
+
       for (WorldConnector connector : worlds) {
-        if (connector instanceof GridWorldConnector gridConnector) {
+        if (connector instanceof GridWorldConnector gridConnector
+            && !golNames.contains(connector.getWorldName())) {
           try {
             var terrain = gridConnector.getState().terrain();
             PersistenceContext.terrain().save(connector.getWorldName(), terrain);

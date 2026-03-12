@@ -23,7 +23,7 @@ public class SqliteClientRepository implements ClientRepository {
   private static final String INSERT_CLIENT_QUERY = "INSERT INTO clients (session_id, username, password, created_at, updated_at) VALUES (?, ?, ?, ?, ?)";
 
 
-  private static final String COLUMNS = "session_id, username, password, created_at, updated_at";
+  private static final String COLUMNS = "client_id, session_id, username, password, created_at, updated_at";
 
   @Override
   public Optional<ClientRecord> findByUsername(String username) {
@@ -118,7 +118,7 @@ public class SqliteClientRepository implements ClientRepository {
       setStatementParams(ps, client);
 
       ps.executeUpdate();
-      log.info("[ClientRepository] Registered client '{}'.", client.username());
+      log.info("[ClientRepository] Registered client '{}'.", client);
     } catch (SQLException e) {
       throw new RuntimeException("Failed to register client: " + client.username(), e);
     }

@@ -29,7 +29,7 @@ public class MessageParser implements Parser {
    */
   @Override
   public Message parse(String rawMessage) {
-    log.info("received data: {}", rawMessage);
+    log.info("Received network message: {}", rawMessage);
     String[] words = rawMessage.split(DELIMITER);
     if (words.length < MIN_WORD_COUNT) {
       String err = "[Parser]: Invalid message - word count less than 2.";
