@@ -1,6 +1,7 @@
 package com.ntros.persistence.repository;
 
 import com.ntros.persistence.model.ClientRecord;
+import java.util.List;
 import java.util.Optional;
 
 public interface ClientRepository {
@@ -14,5 +15,9 @@ public interface ClientRepository {
   Optional<ClientRecord> remove(ClientRecord client);
 
   Optional<ClientRecord> removeById(long clientId);
+
+  List<ClientRecord> findAll();
+
+  ClientRecord registerIfAbsent(ClientRecord record);
 
 }

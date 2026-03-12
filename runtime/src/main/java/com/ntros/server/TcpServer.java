@@ -31,7 +31,7 @@ public class TcpServer implements Server {
   public void start() throws IOException {
     serverSocket = new ServerSocket();
     serverSocket.bind(new InetSocketAddress(port));
-    log.info("Server accepting connections...");
+    log.info("Server accepting connections...\n");
 
     while (serverRunning) {
       try {
@@ -40,8 +40,7 @@ public class TcpServer implements Server {
 
         // once received, create connection + session
         // process client input in separate v-thread, unblocks server loop
-        Thread
-            .startVirtualThread(() -> startSession(socket))
+        Thread.startVirtualThread(() -> startSession(socket))
             .setName("session-vt-" + socket.getPort());
       } catch (SocketException ex) {
         if (!serverRunning) {

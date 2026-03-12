@@ -10,8 +10,11 @@ import com.ntros.lifecycle.session.Session;
 import com.ntros.lifecycle.session.SessionContext;
 import com.ntros.model.world.protocol.WorldResult;
 import com.ntros.model.world.protocol.request.JoinRequest;
+import com.ntros.persistence.db.PersistenceContext;
+import com.ntros.persistence.model.ClientRecord;
 import com.ntros.protocol.Message;
 import java.time.OffsetDateTime;
+import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -24,7 +27,7 @@ public class JoinCommand extends AbstractCommand {
   public Message execute(Message message, Session session) {
     try {
       SessionContext ctx = session.getSessionContext();
-      checkAuthenticated(ctx);
+      checkAuthenticated(message, ctx);
 
       String player = resolvePlayer(message);
       Instance instance = resolveInstance(message);
@@ -68,9 +71,14 @@ public class JoinCommand extends AbstractCommand {
     }
   }
 
-  private void checkAuthenticated(SessionContext sessionContext) {
+  private void checkAuthenticated(Message message, SessionContext sessionContext) {
+    Optional<ClientRecord> clientRecord = PersistenceContext.clients()
+        .findByUsername(message.args().getFirst());
     if (!sessionContext.isAuthenticated()) {
-      throw new JoinCmdException("client not authenticated");
+      if (clientRecord.isEmpty()) {
+        throw new JoinCmdException("client not authenticated");
+      }
+      sessionContext.setAuthenticated(true);
     }
   }
 

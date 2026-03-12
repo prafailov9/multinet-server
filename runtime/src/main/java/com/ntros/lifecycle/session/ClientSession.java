@@ -44,6 +44,7 @@ public class ClientSession implements Session {
    */
   @Override
   public void start() {
+    log.info("Session started: {}", sessionContext);
     try {
       while (isRunning() && connection.isOpen()) {
         String rawMessage = connection.receive();

@@ -9,6 +9,8 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 
@@ -19,6 +21,9 @@ public class SqliteClientRepository implements ClientRepository {
   private static final String FIND_BY_ID_QUERY = "SELECT * FROM clients WHERE client_id = ?";
 
   private static final String INSERT_CLIENT_QUERY = "INSERT INTO clients (session_id, username, password, created_at, updated_at) VALUES (?, ?, ?, ?, ?)";
+
+
+  private static final String COLUMNS = "session_id, username, password, created_at, updated_at";
 
   @Override
   public Optional<ClientRecord> findByUsername(String username) {
@@ -83,6 +88,42 @@ public class SqliteClientRepository implements ClientRepository {
   @Override
   public Optional<ClientRecord> removeById(long clientId) {
     return Optional.empty();
+  }
+
+  @Override
+  public List<ClientRecord> findAll() {
+    List<ClientRecord> result = new ArrayList<>();
+    try (PreparedStatement ps = connection().prepareStatement(
+        "SELECT " + COLUMNS + " FROM clients ORDER BY created_at")) {
+      try (ResultSet rs = ps.executeQuery()) {
+        while (rs.next()) {
+          result.add(map(rs));
+        }
+      }
+    } catch (SQLException e) {
+      throw new RuntimeException("Failed to list clients", e);
+    }
+    return result;
+  }
+
+  @Override
+  public ClientRecord registerIfAbsent(ClientRecord client) {
+    Optional<ClientRecord> existing = findByUsername(client.username());
+    if (existing.isPresent()) {
+      return existing.get();
+    }
+
+    try (PreparedStatement ps = connection().prepareStatement(
+        "INSERT INTO clients (" + COLUMNS + ") VALUES (?, ?, ?, ?, ?)")) {
+      setStatementParams(ps, client);
+
+      ps.executeUpdate();
+      log.info("[ClientRepository] Registered client '{}'.", client.username());
+    } catch (SQLException e) {
+      throw new RuntimeException("Failed to register client: " + client.username(), e);
+    }
+
+    return findByUsername(client.username()).orElseThrow();
   }
 
   private static ClientRecord map(ResultSet rs) throws SQLException {

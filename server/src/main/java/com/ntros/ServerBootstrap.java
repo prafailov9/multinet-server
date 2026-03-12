@@ -38,12 +38,18 @@ public class ServerBootstrap {
   public static void startServer() {
     log.info("Starting server on port {}", PORT);
 
+    // Create db
     initPersistence();
+
+    // Populates initial users in db.
+    // Convenience for skipping REG/AUTH flow during dev
+    ClientSeedLoader.seedIfEmpty();
 
     // seed + load worlds from DB, then init instances
     List<WorldConnector> worlds = loadWorlds();
     initInstances(worlds);
 
+    // on server-stop - run cleanup and save world state
     registerShutdownHook(worlds);
 
     Server server = new TcpServer(PORT);
@@ -109,7 +115,7 @@ public class ServerBootstrap {
           savedTerrain.size());
     }, () -> {
       // First startup: save the freshly generated terrain so future restarts are stable
-      var currentTerrain = ( gridConnector.getState()).terrain();
+      var currentTerrain = (gridConnector.getState()).terrain();
       PersistenceContext.terrain().save(worldName, currentTerrain);
       log.info("[ServerBootstrap] Saved initial terrain for '{}'.", worldName);
     });
