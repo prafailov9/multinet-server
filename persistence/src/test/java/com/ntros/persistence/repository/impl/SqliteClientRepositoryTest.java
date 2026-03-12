@@ -1,9 +1,11 @@
 package com.ntros.persistence.repository.impl;
 
+import static com.ntros.persistence.model.Role.USER;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 
 import com.ntros.persistence.model.ClientRecord;
+import com.ntros.persistence.model.Role;
 import com.ntros.persistence.repository.ClientRepository;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -15,7 +17,7 @@ import org.junit.jupiter.api.Test;
 class SqliteClientRepositoryTest extends AbstractRepositoryTest {
 
   private static final ClientRecord DEFAULT_CLIENT = new ClientRecord(1L, 1, "bob", "bob123",
-      Instant.now(), Instant.now());
+      USER.name(), Instant.now(), Instant.now());
 
   private ClientRepository repo;
 
@@ -47,7 +49,8 @@ class SqliteClientRepositoryTest extends AbstractRepositoryTest {
 
     // assert
     for (int i = 0; i < n; i++) {
-      ClientRecord expected = new ClientRecord(i + 1, i + 1, "cl-" + i, "pass" + i, Instant.now(),
+      ClientRecord expected = new ClientRecord(i + 1, i + 1, "cl-" + i, "pass" + i, USER.name(),
+          Instant.now(),
           Instant.now());
       asserts(expected, clients.get(i));
     }

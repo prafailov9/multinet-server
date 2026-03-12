@@ -82,9 +82,6 @@ public final class ConnectionProvider {
     }
   }
 
-  /**
-   * Returns the shared connection. Throws if {@link #initialize} has not been called.
-   */
   public static Connection connection() {
     if (connection == null) {
       throw new IllegalStateException(
@@ -93,9 +90,6 @@ public final class ConnectionProvider {
     return connection;
   }
 
-  /**
-   * Closes the connection. Safe to call multiple times.
-   */
   static synchronized void close() {
     if (connection != null) {
       try {
@@ -109,9 +103,6 @@ public final class ConnectionProvider {
     }
   }
 
-  /**
-   * Returns {@code true} if the connection has been initialized and is not closed.
-   */
   public static boolean isOpen() {
     try {
       return connection != null && !connection.isClosed();

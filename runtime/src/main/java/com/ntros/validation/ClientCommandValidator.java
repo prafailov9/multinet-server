@@ -1,10 +1,9 @@
-package com.ntros.messageprocessing.client.validation;
+package com.ntros.validation;
 
 import com.ntros.lifecycle.session.Session;
 import com.ntros.lifecycle.session.SessionContext;
-import com.ntros.messageprocessing.client.validation.exception.MessageValidationException;
-import com.ntros.model.entity.movement.cell.Position;
-import com.ntros.model.world.protocol.request.OrchestrateAction;
+import com.ntros.model.entity.config.access.Role;
+import com.ntros.validation.exception.MessageValidationException;
 import com.ntros.model.world.protocol.request.OrchestrateRequest;
 import com.ntros.persistence.db.PersistenceContext;
 import com.ntros.protocol.Message;
@@ -127,6 +126,12 @@ public class ClientCommandValidator implements CommandValidator {
     check(() -> args == null || args.isEmpty(),
         "[Validator.Orchestrate]: No arguments provided. Full message: ", message.toWireFormat());
 
+
+
+//    if (ctx.getRole() != Role.ORCHESTRATOR) {
+//      throw new IllegalStateException("NOT_ORCHESTRATOR");
+//    }
+
     // validate subcommand
     String sub = args.getFirst().toUpperCase();
 
@@ -142,10 +147,8 @@ public class ClientCommandValidator implements CommandValidator {
             "Density must be in [0.0, 1.0], got: " + density + ". Message: %s",
             message.toWireFormat());
       }
-      case "TOGGLE" -> {
-        check(() -> args.size() < 3, "TOGGLE requires x and y arguments. Message: %s",
-            message.toWireFormat());
-      }
+      case "TOGGLE" -> check(() -> args.size() < 3, "TOGGLE requires x and y arguments. Message: %s",
+          message.toWireFormat());
       case "CLEAR" -> OrchestrateRequest.clear();
       default -> throw new MessageValidationException(
           "Unknown ORCHESTRATE sub-command: " + sub + ". Valid: SEED, RANDOM, TOGGLE, CLEAR");

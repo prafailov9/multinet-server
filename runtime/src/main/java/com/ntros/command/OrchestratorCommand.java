@@ -1,5 +1,6 @@
 package com.ntros.command;
 
+import static com.ntros.model.entity.config.access.Role.ORCHESTRATOR;
 import static com.ntros.protocol.Message.ack;
 import static com.ntros.protocol.Message.errorMsg;
 
@@ -7,10 +8,12 @@ import com.ntros.lifecycle.instance.Instance;
 import com.ntros.lifecycle.instance.Instances;
 import com.ntros.lifecycle.session.Session;
 import com.ntros.lifecycle.session.SessionContext;
+import com.ntros.model.entity.config.access.Role;
 import com.ntros.model.entity.movement.cell.Position;
 import com.ntros.model.world.protocol.WorldResult;
 import com.ntros.model.world.protocol.request.OrchestrateAction;
 import com.ntros.model.world.protocol.request.OrchestrateRequest;
+import com.ntros.persistence.db.PersistenceContext;
 import com.ntros.protocol.Message;
 import java.util.ArrayList;
 import java.util.List;
@@ -45,6 +48,8 @@ public class OrchestratorCommand extends AbstractCommand {
         return errorMsg("World not found: " + worldName);
       }
 
+      ctx.setRole(ORCHESTRATOR);
+      PersistenceContext.clients().updateRole(ctx.getUsername(), ORCHESTRATOR.name());
       // submit on actor, session-vt proceeds
       WorldResult result = instance.orchestrateAsync(req).join();
       if (result.success()) {

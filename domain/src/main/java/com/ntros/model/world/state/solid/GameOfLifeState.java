@@ -3,6 +3,7 @@ package com.ntros.model.world.state.solid;
 import com.ntros.model.entity.Entity;
 import com.ntros.model.entity.movement.vectors.Vector4;
 import com.ntros.model.world.engine.gameoflife.fast.BitGrid;
+import com.ntros.model.world.protocol.TileType;
 import com.ntros.model.world.state.GridState;
 import com.ntros.model.world.state.dimension.Dimension;
 import com.ntros.model.world.state.dimension.Dimension2D;
@@ -69,20 +70,20 @@ public class GameOfLifeState implements GridState {
   }
 
   @Override
-  public Map<Vector4, com.ntros.model.world.protocol.TileType> terrain() {
+  public Map<Vector4, TileType> terrain() {
     throw new UnsupportedOperationException("BitGrid world does not expose terrain map");
   }
 
   @Override
-  public com.ntros.model.world.protocol.TileType getTileTypeAt(Vector4 pos) {
+  public TileType getTileTypeAt(Vector4 pos) {
     return grid.get((int) pos.getX(), (int) pos.getY())
-        ? com.ntros.model.world.protocol.TileType.ALIVE
-        : com.ntros.model.world.protocol.TileType.EMPTY;
+        ? TileType.ALIVE
+        : TileType.EMPTY;
   }
 
   @Override
   public boolean isLegalMove(Vector4 vector4) {
-    return false;
+    return isWithinBounds(vector4);
   }
 
   @Override

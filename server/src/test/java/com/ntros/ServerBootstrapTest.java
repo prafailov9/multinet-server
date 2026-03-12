@@ -11,12 +11,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ntros.TestClient.ServerCmd;
 import com.ntros.TestClient.ServerMessage;
 import com.ntros.broadcast.SharedBroadcaster;
-import com.ntros.broadcast.Broadcaster;
-import com.ntros.lifecycle.sessionmanager.ClientSessionManager;
-import com.ntros.lifecycle.sessionmanager.SessionManager;
-import com.ntros.lifecycle.instance.Instances;
+import com.ntros.lifecycle.clock.PacedRateClock;
 import com.ntros.lifecycle.instance.Instance;
+import com.ntros.lifecycle.instance.Instances;
 import com.ntros.lifecycle.instance.ServerInstance;
+import com.ntros.lifecycle.sessionmanager.ClientSessionManager;
 import com.ntros.model.entity.Entity;
 import com.ntros.model.entity.config.WorldCapabilities;
 import com.ntros.model.entity.config.access.Settings;
@@ -27,8 +26,6 @@ import com.ntros.model.world.engine.solid.GridWorldEngine;
 import com.ntros.model.world.state.solid.GridWorldState;
 import com.ntros.persistence.db.DatabaseBuilder;
 import com.ntros.server.TcpServer;
-import com.ntros.lifecycle.clock.Clock;
-import com.ntros.lifecycle.clock.PacedRateClock;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -57,7 +54,7 @@ public class ServerBootstrapTest {
 
   private final ExecutorService serverExecutor = Executors.newSingleThreadExecutor();
   private TcpServer server;
-  private Instance instance;
+  private Instance instanceMultiplayer;
   private WorldConnector defaultWorld;
 
   @BeforeAll
@@ -76,10 +73,8 @@ public class ServerBootstrapTest {
     defaultWorld = createWorldConnector("arena-x", 3, 3);
 
     // TODO: singlePlayer instances should use SingleBroadcaster
-    instance = createSingleplayerInstance(defaultWorld, new ClientSessionManager(),
-        new PacedRateClock(TICK_RATE), new SharedBroadcaster(),
-        Settings.multiplayer(BROADCAST_RATE));
-    Instances.registerInstance(instance);
+    instanceMultiplayer = createMultiplayerInstance(defaultWorld, TICK_RATE, BROADCAST_RATE);
+    Instances.registerInstance(instanceMultiplayer);
     server = new TcpServer(PORT);
   }
 
@@ -114,7 +109,7 @@ public class ServerBootstrapTest {
     }
 
     // stop server
-    stopServerWhen(instance, server, serverExecutor);
+    stopServerWhen(instanceMultiplayer, server, serverExecutor);
 
     List<Entity> entities = defaultWorld.getCurrentEntities();
     // verify cleanup success
@@ -139,7 +134,7 @@ public class ServerBootstrapTest {
       assertEquals("client-1", actualJoinResponse.args().getFirst());
     }
     // stop server
-    stopServerWhen(instance, server, serverExecutor);
+    stopServerWhen(instanceMultiplayer, server, serverExecutor);
 
     List<Entity> entities = defaultWorld.getCurrentEntities();
     log.info("Entities in world: {}", entities);
@@ -181,7 +176,7 @@ public class ServerBootstrapTest {
 
     }
     // stop server
-    stopServerWhen(instance, server, serverExecutor);
+    stopServerWhen(instanceMultiplayer, server, serverExecutor);
 
     List<Entity> entities = defaultWorld.getCurrentEntities();
     log.info("[SingleCon_MoveCommand]: Entities in world: {}", entities);
@@ -216,7 +211,7 @@ public class ServerBootstrapTest {
       }
     }
     // stop server
-    stopServerWhen(instance, server, serverExecutor);
+    stopServerWhen(instanceMultiplayer, server, serverExecutor);
 
     List<Entity> entities = defaultWorld.getCurrentEntities();
     log.info("[MultiConn_JoinCommand]: Entities in world: {}", entities);
@@ -263,7 +258,7 @@ public class ServerBootstrapTest {
       }
     }
     // stop server
-    stopServerWhen(instance, server, serverExecutor);
+    stopServerWhen(instanceMultiplayer, server, serverExecutor);
 
     List<Entity> entities = defaultWorld.getCurrentEntities();
     log.info("[MultiConn_MoveCommand]: Entities in world: {}", entities);
@@ -273,8 +268,7 @@ public class ServerBootstrapTest {
   @Test
   void multipleClients_joinDifferentWorlds_welcomeMessageResponse() throws Exception {
     var secondWorld = createWorldConnector("arena-y", 3, 3);
-    var secondInstance = createMultiplayerInstance(secondWorld,
-        Settings.multiplayer(BROADCAST_RATE));
+    var secondInstance = createMultiplayerInstance(secondWorld, TICK_RATE, BROADCAST_RATE);
     Instances.registerInstance(secondInstance);
 
     // NOW start server
@@ -307,7 +301,7 @@ public class ServerBootstrapTest {
       assertEquals("client-2", joinResponse2.args().getFirst());
     }
 
-    stopServerWhen(List.of(instance, secondInstance), server, serverExecutor);
+    stopServerWhen(List.of(instanceMultiplayer, secondInstance), server, serverExecutor);
   }
 
   private GridWorldConnector createWorldConnector(String worldName, int width, int height) {
@@ -315,15 +309,10 @@ public class ServerBootstrapTest {
         new GridWorldEngine(), new WorldCapabilities(true, true, false, true));
   }
 
-  private ServerInstance createSingleplayerInstance(WorldConnector worldConnector,
-      SessionManager sessionManager, Clock clock, Broadcaster broadcaster, Settings settings) {
-    return new ServerInstance(worldConnector, sessionManager, clock, broadcaster, settings);
-  }
-
-  private ServerInstance createMultiplayerInstance(WorldConnector worldConnector,
-      Settings settings) {
+  private ServerInstance createMultiplayerInstance(WorldConnector worldConnector, int tickRate,
+      int broadcastRate) {
     return new ServerInstance(worldConnector, new ClientSessionManager(),
-        new PacedRateClock(TICK_RATE), new SharedBroadcaster(), settings);
+        new PacedRateClock(tickRate), new SharedBroadcaster(), Settings.multiplayer(broadcastRate));
   }
 
 

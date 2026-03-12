@@ -30,6 +30,7 @@ final class SchemaInitializer {
             session_id     INTEGER NOT NULL DEFAULT 0,
             username      TEXT NOT NULL UNIQUE,
             password      TEXT,
+            client_role   TEXT,
             created_at    TEXT,
             updated_at    TEXT
           )

@@ -18,6 +18,9 @@ public interface ClientRepository {
 
   List<ClientRecord> findAll();
 
+  Optional<ClientRecord> upsert(ClientRecord client) ;
+  void updateRole(String username, String role);
+
   ClientRecord registerIfAbsent(ClientRecord record);
 
 }

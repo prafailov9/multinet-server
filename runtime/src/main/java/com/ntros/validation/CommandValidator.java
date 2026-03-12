@@ -1,4 +1,4 @@
-package com.ntros.messageprocessing.client.validation;
+package com.ntros.validation;
 
 import com.ntros.lifecycle.session.Session;
 import com.ntros.protocol.Message;

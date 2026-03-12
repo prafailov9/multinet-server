@@ -1,4 +1,4 @@
-package com.ntros.messageprocessing.client.validation.exception;
+package com.ntros.validation.exception;
 
 public class MessageValidationException extends RuntimeException {
 
