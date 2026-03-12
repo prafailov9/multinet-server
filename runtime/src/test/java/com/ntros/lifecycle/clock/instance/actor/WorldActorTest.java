@@ -1,8 +1,5 @@
 package com.ntros.lifecycle.clock.instance.actor;
 
-import static com.ntros.model.entity.Direction.DOWN;
-import static com.ntros.model.entity.Direction.RIGHT;
-import static com.ntros.model.entity.Direction.UP;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;

@@ -12,6 +12,7 @@ import com.ntros.model.world.connector.WorldConnector;
 import com.ntros.model.world.protocol.WorldResult;
 import com.ntros.model.world.protocol.request.JoinRequest;
 import com.ntros.model.world.protocol.request.MoveRequest;
+import com.ntros.model.world.protocol.request.OrchestrateRequest;
 import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
 import lombok.extern.slf4j.Slf4j;
@@ -91,6 +92,11 @@ public class ServerInstance extends AbstractInstance {
   @Override
   public CompletableFuture<WorldResult> storeMoveAsync(MoveRequest req) {
     return actor.stageMove(world, req);
+  }
+
+  @Override
+  public CompletableFuture<WorldResult> orchestrateAsync(OrchestrateRequest req) {
+    return actor.orchestrate(world, req);
   }
 
   @Override

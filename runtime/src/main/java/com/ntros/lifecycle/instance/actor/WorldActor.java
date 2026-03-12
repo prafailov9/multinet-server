@@ -7,10 +7,12 @@ import com.ntros.model.entity.movement.MoveInput;
 import com.ntros.model.world.connector.WorldConnector;
 import com.ntros.model.world.connector.ops.JoinOp;
 import com.ntros.model.world.connector.ops.MoveOp;
+import com.ntros.model.world.connector.ops.OrchestrateOp;
 import com.ntros.model.world.connector.ops.RemoveOp;
 import com.ntros.model.world.protocol.WorldResult;
 import com.ntros.model.world.protocol.request.JoinRequest;
 import com.ntros.model.world.protocol.request.MoveRequest;
+import com.ntros.model.world.protocol.request.OrchestrateRequest;
 import com.ntros.model.world.protocol.request.RemoveRequest;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
@@ -107,6 +109,11 @@ public final class WorldActor implements Actor {
   @Override
   public CompletableFuture<WorldResult> remove(WorldConnector world, RemoveRequest req) {
     return ask(() -> world.apply(new RemoveOp(req)));
+  }
+
+  @Override
+  public CompletableFuture<WorldResult> orchestrate(WorldConnector world, OrchestrateRequest req) {
+    return ask(() -> world.apply(new OrchestrateOp(req)));
   }
 
   /**

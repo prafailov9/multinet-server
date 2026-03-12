@@ -168,7 +168,7 @@ public class ServerBootstrapTest {
       log.info("[SingleCon_MoveCommand]: Sending MOVE request to server...");
 
       // MOVE UP
-      ServerMessage actualMoveResponse = testClient.move(clientName, 0, 1, 0, 0,
+      ServerMessage actualMoveResponse = testClient.move(clientName, 0, 1.0f, 0, 0,
           CMD_TIMEOUT_DEFAULT);
       // ticker will constantly stream the state, ack command is never sent or is lost between state broadcasts
       assertEquals(ServerCmd.STATE, actualMoveResponse.type());

@@ -5,6 +5,7 @@ public enum TileType {
   WALL,
   WATER,
   FIRE,
-  TRAP
-
+  TRAP,
+  /** A live cell in a Game-of-Life simulation. */
+  ALIVE
 }

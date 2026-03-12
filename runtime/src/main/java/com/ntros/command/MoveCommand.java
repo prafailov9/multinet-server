@@ -28,8 +28,6 @@ public class MoveCommand extends AbstractCommand {
       validateContext(ctx);
       validateMessage(message);
 
-      // move command curently only handles movement(n,w,s,e) within a grid(x, y)
-      // TODO: extend to handle 3d + 4d movement. Need to extend the Movement semantics in domain
       MoveInput input = getMovementInput(message);
 
       String playerId = ctx.getEntityId();
@@ -51,12 +49,11 @@ public class MoveCommand extends AbstractCommand {
   }
 
   private MoveInput getMovementInput(Message message) {
-    // capture first 4 args
+    // capture first 4 args, already validated in ClientMessageValidator
     float dx = Float.parseFloat(message.args().getFirst());
     float dy = Float.parseFloat(message.args().get(1));
     float dz = Float.parseFloat(message.args().get(2));
     float dw = Float.parseFloat(message.args().get(3));
-
     return new MoveInput(dx, dy, dz, dw);
   }
 

@@ -8,6 +8,7 @@ import com.ntros.model.world.connector.WorldConnector;
 import com.ntros.model.world.protocol.WorldResult;
 import com.ntros.model.world.protocol.request.JoinRequest;
 import com.ntros.model.world.protocol.request.MoveRequest;
+import com.ntros.model.world.protocol.request.OrchestrateRequest;
 import com.ntros.model.world.protocol.request.RemoveRequest;
 import java.util.concurrent.CompletableFuture;
 
@@ -32,6 +33,9 @@ public interface Actor extends Shutdownable {
 
   CompletableFuture<WorldResult> remove(WorldConnector world,
       RemoveRequest removeRequest);
+
+  CompletableFuture<WorldResult> orchestrate(WorldConnector world,
+      OrchestrateRequest req);
 
   CompletableFuture<Void> tell(Runnable action);
 

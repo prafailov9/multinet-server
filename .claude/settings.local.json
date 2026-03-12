@@ -15,7 +15,9 @@
       "Bash(mvn test:*)",
       "Bash(mvn clean:*)",
       "Bash(xargs grep:*)",
-      "Bash(grep -v \"^\\\\[INFO\\\\] Tests run: [0-9]*, Failures: 0, Errors: 0, Skipped: 0$\")"
+      "Bash(grep -v \"^\\\\[INFO\\\\] Tests run: [0-9]*, Failures: 0, Errors: 0, Skipped: 0$\")",
+      "Bash(find /c/dev/multinet/multinet-server -type f -name *Strategy*)",
+      "Bash(grep -r 'class CommandActor' /c/dev/multinet/multinet-server --include=*.java)"
     ]
   }
 }

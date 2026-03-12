@@ -7,6 +7,7 @@ import com.ntros.model.world.connector.WorldConnector;
 import com.ntros.model.world.protocol.WorldResult;
 import com.ntros.model.world.protocol.request.JoinRequest;
 import com.ntros.model.world.protocol.request.MoveRequest;
+import com.ntros.model.world.protocol.request.OrchestrateRequest;
 import com.ntros.lifecycle.session.Session;
 import java.util.concurrent.CompletableFuture;
 
@@ -23,6 +24,8 @@ public interface Instance extends Lifecycle, Pausable {
   CompletableFuture<WorldResult> joinAsync(JoinRequest req);
 
   CompletableFuture<WorldResult> storeMoveAsync(MoveRequest req);
+
+  CompletableFuture<WorldResult> orchestrateAsync(OrchestrateRequest req);
 
   CompletableFuture<Void> leaveAsync(Session session);
 

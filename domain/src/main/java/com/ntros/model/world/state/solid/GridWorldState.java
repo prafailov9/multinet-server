@@ -52,6 +52,27 @@ public class GridWorldState implements GridState {
   }
 
   /**
+   * Creates a blank world state — every cell is {@link TileType#EMPTY}, no walls, no traps.
+   *
+   * <p>Used for Game-of-Life worlds where the simulation itself controls tile states via
+   * {@link TileType#ALIVE}; random terrain generation would interfere with Conway's rules.
+   *
+   * @param worldName unique world name
+   * @param width     number of columns
+   * @param height    number of rows
+   * @return a fully initialised {@link GridWorldState} with an all-EMPTY terrain map
+   */
+  public static GridWorldState blank(String worldName, int width, int height) {
+    Map<Vector4, TileType> emptyTerrain = new HashMap<>();
+    for (int x = 0; x < width; x++) {
+      for (int y = 0; y < height; y++) {
+        emptyTerrain.put(Vector4.of(x, y, 0, 0), TileType.EMPTY);
+      }
+    }
+    return new GridWorldState(worldName, width, height, emptyTerrain);
+  }
+
+  /**
    * Restoration constructor — uses a pre-built terrain map instead of generating a new one.
    *
    * <p>Used by the persistence layer to recreate stable terrain across server restarts:
@@ -117,7 +138,7 @@ public class GridWorldState implements GridState {
 
   @Override
   public TileType getTileTypeAt(Vector4 pos) {
-    return null;
+    return terrainMap.get(pos);
   }
 
   /**

@@ -9,6 +9,7 @@ import com.ntros.model.entity.config.WorldCapabilities;
 import com.ntros.model.entity.config.access.Settings;
 import com.ntros.model.world.connector.GridWorldConnector;
 import com.ntros.model.world.connector.WorldConnector;
+import com.ntros.model.world.engine.gameoflife.GameOfLifeEngine;
 import com.ntros.model.world.engine.solid.GridWorldEngine;
 import com.ntros.model.world.state.solid.GridWorldState;
 import com.ntros.lifecycle.session.Session;
@@ -61,9 +62,10 @@ public final class InstanceFactory {
 
   public static Instance createGameOfLifeWorld(String name, String ownerUserId,
       SessionManager sessions) {
-    // If you have a LifeEngine/State, plug it here; otherwise reuse grid placeholder
-    WorldConnector connector = new GridWorldConnector(new GridWorldState(name, 256, 256),
-        new GridWorldEngine(), new WorldCapabilities(true, true, true, true));
+    WorldConnector connector = new GridWorldConnector(
+        GridWorldState.blank(name, 256, 256),
+        new GameOfLifeEngine(),
+        new WorldCapabilities(true, true, true, true));
     Settings cfg = Settings.singlePlayerOrchestrator();
     Instance inst = new ServerInstance(connector, sessions, new FixedRateClock(20),
         new SingleBroadcaster(ownerUserId), cfg);

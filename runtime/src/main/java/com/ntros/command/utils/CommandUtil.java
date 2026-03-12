@@ -19,5 +19,6 @@ public class CommandUtil {
   public static final String STATE = "STATE";
   public static final String WELCOME = "WELCOME";
   public static final String ERROR = "ERROR";
+  public static final String ORCHESTRATE = "ORCHESTRATE";
 
 }

@@ -44,7 +44,7 @@ public class GridWorldEngine implements WorldEngine {
   }
 
   private Vector4 determineNewPosition(Position current, Position delta) {
-    return Vector4.of(current.getX() + delta.getX(), current.getY() + delta.getX(), 0f, 0f);
+    return Vector4.of(current.getX() + delta.getX(), current.getY() + delta.getY(), 0f, 0f);
   }
 
   @Override
@@ -57,8 +57,6 @@ public class GridWorldEngine implements WorldEngine {
     int dy = Math.round(moveIntent.getY());
 
     Vector4 newPos = determineNewPosition(entity.getPosition(), Position.of(dx, dy));
-//    Position newPos = createPosition(entity.getPosition(), Position.of(dx, dy));
-//    Position position = createPosition(entity.getPosition(), moveRequest.direction());
 
     // allow all moves if within bounds
     if (state.isWithinBounds(newPos)) {
@@ -218,11 +216,5 @@ public class GridWorldEngine implements WorldEngine {
     }
     return null; // if world is full
   }
-
-  public Position createPosition(Position currentPosition, Position newPosition) {
-    return Position.of(currentPosition.getX() + newPosition.getX(),
-        currentPosition.getY() + newPosition.getY());
-  }
-
 
 }

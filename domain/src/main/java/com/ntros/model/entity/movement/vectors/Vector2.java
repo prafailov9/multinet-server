@@ -2,7 +2,7 @@ package com.ntros.model.entity.movement.vectors;
 
 import java.util.Objects;
 
-public class Vector2 implements Vector {
+public class Vector2 {
 
   public static final Vector2 ZERO = new Vector2(0, 0);
 
@@ -18,12 +18,10 @@ public class Vector2 implements Vector {
     return new Vector2(x, y);
   }
 
-  @Override
   public float getX() {
     return x;
   }
 
-  @Override
   public float getY() {
     return y;
   }

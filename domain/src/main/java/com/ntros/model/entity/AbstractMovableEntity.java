@@ -9,7 +9,7 @@ public abstract class AbstractMovableEntity implements StaticEntity {
   protected int hp;
   protected String name;
   protected Position currentPosition;
-  protected Direction movementIntent;
+  protected Position movementIntent;
 
   public AbstractMovableEntity(Position position) {
     this.currentPosition = position;

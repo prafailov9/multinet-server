@@ -1,9 +1,8 @@
 package com.ntros.model.entity.movement.vectors;
 
 
-import lombok.Data;
-
 import java.util.Objects;
+import lombok.Data;
 
 /**
  * Immutable 4-dimensional float vector.
@@ -161,4 +160,5 @@ public final class Vector4 {
         ", w=" + w +
         '}';
   }
+
 }
