@@ -1,6 +1,7 @@
 package com.ntros.model.entity.movement.vectors;
 
 
+import com.ntros.model.entity.movement.cell.Position;
 import java.util.Objects;
 import lombok.Data;
 
@@ -28,6 +29,10 @@ public final class Vector4 {
 
   public static Vector4 of(float x, float y, float z, float w) {
     return new Vector4(x, y, z, w);
+  }
+
+  public static Vector4 of2dGridPosition(Position position) {
+    return new Vector4(position.getX(), position.getY(), 0f, 0f);
   }
 
   // ── Arithmetic ────────────────────────────────────────────────────────────

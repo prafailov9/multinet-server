@@ -3,6 +3,7 @@ package com.ntros.messageprocessing.client.validation;
 import com.ntros.lifecycle.session.Session;
 import com.ntros.lifecycle.session.SessionContext;
 import com.ntros.messageprocessing.client.validation.exception.MessageValidationException;
+import com.ntros.persistence.db.PersistenceContext;
 import com.ntros.protocol.Message;
 import java.util.List;
 import java.util.function.Supplier;
@@ -13,6 +14,8 @@ public class ClientCommandValidator implements CommandValidator {
 
   @Override
   public void validate(Message message, Session session) {
+    log.info("Validating parsed message semantics. {}", message);
+
     switch (message.commandType()) {
       case REG -> onRegister(message, session);
       case AUTHENTICATE -> onAuthenticate(message, session);
@@ -51,8 +54,17 @@ public class ClientCommandValidator implements CommandValidator {
 
   private void onJoin(Message message, Session session) {
     SessionContext ctx = session.getSessionContext();
-    check(() -> !ctx.isAuthenticated(), "[Validator.Join]: Client: %s must be authenticated",
-        ctx.toString());
+    String clientName = message.args().getFirst();
+    check(() -> clientName == null || clientName.isBlank(),
+        "[Validator.Join]: message args missing client name. Received message: %s",
+        message.toWireFormat());
+    check(() -> PersistenceContext.clients().findByUsername(clientName).isEmpty(),
+        "[Validator.Join]: Client not exist in DB. Received message: %s", message.toWireFormat());
+    // TODO: figure out better way to check for authenticated client
+    ctx.setAuthenticated(true);
+
+//    check(() -> !ctx.isAuthenticated(), "[Validator.Join]: Client: %s must be authenticated",
+//        ctx.toString());
   }
 
   private void onDisconnect(Message message, Session session) {

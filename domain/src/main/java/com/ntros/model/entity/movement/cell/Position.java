@@ -1,5 +1,6 @@
 package com.ntros.model.entity.movement.cell;
 
+import com.ntros.model.entity.movement.vectors.Vector4;
 import java.util.Objects;
 
 public final class Position {
@@ -15,6 +16,11 @@ public final class Position {
   public static Position of(int x, int y) {
     return new Position(x, y);
   }
+
+  public static Position ofVector4(Vector4 vector4) {
+    return new Position(Math.round(vector4.getX()), Math.round(vector4.getY()));
+  }
+
 
   @Override
   public boolean equals(Object o) {

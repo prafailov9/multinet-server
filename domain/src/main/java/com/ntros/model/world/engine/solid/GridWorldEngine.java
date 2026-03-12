@@ -24,26 +24,24 @@ public class GridWorldEngine implements WorldEngine {
 
   @Override
   public void applyIntents(GridState state) {
-    for (var intent : state.moveIntents().entrySet()) {
-      Entity entity = state.entities().get(intent.getKey());
+    for (var stagedIntent : state.moveIntents().entrySet()) {
+      Entity entity = state.entities().get(stagedIntent.getKey());
       if (entity == null) {
-        log.warn("No entity found for id: {}", intent.getKey());
+        log.warn("No entity found for id: {}", stagedIntent.getKey());
         continue;
       }
-      Vector4 moveIntent = intent.getValue();
-      int dx = Math.round(moveIntent.getX());
-      int dy = Math.round(moveIntent.getY());
-      Position currentPosition = entity.getPosition();
-      Vector4 currentVec = Vector4.of(currentPosition.getX(), currentPosition.getY(), 0f, 0f);
-      Vector4 newPos = determineNewPosition(entity.getPosition(), Position.of(dx, dy));
-      log.info("Processing move for {}: {} -> {}", entity.getName(), currentPosition, newPos);
-      moveEntity(entity, currentVec, newPos, state);
+      Vector4 stagedMoveIntent = stagedIntent.getValue();
+      Vector4 currentVec = Vector4.of2dGridPosition(entity.getPosition());
+      log.info("Applying move for {}: {} -> {}", entity.getName(), currentVec, stagedMoveIntent);
+      moveEntity(entity, currentVec, stagedMoveIntent, state);
     }
 
     state.moveIntents().clear();
   }
 
   private Vector4 determineNewPosition(Position current, Position delta) {
+    log.info("Determining new position for entity. Current pos: {}, delta: {}", current, delta);
+
     return Vector4.of(current.getX() + delta.getX(), current.getY() + delta.getY(), 0f, 0f);
   }
 
@@ -55,13 +53,13 @@ public class GridWorldEngine implements WorldEngine {
     Vector4 moveIntent = Vector4.of(input.dx(), input.dy(), input.dz(), input.dw());
     int dx = Math.round(moveIntent.getX());
     int dy = Math.round(moveIntent.getY());
-
+    log.info("received move intent: {}", moveIntent);
     Vector4 newPos = determineNewPosition(entity.getPosition(), Position.of(dx, dy));
 
     // allow all moves if within bounds
     if (state.isWithinBounds(newPos)) {
       state.moveIntents().put(moveRequest.playerId(), newPos);
-      log.info("Added move intent: {}", moveRequest);
+      log.info("Added move intent: {}", newPos);
       return WorldResult.succeeded(entity.getName(), state.worldName(), "intent added");
     }
     String msg = String.format("[%s]: invalid move: %s. Out of bounds.", state.worldName(),
@@ -190,11 +188,14 @@ public class GridWorldEngine implements WorldEngine {
     log.info("Added entity: {}", entity);
   }
 
+  /**
+   * swap the entities current position(origin) with target in the positions map
+   */
   private void moveEntity(Entity entity, Vector4 origin, Vector4 target, GridState worldState) {
     if (worldState.isLegalMove(target)) {
       worldState.takenPositions().remove(origin);
       worldState.takenPositions().put(target, entity.getName());
-      entity.setPosition(Position.of(Math.round(target.getX()), Math.round(target.getY())));
+      entity.setPosition(Position.ofVector4(target));
       log.info("Moved {} from {} to {}.", entity.getName(), origin, target);
     } else {
       log.warn("Failed to move {} to {} position. Illegal move.", entity.getName(), target);

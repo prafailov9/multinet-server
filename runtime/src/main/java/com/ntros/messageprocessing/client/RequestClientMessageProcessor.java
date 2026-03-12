@@ -4,6 +4,9 @@ import com.ntros.dispatcher.Dispatcher;
 import com.ntros.dispatcher.MessageDispatcher;
 import com.ntros.lifecycle.session.Session;
 import com.ntros.messageprocessing.NoResponseFromServerException;
+import com.ntros.messageprocessing.client.validation.ClientCommandValidator;
+import com.ntros.messageprocessing.client.validation.CommandValidator;
+import com.ntros.messageprocessing.client.validation.exception.MessageValidationException;
 import com.ntros.parser.MessageParser;
 import com.ntros.protocol.Message;
 import lombok.extern.slf4j.Slf4j;
@@ -14,10 +17,12 @@ public class RequestClientMessageProcessor implements ClientMessageProcessor {
   private static final String SESSION_FAILED_NOTIFIER = "SESSION_FAILED";
 
   private final MessageParser messageParser;
+  private final CommandValidator commandValidator;
   private final Dispatcher dispatcher;
 
   public RequestClientMessageProcessor() {
     this.messageParser = new MessageParser();
+    this.commandValidator = new ClientCommandValidator();
     this.dispatcher = new MessageDispatcher();
   }
 
@@ -32,7 +37,8 @@ public class RequestClientMessageProcessor implements ClientMessageProcessor {
     }
 
     Message message = messageParser.parse(rawMessage);
-    log.info("Message received: {}", message);
+    commandValidator.validate(message, session);
+
     return dispatcher.dispatch(message, session)
         .orElseThrow(() -> new NoResponseFromServerException("Server returned empty response"));
   }
