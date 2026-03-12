@@ -35,15 +35,13 @@ public final class DatabaseBuilder {
   }
 
   public static void dropDatabase() {
-    try (Connection conn = ConnectionProvider.connection()) {
-      try (Statement stm = conn.createStatement()) {
-        stm.executeUpdate(DROP_ALL_QUERY);
-      } catch (SQLException ex) {
-        log.error("Error during drop database: {}", ex.getMessage(), ex);
-      }
+    // Use the shared connection directly — do NOT use try-with-resources here,
+    // because closing the shared connection is ConnectionProvider.close()'s job.
+    Connection conn = ConnectionProvider.connection();
+    try (Statement stm = conn.createStatement()) {
+      stm.executeUpdate(DROP_ALL_QUERY);
     } catch (SQLException ex) {
-      log.error("Could not get connection: {}", ex.getMessage(), ex);
-      throw new SqlCrudException("Could not get connection", ex);
+      log.error("Error during drop database: {}", ex.getMessage(), ex);
     }
     ConnectionProvider.close();
     PersistenceContext.reset();

@@ -2,7 +2,6 @@ package com.ntros.persistence.repository.impl;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.ntros.persistence.db.ConnectionProvider;
 import com.ntros.persistence.model.WorldRecord;
 import com.ntros.persistence.repository.WorldRepository;
 import java.time.Instant;
@@ -32,26 +31,29 @@ class SqliteWorldRepositoryTest extends AbstractRepositoryTest {
 
   @Test
   void registerIfAbsent_newWorld_isStoredAndReturned() {
-    WorldRecord record = new WorldRecord("arena-x", "GRID", 5, 5, 0, Instant.now());
+    WorldRecord record = world("arena-x", "GRID", 5, 5, 0,
+        true, false, false, true);
     WorldRecord stored = repo.registerIfAbsent(record);
 
     assertThat(stored.name()).isEqualTo("arena-x");
-    assertThat(stored.type()).isEqualTo("GRID");
+    assertThat(stored.engineType()).isEqualTo("GRID");
     assertThat(stored.width()).isEqualTo(5);
     assertThat(stored.height()).isEqualTo(5);
     assertThat(stored.depth()).isZero();
+    assertThat(stored.multiplayer()).isTrue();
+    assertThat(stored.deterministic()).isTrue();
   }
 
   @Test
   void registerIfAbsent_duplicateName_isIdempotentReturnsExisting() {
-    WorldRecord first = new WorldRecord("arena-x", "GRID", 5, 5, 0, Instant.now());
-    WorldRecord second = new WorldRecord("arena-x", "OPEN", 100, 50, 100, Instant.now());
+    WorldRecord first  = world("arena-x", "GRID", 5,   5,   0,   true,  false, false, true);
+    WorldRecord second = world("arena-x", "GOL",  100, 50,  100, false, true,  true,  false);
 
     repo.registerIfAbsent(first);
     WorldRecord returned = repo.registerIfAbsent(second);
 
-    // Must return the FIRST record — type must not be overwritten
-    assertThat(returned.type()).isEqualTo("GRID");
+    // Must return the FIRST record — engine_type must not be overwritten
+    assertThat(returned.engineType()).isEqualTo("GRID");
     assertThat(repo.findAll()).hasSize(1);
   }
 
@@ -64,11 +66,13 @@ class SqliteWorldRepositoryTest extends AbstractRepositoryTest {
 
   @Test
   void findByName_knownWorld_returnsRecord() {
-    repo.registerIfAbsent(new WorldRecord("open-1", "OPEN", 200, 50, 200, Instant.now()));
+    repo.registerIfAbsent(world("open-1", "GRID", 200, 50, 0,
+        false, true, false, true));
 
     var found = repo.findByName("open-1");
     assertThat(found).isPresent();
-    assertThat(found.get().depth()).isEqualTo(200);
+    assertThat(found.get().width()).isEqualTo(200);
+    assertThat(found.get().orchestrated()).isTrue();
   }
 
   // ── findAll ───────────────────────────────────────────────────────────────
@@ -80,9 +84,11 @@ class SqliteWorldRepositoryTest extends AbstractRepositoryTest {
 
   @Test
   void findAll_multipleWorlds_returnsAllOrderedByCreatedAt() throws InterruptedException {
-    repo.registerIfAbsent(new WorldRecord("world-a", "GRID", 10, 10, 0, Instant.now()));
+    repo.registerIfAbsent(world("world-a", "GRID", 10, 10, 0,
+        true, false, false, true));
     Thread.sleep(5);
-    repo.registerIfAbsent(new WorldRecord("world-b", "OPEN", 50, 20, 50, Instant.now()));
+    repo.registerIfAbsent(world("world-b", "GOL",  50, 20, 0,
+        false, true, false, true));
 
     List<WorldRecord> all = repo.findAll();
 
@@ -91,4 +97,13 @@ class SqliteWorldRepositoryTest extends AbstractRepositoryTest {
     assertThat(all.get(1).name()).isEqualTo("world-b");
   }
 
+  // ── Helper ────────────────────────────────────────────────────────────────
+
+  private static WorldRecord world(String name, String engineType,
+      int width, int height, int depth,
+      boolean multiplayer, boolean orchestrated,
+      boolean hasAi, boolean deterministic) {
+    return new WorldRecord(name, engineType, width, height, depth,
+        multiplayer, orchestrated, hasAi, deterministic, Instant.now());
+  }
 }

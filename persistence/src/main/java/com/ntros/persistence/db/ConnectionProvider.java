@@ -6,6 +6,7 @@ import java.nio.file.Paths;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.concurrent.atomic.AtomicInteger;
 import lombok.extern.slf4j.Slf4j;
 
@@ -27,7 +28,7 @@ public final class ConnectionProvider {
   public static final String DEFAULT_DB_PATH = "data/multinet.db";
 
   private static volatile Connection connection;
-  private static AtomicInteger counter = new AtomicInteger(1);
+  private static final AtomicInteger counter = new AtomicInteger(0);
 
   private ConnectionProvider() {
   }
@@ -54,13 +55,26 @@ public final class ConnectionProvider {
       }
 
       connection = DriverManager.getConnection("jdbc:sqlite:" + dbPath);
-      // WAL mode requires a file-based database; skip for in-memory ":memory:" databases
-      if (!dbPath.startsWith(":")) {
-        connection.createStatement().execute("PRAGMA journal_mode=WAL");
-      }
-      connection.setAutoCommit(true);
-
       log.info("[ConnectionProvider] SQLite database opened at '{}'.", dbPath);
+
+      try (Statement st = connection.createStatement()) {
+        // Give concurrent readers / stale WAL writers up to 5 s to release locks
+        // before throwing SQLITE_BUSY — prevents startup failures after a crash.
+        st.execute("PRAGMA busy_timeout=5000");
+
+        // WAL mode: better read concurrency on file-based databases.
+        // Skip for in-memory databases (:memory:) which don't support WAL.
+        // Must come BEFORE any write (including schema init) so the journal
+        // mode is active for every subsequent statement.
+        // NOTE: do NOT call connection.setAutoCommit(true) after this — JDBC
+        // connections are autocommit by default, and calling it explicitly on
+        // a WAL-mode connection triggers an internal checkpoint that can fail
+        // with SQLITE_BUSY if a stale WAL file exists from a previous crash.
+        if (!dbPath.startsWith(":")) {
+          st.execute("PRAGMA journal_mode=WAL");
+        }
+      }
+
       SchemaInitializer.run(connection);
 
     } catch (Exception e) {

@@ -17,7 +17,8 @@
       "Bash(xargs grep:*)",
       "Bash(grep -v \"^\\\\[INFO\\\\] Tests run: [0-9]*, Failures: 0, Errors: 0, Skipped: 0$\")",
       "Bash(find /c/dev/multinet/multinet-server -type f -name *Strategy*)",
-      "Bash(grep -r 'class CommandActor' /c/dev/multinet/multinet-server --include=*.java)"
+      "Bash(grep -r 'class CommandActor' /c/dev/multinet/multinet-server --include=*.java)",
+      "Bash(python3 -c \":*)"
     ]
   }
 }

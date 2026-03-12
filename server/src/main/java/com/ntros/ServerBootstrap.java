@@ -2,7 +2,6 @@ package com.ntros;
 
 
 import com.ntros.config.converter.WorldConverter;
-import com.ntros.config.reader.WorldConfigReader;
 import com.ntros.broadcast.SharedBroadcaster;
 import com.ntros.lifecycle.sessionmanager.ClientSessionManager;
 import com.ntros.lifecycle.sessionmanager.SessionManager;
@@ -15,16 +14,13 @@ import com.ntros.lifecycle.instance.ServerInstance;
 import com.ntros.model.entity.config.access.Settings;
 import com.ntros.model.world.connector.GridWorldConnector;
 import com.ntros.model.world.connector.WorldConnector;
-import com.ntros.model.world.state.solid.GridWorldState;
 import com.ntros.persistence.db.ConnectionProvider;
 import com.ntros.persistence.db.DatabaseBuilder;
 import com.ntros.persistence.db.PersistenceContext;
-import com.ntros.persistence.model.WorldRecord;
 import com.ntros.server.Server;
 import com.ntros.server.TcpServer;
 import java.io.IOException;
 import java.nio.file.Path;
-import java.time.Instant;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 
@@ -44,7 +40,7 @@ public class ServerBootstrap {
 
     initPersistence();
 
-    // load default worlds from worlds.yml and init instances
+    // seed + load worlds from DB, then init instances
     List<WorldConnector> worlds = loadWorlds();
     initInstances(worlds);
 
@@ -77,37 +73,24 @@ public class ServerBootstrap {
     log.info("[ServerBootstrap] Persistence layer initialised.");
   }
 
+  /**
+   * Seeds default worlds into the DB (first startup only), then loads all world records and
+   * converts each to a live {@link WorldConnector}.
+   */
   private static List<WorldConnector> loadWorlds() {
-    WorldConverter converter = new WorldConverter();
-    List<WorldConnector> worlds = new WorldConfigReader().readAll().stream()
-        .map(converter::toModelObject).toList();
+    WorldSeedLoader.seedIfEmpty();
 
-    // Register world metadata and restore terrain for grid worlds
+    WorldConverter converter = new WorldConverter();
+    List<WorldConnector> worlds = PersistenceContext.worlds().findAll().stream()
+        .map(converter::toModelObject)
+        .toList();
+
+    // Restore persisted terrain snapshots for grid worlds
     for (WorldConnector connector : worlds) {
-      registerWorldMetadata(connector);
       restoreTerrainIfGridWorld(connector);
     }
 
     return worlds;
-  }
-
-  /**
-   * Saves world metadata to the database the first time a world is seen.
-   * Subsequent startups are idempotent (row already exists).
-   */
-  private static void registerWorldMetadata(WorldConnector connector) {
-    try {
-      // Determine depth: 0 for 2-D grid worlds, actual depth for 3-D open worlds
-      int depth = 0; // grid worlds are 2D
-
-      WorldRecord record = new WorldRecord(connector.getWorldName(), connector.getWorldType(), 0, 0,
-          depth,   // dimensions not critical in metadata; world config is the source of truth
-          Instant.now());
-      PersistenceContext.worlds().registerIfAbsent(record);
-    } catch (Exception e) {
-      log.warn("[ServerBootstrap] Could not register world metadata for '{}': {}",
-          connector.getWorldName(), e.getMessage());
-    }
   }
 
   /**

@@ -45,14 +45,21 @@ final class SchemaInitializer {
           )
           """);
 
+      // Worlds are always seeded from WorldSeedLoader at startup, so we can safely
+      // drop-and-recreate to guarantee the schema is up to date after any crash or upgrade.
+      st.execute("DROP TABLE IF EXISTS worlds");
       st.execute("""
-          CREATE TABLE IF NOT EXISTS worlds (
-            name       TEXT    PRIMARY KEY,
-            type       TEXT    NOT NULL,
-            width      INTEGER NOT NULL,
-            height     INTEGER NOT NULL,
-            depth      INTEGER NOT NULL DEFAULT 0,
-            created_at TEXT    NOT NULL
+          CREATE TABLE worlds (
+            name          TEXT    PRIMARY KEY,
+            engine_type   TEXT    NOT NULL DEFAULT 'GRID',
+            width         INTEGER NOT NULL DEFAULT 0,
+            height        INTEGER NOT NULL DEFAULT 0,
+            depth         INTEGER NOT NULL DEFAULT 0,
+            multiplayer   INTEGER NOT NULL DEFAULT 0,
+            orchestrated  INTEGER NOT NULL DEFAULT 0,
+            has_ai        INTEGER NOT NULL DEFAULT 0,
+            deterministic INTEGER NOT NULL DEFAULT 0,
+            created_at    TEXT    NOT NULL
           )
           """);
 
