@@ -52,10 +52,10 @@ public class MoveCommand extends AbstractCommand {
 
   private MoveInput getMovementInput(Message message) {
     // capture first 4 args
-    int dx = Integer.parseInt(message.args().getFirst());
-    int dy = Integer.parseInt(message.args().get(1));
-    int dz = Integer.parseInt(message.args().get(2));
-    int dw = Integer.parseInt(message.args().get(3));
+    float dx = Float.parseFloat(message.args().getFirst());
+    float dy = Float.parseFloat(message.args().get(1));
+    float dz = Float.parseFloat(message.args().get(2));
+    float dw = Float.parseFloat(message.args().get(3));
 
     return new MoveInput(dx, dy, dz, dw);
   }

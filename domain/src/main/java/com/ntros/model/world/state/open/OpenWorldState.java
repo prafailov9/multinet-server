@@ -1,6 +1,6 @@
 package com.ntros.model.world.state.open;
 
-import com.ntros.model.entity.movement.Vector3D;
+import com.ntros.model.entity.movement.vectors.Vector3;
 import com.ntros.model.entity.open.OpenWorldEntity;
 import com.ntros.model.world.state.dimension.Dimension3D;
 import java.util.HashMap;
@@ -26,7 +26,7 @@ public class OpenWorldState implements DynamicWorldState {
    * Keyed by entity name; values are the raw (possibly un-normalised) direction vectors
    * as received from the client. The engine normalises them during {@code applyIntents}.
    */
-  private final Map<String, Vector3D> movementIntents;
+  private final Map<String, Vector3> movementIntents;
 
   public OpenWorldState(String worldName, int width, int height, int depth) {
     this.worldName  = worldName;
@@ -58,7 +58,7 @@ public class OpenWorldState implements DynamicWorldState {
   }
 
   @Override
-  public Map<String, Vector3D> moveIntents() {
+  public Map<String, Vector3> moveIntents() {
     return movementIntents;
   }
 }

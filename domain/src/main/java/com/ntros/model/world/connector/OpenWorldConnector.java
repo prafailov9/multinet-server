@@ -2,6 +2,7 @@ package com.ntros.model.world.connector;
 
 import com.ntros.model.entity.Entity;
 import com.ntros.model.entity.config.WorldCapabilities;
+import com.ntros.model.entity.movement.cell.Position;
 import com.ntros.model.entity.open.OpenWorldEntity;
 import com.ntros.model.world.connector.ops.JoinOp;
 import com.ntros.model.world.connector.ops.OpenMoveOp;
@@ -139,7 +140,7 @@ public class OpenWorldConnector implements WorldConnector {
    * Thin adapter that bridges {@link OpenWorldEntity} to the grid-centric {@link Entity}
    * interface, exposing just the name. Position methods throw
    * {@link UnsupportedOperationException} because open-world positions are float-based and
-   * cannot be represented as a discrete {@link com.ntros.model.entity.movement.Position}.
+   * cannot be represented as a discrete {@link Position}.
    */
   private record OpenWorldEntityAdapter(OpenWorldEntity delegate) implements Entity {
 
@@ -149,13 +150,13 @@ public class OpenWorldConnector implements WorldConnector {
     }
 
     @Override
-    public com.ntros.model.entity.movement.Position getPosition() {
+    public Position getPosition() {
       throw new UnsupportedOperationException(
           "Open-world entities have float positions — use OpenWorldConnector.snapshot() instead.");
     }
 
     @Override
-    public void setPosition(com.ntros.model.entity.movement.Position position) {
+    public void setPosition(Position position) {
       throw new UnsupportedOperationException(
           "Open-world entities use Vector3D positions.");
     }

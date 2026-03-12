@@ -1,7 +1,7 @@
 package com.ntros.model.entity.open;
 
-import com.ntros.model.entity.movement.Vector3D;
-import com.ntros.model.entity.movement.Velocity3D;
+import com.ntros.model.entity.movement.vectors.Vector3;
+import com.ntros.model.entity.movement.velocity.Velocity3;
 
 /**
  * A human-controlled entity in the open 3D world.
@@ -20,8 +20,8 @@ public class OpenWorldPlayer extends AbstractOpenWorldEntity {
   private final String name;
   private final long id;
 
-  public OpenWorldPlayer(String name, long id, Vector3D spawnPosition) {
-    super(spawnPosition, Velocity3D.ZERO);
+  public OpenWorldPlayer(String name, long id, Vector3 spawnPosition) {
+    super(spawnPosition, Velocity3.ZERO);
     this.name = name;
     this.id = id;
   }

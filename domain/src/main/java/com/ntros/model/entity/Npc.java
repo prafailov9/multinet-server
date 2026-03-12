@@ -1,6 +1,6 @@
 package com.ntros.model.entity;
 
-import com.ntros.model.entity.movement.Position;
+import com.ntros.model.entity.movement.cell.Position;
 import com.ntros.model.entity.sequence.IdSequenceGenerator;
 
 public class Npc extends AbstractMovableEntity {

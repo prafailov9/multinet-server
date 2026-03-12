@@ -1,9 +1,9 @@
 package com.ntros.persistence.repository.impl;
 
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
-import com.ntros.model.entity.movement.Position;
+import com.ntros.model.entity.movement.cell.Position;
+import com.ntros.model.entity.movement.vectors.Vector4;
 import com.ntros.model.world.protocol.TileType;
 import com.ntros.persistence.repository.TerrainSnapshotRepository;
 import java.io.IOException;
@@ -57,7 +57,7 @@ public class JsonTerrainSnapshotRepository implements TerrainSnapshotRepository 
   // ── save ──────────────────────────────────────────────────────────────────
 
   @Override
-  public void save(String worldName, Map<Position, TileType> terrain) {
+  public void save(String worldName, Map<Vector4, TileType> terrain) {
     Path file = fileFor(worldName);
     try {
       // Convert Position keys to "x,y" strings for JSON serialisation
@@ -77,17 +77,17 @@ public class JsonTerrainSnapshotRepository implements TerrainSnapshotRepository 
   // ── load ──────────────────────────────────────────────────────────────────
 
   @Override
-  public Optional<Map<Position, TileType>> load(String worldName) {
+  public Optional<Map<Vector4, TileType>> load(String worldName) {
     Path file = fileFor(worldName);
     if (!Files.exists(file)) {
       return Optional.empty();
     }
     try {
       SnapshotFile payload = MAPPER.readValue(file.toFile(), SnapshotFile.class);
-      Map<Position, TileType> terrain = new LinkedHashMap<>(payload.terrain().size());
+      Map<Vector4, TileType> terrain = new LinkedHashMap<>(payload.terrain().size());
       payload.terrain().forEach((key, tileName) -> {
         String[] parts = key.split(",");
-        Position pos = Position.of(Integer.parseInt(parts[0]), Integer.parseInt(parts[1]));
+        Vector4 pos = Vector4.of(Float.parseFloat(parts[0]), Float.parseFloat(parts[1]), 0f, 0f);
         TileType tile = TileType.valueOf(tileName);
         terrain.put(pos, tile);
       });

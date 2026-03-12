@@ -1,14 +1,14 @@
 package com.ntros.model.entity.dynamic;
 
-import com.ntros.model.entity.movement.Vector2D;
-import com.ntros.model.entity.movement.Velocity2D;
+import com.ntros.model.entity.movement.vectors.Vector2;
+import com.ntros.model.entity.movement.velocity.Velocity2;
 
 public class DynamicPlayer extends AbstractDynamicEntity {
 
   private static final float ACCELERATION = 10f;
   private static final float MAX_SPEED = 5f;
 
-  public DynamicPlayer(Vector2D position, Velocity2D velocity) {
+  public DynamicPlayer(Vector2 position, Velocity2 velocity) {
     super(position, velocity);
   }
 
@@ -33,12 +33,12 @@ public class DynamicPlayer extends AbstractDynamicEntity {
   }
 
   @Override
-  public Vector2D getPosition() {
+  public Vector2 getPosition() {
     return position;
   }
 
   @Override
-  public void setPosition(Vector2D position) {
+  public void setPosition(Vector2 position) {
     this.position = position;
   }
 }

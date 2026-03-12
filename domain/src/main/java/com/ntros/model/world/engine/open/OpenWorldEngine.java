@@ -3,8 +3,8 @@ package com.ntros.model.world.engine.open;
 import static com.ntros.model.world.protocol.WorldResult.failed;
 import static com.ntros.model.world.protocol.WorldResult.succeeded;
 
-import com.ntros.model.entity.movement.Vector3D;
-import com.ntros.model.entity.movement.Velocity3D;
+import com.ntros.model.entity.movement.vectors.Vector3;
+import com.ntros.model.entity.movement.velocity.Velocity3;
 import com.ntros.model.entity.open.OpenWorldEntity;
 import com.ntros.model.entity.open.OpenWorldPlayer;
 import com.ntros.model.entity.sequence.IdSequenceGenerator;
@@ -37,9 +37,9 @@ public class OpenWorldEngine implements DynamicWorldEngine {
 
   @Override
   public void applyIntents(DynamicWorldState state, float deltaTime) {
-    for (Map.Entry<String, Vector3D> entry : state.moveIntents().entrySet()) {
+    for (Map.Entry<String, Vector3> entry : state.moveIntents().entrySet()) {
       String name = entry.getKey();
-      Vector3D intent = entry.getValue();
+      Vector3 intent = entry.getValue();
 
       OpenWorldEntity entity = state.entities().get(name);
       if (entity == null) {
@@ -48,13 +48,13 @@ public class OpenWorldEngine implements DynamicWorldEngine {
       }
 
       // Normalise direction; skip if zero vector (client sent a no-op)
-      Vector3D direction = intent.normalize();
-      if (direction.equals(Vector3D.ZERO)) {
+      Vector3 direction = intent.normalize();
+      if (direction.equals(Vector3.ZERO)) {
         continue;
       }
 
       // v_new = v + direction * accel * dt, then clamp to maxSpeed
-      Velocity3D newVelocity = entity.getVelocity()
+      Velocity3 newVelocity = entity.getVelocity()
           .add(direction.scale(entity.acceleration() * deltaTime))
           .clampSpeed(entity.maxSpeed());
 
@@ -79,7 +79,7 @@ public class OpenWorldEngine implements DynamicWorldEngine {
       return failed(req.playerId(), state.worldName(), msg);
     }
 
-    Vector3D moveIntent = Vector3D.of(req.dx(), req.dy(), req.dz());
+    Vector3 moveIntent = Vector3.of(req.dx(), req.dy(), req.dz());
     state.moveIntents().put(req.playerId(), moveIntent);
     log.info("[OpenWorldEngine] Staged move intent for '{}': {}", req.playerId(), moveIntent);
     return succeeded(req.playerId(), state.worldName(), "intent staged");
@@ -93,7 +93,7 @@ public class OpenWorldEngine implements DynamicWorldEngine {
     }
 
     long id = IdSequenceGenerator.getInstance().nextPlayerEntityId();
-    Vector3D spawn = randomSpawnPosition(state.dimension());
+    Vector3 spawn = randomSpawnPosition(state.dimension());
     OpenWorldPlayer player = new OpenWorldPlayer(req.playerName(), id, spawn);
     state.entities().put(player.getName(), player);
 
@@ -131,8 +131,8 @@ public class OpenWorldEngine implements DynamicWorldEngine {
     int i = 0;
     int total = state.entities().size();
     for (OpenWorldEntity e : state.entities().values()) {
-      Vector3D pos = e.getPosition();
-      Velocity3D vel = e.getVelocity();
+      Vector3 pos = e.getPosition();
+      Velocity3 vel = e.getVelocity();
       sb.append(String.format(
           "\t\"%s\": {\n"
               + "\t\t\"x\": %.4f, \"y\": %.4f, \"z\": %.4f,\n"
@@ -164,8 +164,8 @@ public class OpenWorldEngine implements DynamicWorldEngine {
     int i = 0;
     int total = state.entities().size();
     for (OpenWorldEntity e : state.entities().values()) {
-      Vector3D pos = e.getPosition();
-      Velocity3D vel = e.getVelocity();
+      Vector3 pos = e.getPosition();
+      Velocity3 vel = e.getVelocity();
       sb.append(String.format(
           "\"%s\":{\"x\":%.4f,\"y\":%.4f,\"z\":%.4f,"
               + "\"dx\":%.4f,\"dy\":%.4f,\"dz\":%.4f,"
@@ -192,11 +192,11 @@ public class OpenWorldEngine implements DynamicWorldEngine {
   /**
    * Picks a random spawn point on the "ground" plane (y = 0) within the XZ bounds of the world.
    */
-  private Vector3D randomSpawnPosition(Dimension3D dim) {
+  private Vector3 randomSpawnPosition(Dimension3D dim) {
     ThreadLocalRandom rng = ThreadLocalRandom.current();
     float x = rng.nextFloat() * dim.getWidth();
     float z = rng.nextFloat() * dim.getDepth();
-    return Vector3D.of(x, 0f, z);
+    return Vector3.of(x, 0f, z);
   }
 
   /**
@@ -204,8 +204,8 @@ public class OpenWorldEngine implements DynamicWorldEngine {
    * that would push it further out of bounds (wall-slide behaviour).
    */
   private void clampToBounds(OpenWorldEntity entity, Dimension3D dim) {
-    Vector3D pos = entity.getPosition();
-    Velocity3D vel = entity.getVelocity();
+    Vector3 pos = entity.getPosition();
+    Velocity3 vel = entity.getVelocity();
 
     float cx = clamp(pos.getX(), 0f, dim.getWidth());
     float cy = clamp(pos.getY(), 0f, dim.getHeight());
@@ -217,8 +217,8 @@ public class OpenWorldEngine implements DynamicWorldEngine {
     float vz = (cz != pos.getZ()) ? 0f : vel.getDz();
 
     if (cx != pos.getX() || cy != pos.getY() || cz != pos.getZ()) {
-      entity.setPosition(Vector3D.of(cx, cy, cz));
-      entity.setVelocity(Velocity3D.of(vx, vy, vz));
+      entity.setPosition(Vector3.of(cx, cy, cz));
+      entity.setVelocity(Velocity3.of(vx, vy, vz));
       log.debug("[OpenWorldEngine] Clamped '{}' to bounds: ({},{},{}).",
           entity.getName(), cx, cy, cz);
     }

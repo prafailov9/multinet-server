@@ -1,7 +1,7 @@
 package com.ntros.model.entity.solid;
 
 import com.ntros.model.entity.Entity;
-import com.ntros.model.entity.movement.Position;
+import com.ntros.model.entity.movement.cell.Position;
 
 public interface StaticEntity extends Entity {
 

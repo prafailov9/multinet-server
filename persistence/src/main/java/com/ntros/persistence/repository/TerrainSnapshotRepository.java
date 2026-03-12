@@ -1,6 +1,7 @@
 package com.ntros.persistence.repository;
 
-import com.ntros.model.entity.movement.Position;
+import com.ntros.model.entity.movement.cell.Position;
+import com.ntros.model.entity.movement.vectors.Vector4;
 import com.ntros.model.world.protocol.TileType;
 import java.util.Map;
 import java.util.Optional;
@@ -20,7 +21,7 @@ public interface TerrainSnapshotRepository {
    * @param worldName unique world name (used as the storage key / filename stem)
    * @param terrain   full terrain map — must not be null or empty
    */
-  void save(String worldName, Map<Position, TileType> terrain);
+  void save(String worldName, Map<Vector4, TileType> terrain);
 
   /**
    * Loads a previously saved terrain snapshot.
@@ -28,7 +29,7 @@ public interface TerrainSnapshotRepository {
    * @param worldName world name to load
    * @return the terrain map, or {@link Optional#empty()} if no snapshot exists yet
    */
-  Optional<Map<Position, TileType>> load(String worldName);
+  Optional<Map<Vector4, TileType>> load(String worldName);
 
   /**
    * Returns {@code true} if a snapshot file exists for {@code worldName}.

@@ -1,16 +1,14 @@
 package com.ntros.model.world.engine.solid;
 
-import static com.ntros.model.entity.DirectionUtil.createPosition;
-
-import com.ntros.model.entity.Direction;
 import com.ntros.model.entity.Entity;
 import com.ntros.model.entity.Player;
 import com.ntros.model.entity.movement.MoveInput;
-import com.ntros.model.entity.movement.Position;
+import com.ntros.model.entity.movement.cell.Position;
+import com.ntros.model.entity.movement.vectors.Vector4;
 import com.ntros.model.entity.sequence.IdSequenceGenerator;
 import com.ntros.model.entity.solid.StaticEntity;
-import com.ntros.model.world.protocol.WorldResult;
 import com.ntros.model.world.protocol.TileType;
+import com.ntros.model.world.protocol.WorldResult;
 import com.ntros.model.world.protocol.request.JoinRequest;
 import com.ntros.model.world.protocol.request.MoveRequest;
 import com.ntros.model.world.state.GridState;
@@ -32,14 +30,21 @@ public class GridWorldEngine implements WorldEngine {
         log.warn("No entity found for id: {}", intent.getKey());
         continue;
       }
-
+      Vector4 moveIntent = intent.getValue();
+      int dx = Math.round(moveIntent.getX());
+      int dy = Math.round(moveIntent.getY());
       Position currentPosition = entity.getPosition();
-      Position newPosition = createPosition(currentPosition, intent.getValue());
-      log.info("Processing move for {}: {} -> {}", entity.getName(), currentPosition, newPosition);
-      moveEntity(entity, currentPosition, newPosition, state);
+      Vector4 currentVec = Vector4.of(currentPosition.getX(), currentPosition.getY(), 0f, 0f);
+      Vector4 newPos = determineNewPosition(entity.getPosition(), Position.of(dx, dy));
+      log.info("Processing move for {}: {} -> {}", entity.getName(), currentPosition, newPos);
+      moveEntity(entity, currentVec, newPos, state);
     }
 
     state.moveIntents().clear();
+  }
+
+  private Vector4 determineNewPosition(Position current, Position delta) {
+    return Vector4.of(current.getX() + delta.getX(), current.getY() + delta.getX(), 0f, 0f);
   }
 
   @Override
@@ -47,8 +52,12 @@ public class GridWorldEngine implements WorldEngine {
     Entity entity = state.entities().get(moveRequest.playerId());
     MoveInput input = moveRequest.moveInput();
     // 2d space
+    Vector4 moveIntent = Vector4.of(input.dx(), input.dy(), input.dz(), input.dw());
+    int dx = Math.round(moveIntent.getX());
+    int dy = Math.round(moveIntent.getY());
 
-    Position newPos = createPosition(entity.getPosition(), input.dx(), input.dy());
+    Vector4 newPos = determineNewPosition(entity.getPosition(), Position.of(dx, dy));
+//    Position newPos = createPosition(entity.getPosition(), Position.of(dx, dy));
 //    Position position = createPosition(entity.getPosition(), moveRequest.direction());
 
     // allow all moves if within bounds
@@ -71,13 +80,15 @@ public class GridWorldEngine implements WorldEngine {
           String.format("Player with name %s already exists", joinRequest.playerName()));
     }
     long id = IdSequenceGenerator.getInstance().nextPlayerEntityId();
-    Position freePosition = findRandomFreePosition(worldState);
+    Vector4 freePosition = findRandomFreePosition(worldState);
     if (freePosition == null) {
       return WorldResult.failed(joinRequest.playerName(), worldState.worldName(),
           "Could not find free position in world.");
     }
     // register player in world
-    Player player = new Player(freePosition, joinRequest.playerName(), id, 100);
+    Player player = new Player(
+        Position.of(Math.round(freePosition.getX()), Math.round(freePosition.getY())),
+        joinRequest.playerName(), id, 100);
     addEntity(player, worldState);
 
     // create commandResult
@@ -92,7 +103,8 @@ public class GridWorldEngine implements WorldEngine {
   @Override
   public Entity removeEntity(String entityId, GridState worldState) {
     Entity entity = worldState.entities().remove(entityId);
-    worldState.takenPositions().remove(entity.getPosition());
+    worldState.takenPositions()
+        .remove(Vector4.of(entity.getPosition().getX(), entity.getPosition().getY(), 0f, 0f));
     return entity;
   }
 
@@ -105,9 +117,9 @@ public class GridWorldEngine implements WorldEngine {
     // Terrain first
     sb.append("\"tiles\": {\n");
     int t = 0;
-    for (Map.Entry<Position, TileType> entry : worldState.terrain().entrySet()) {
-      Position p = entry.getKey();
-      sb.append(String.format("\t\"%d,%d\": \"%s\"", p.getX(), p.getY(), entry.getValue().name()));
+    for (Map.Entry<Vector4, TileType> entry : worldState.terrain().entrySet()) {
+      Vector4 p = entry.getKey();
+      sb.append(String.format("\t\"%f,%f\": \"%s\"", p.getX(), p.getY(), entry.getValue().name()));
       if (++t < worldState.terrain().size()) {
         sb.append(",\n");
       }
@@ -138,9 +150,9 @@ public class GridWorldEngine implements WorldEngine {
     // Terrain first
     sb.append("\"tiles\": {");
     int t = 0;
-    for (Map.Entry<Position, TileType> entry : worldState.terrain().entrySet()) {
-      Position p = entry.getKey();
-      sb.append(String.format("\t\"%d,%d\": \"%s\"", p.getX(), p.getY(), entry.getValue().name()));
+    for (Map.Entry<Vector4, TileType> entry : worldState.terrain().entrySet()) {
+      Vector4 p = entry.getKey();
+      sb.append(String.format("\t\"%f,%f\": \"%s\"", p.getX(), p.getY(), entry.getValue().name()));
       if (++t < worldState.terrain().size()) {
         sb.append(",");
       }
@@ -174,29 +186,31 @@ public class GridWorldEngine implements WorldEngine {
 
   private void addEntity(StaticEntity entity, GridState worldState) {
     worldState.entities().put(entity.getName(), entity);
-    worldState.takenPositions().put(entity.getPosition(), entity.getName());
+    float x = (float) entity.getPosition().getX();
+    float y = (float) entity.getPosition().getY();
+    worldState.takenPositions().put(Vector4.of(x, y, 0, 0), entity.getName());
     log.info("Added entity: {}", entity);
   }
 
-  private void moveEntity(Entity entity, Position origin, Position target, GridState worldState) {
+  private void moveEntity(Entity entity, Vector4 origin, Vector4 target, GridState worldState) {
     if (worldState.isLegalMove(target)) {
       worldState.takenPositions().remove(origin);
       worldState.takenPositions().put(target, entity.getName());
-      entity.setPosition(target);
+      entity.setPosition(Position.of(Math.round(target.getX()), Math.round(target.getY())));
       log.info("Moved {} from {} to {}.", entity.getName(), origin, target);
     } else {
       log.warn("Failed to move {} to {} position. Illegal move.", entity.getName(), target);
     }
   }
 
-  private Position findRandomFreePosition(GridState state) {
+  private Vector4 findRandomFreePosition(GridState state) {
     int width = state.dimension().getWidth();
     int height = state.dimension().getHeight();
     int maxAttempts = width * height; // avoid infinite loops
     while (maxAttempts-- > 0) {
       int x = ThreadLocalRandom.current().nextInt(width);  // 0..width-1
       int y = ThreadLocalRandom.current().nextInt(height); // 0..height-1
-      Position candidate = Position.of(x, y);
+      Vector4 candidate = Vector4.of(x, y, 0, 0);
 
       if (!state.takenPositions().containsKey(candidate)) {
         return candidate;
@@ -204,5 +218,11 @@ public class GridWorldEngine implements WorldEngine {
     }
     return null; // if world is full
   }
+
+  public Position createPosition(Position currentPosition, Position newPosition) {
+    return Position.of(currentPosition.getX() + newPosition.getX(),
+        currentPosition.getY() + newPosition.getY());
+  }
+
 
 }

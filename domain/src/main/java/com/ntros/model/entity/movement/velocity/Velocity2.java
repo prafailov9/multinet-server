@@ -1,19 +1,20 @@
-package com.ntros.model.entity.movement;
+package com.ntros.model.entity.movement.velocity;
 
+import com.ntros.model.entity.movement.vectors.Vector2;
 import java.util.Objects;
 
-public class Velocity2D implements Velocity {
+public class Velocity2 implements Velocity {
 
   private final float dx;
   private final float dy;
 
-  private Velocity2D(float dx, float dy) {
+  private Velocity2(float dx, float dy) {
     this.dx = dx;
     this.dy = dy;
   }
 
-  public static Velocity2D of(float dx, float dy) {
-    return new Velocity2D(dx, dy);
+  public static Velocity2 of(float dx, float dy) {
+    return new Velocity2(dx, dy);
   }
 
   @Override
@@ -26,28 +27,28 @@ public class Velocity2D implements Velocity {
     return dy;
   }
 
-  public Velocity2D add(Vector2D other) {
-    return new Velocity2D(this.dx + other.getX(), this.dy + other.getY());
+  public Velocity2 add(Vector2 other) {
+    return new Velocity2(this.dx + other.getX(), this.dy + other.getY());
   }
 
-  public Velocity2D scale(float factor) {
-    return new Velocity2D(this.dx * factor, this.dy * factor);
+  public Velocity2 scale(float factor) {
+    return new Velocity2(this.dx * factor, this.dy * factor);
   }
 
-  public Velocity2D normalize() {
+  public Velocity2 normalize() {
     float lenSq = dx * dx + dy * dy;
     if (lenSq == 0f) {
       return this;
     }
 
     float invLen = quake3InverseSqrt(lenSq);
-    return new Velocity2D(dx * invLen, dy * invLen);
+    return new Velocity2(dx * invLen, dy * invLen);
   }
 
 
   @Override
   public boolean equals(Object o) {
-    if (!(o instanceof Velocity2D that)) {
+    if (!(o instanceof Velocity2 that)) {
       return false;
     }
     return Float.compare(dx, that.dx) == 0 && Float.compare(dy, that.dy) == 0;

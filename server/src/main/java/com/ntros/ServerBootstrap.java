@@ -126,7 +126,7 @@ public class ServerBootstrap {
           savedTerrain.size());
     }, () -> {
       // First startup: save the freshly generated terrain so future restarts are stable
-      var currentTerrain = ((GridWorldState) gridConnector.getState()).terrain();
+      var currentTerrain = ( gridConnector.getState()).terrain();
       PersistenceContext.terrain().save(worldName, currentTerrain);
       log.info("[ServerBootstrap] Saved initial terrain for '{}'.", worldName);
     });

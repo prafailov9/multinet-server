@@ -1,9 +1,8 @@
 package com.ntros.model.entity.dynamic;
 
-import com.ntros.model.entity.Entity;
-import com.ntros.model.entity.movement.Vector;
-import com.ntros.model.entity.movement.Vector2D;
-import com.ntros.model.entity.movement.Velocity;
+import com.ntros.model.entity.movement.vectors.Vector;
+import com.ntros.model.entity.movement.vectors.Vector2;
+import com.ntros.model.entity.movement.velocity.Velocity;
 
 public interface DynamicEntity {
 
@@ -17,9 +16,9 @@ public interface DynamicEntity {
 
   void updatePosition(float deltaTime);
 
-  Vector2D getPosition();
+  Vector2 getPosition();
 
-  void setPosition(Vector2D position);
+  void setPosition(Vector2 position);
 
   float rotation(); // angle in degrees
 

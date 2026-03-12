@@ -1,4 +1,4 @@
-package com.ntros.model.entity.movement;
+package com.ntros.model.entity.movement.velocity;
 
 public interface Velocity {
 

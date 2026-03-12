@@ -1,7 +1,7 @@
 package com.ntros.model.entity.open;
 
-import com.ntros.model.entity.movement.Vector3D;
-import com.ntros.model.entity.movement.Velocity3D;
+import com.ntros.model.entity.movement.vectors.Vector3;
+import com.ntros.model.entity.movement.velocity.Velocity3;
 
 /**
  * Base implementation of {@link OpenWorldEntity} that handles position integration and provides
@@ -9,10 +9,10 @@ import com.ntros.model.entity.movement.Velocity3D;
  */
 public abstract class AbstractOpenWorldEntity implements OpenWorldEntity {
 
-  protected volatile Vector3D  position;
-  protected volatile Velocity3D velocity;
+  protected volatile Vector3 position;
+  protected volatile Velocity3 velocity;
 
-  protected AbstractOpenWorldEntity(Vector3D position, Velocity3D velocity) {
+  protected AbstractOpenWorldEntity(Vector3 position, Velocity3 velocity) {
     this.position = position;
     this.velocity = velocity;
   }
@@ -20,22 +20,22 @@ public abstract class AbstractOpenWorldEntity implements OpenWorldEntity {
   // ── Position / velocity ───────────────────────────────────────────────────
 
   @Override
-  public Vector3D getPosition() {
+  public Vector3 getPosition() {
     return position;
   }
 
   @Override
-  public void setPosition(Vector3D position) {
+  public void setPosition(Vector3 position) {
     this.position = position;
   }
 
   @Override
-  public Velocity3D getVelocity() {
+  public Velocity3 getVelocity() {
     return velocity;
   }
 
   @Override
-  public void setVelocity(Velocity3D velocity) {
+  public void setVelocity(Velocity3 velocity) {
     this.velocity = velocity;
   }
 
@@ -45,7 +45,7 @@ public abstract class AbstractOpenWorldEntity implements OpenWorldEntity {
    */
   @Override
   public void updatePosition(float deltaTime) {
-    position = Vector3D.of(
+    position = Vector3.of(
         position.getX() + velocity.getDx() * deltaTime,
         position.getY() + velocity.getDy() * deltaTime,
         position.getZ() + velocity.getDz() * deltaTime

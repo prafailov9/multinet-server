@@ -1,6 +1,6 @@
 package com.ntros.model.world.state.open;
 
-import com.ntros.model.entity.movement.Vector3D;
+import com.ntros.model.entity.movement.vectors.Vector3;
 import com.ntros.model.entity.open.OpenWorldEntity;
 import com.ntros.model.world.state.dimension.Dimension3D;
 import java.util.Map;
@@ -34,5 +34,5 @@ public interface DynamicWorldState {
    * Key = entity name; value = normalised thrust direction.
    * Cleared by the engine at the end of each {@code applyIntents} call.
    */
-  Map<String, Vector3D> moveIntents();
+  Map<String, Vector3> moveIntents();
 }

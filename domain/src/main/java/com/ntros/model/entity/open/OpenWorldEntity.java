@@ -1,13 +1,14 @@
 package com.ntros.model.entity.open;
 
-import com.ntros.model.entity.movement.Vector3D;
-import com.ntros.model.entity.movement.Velocity3D;
+import com.ntros.model.entity.movement.vectors.Vector3;
+import com.ntros.model.entity.movement.velocity.Velocity3;
+import com.ntros.model.entity.movement.cell.Position;
 
 /**
  * A freely-moving entity that lives in a continuous 3D open world.
  *
  * <p>Unlike {@link com.ntros.model.entity.Entity}, whose position is a discrete integer
- * {@link com.ntros.model.entity.movement.Position}, an {@code OpenWorldEntity} occupies a
+ * {@link Position}, an {@code OpenWorldEntity} occupies a
  * floating-point coordinate in 3-dimensional space. Movement is physics-driven: callers push
  * thrust intents, the engine accumulates them into velocity, and
  * {@link #updatePosition(float)} integrates position each tick.
@@ -22,13 +23,13 @@ public interface OpenWorldEntity {
 
   // ── Position / velocity ───────────────────────────────────────────────────
 
-  Vector3D getPosition();
+  Vector3 getPosition();
 
-  void setPosition(Vector3D position);
+  void setPosition(Vector3 position);
 
-  Velocity3D getVelocity();
+  Velocity3 getVelocity();
 
-  void setVelocity(Velocity3D velocity);
+  void setVelocity(Velocity3 velocity);
 
   /**
    * Integrates velocity into position over {@code deltaTime} seconds.

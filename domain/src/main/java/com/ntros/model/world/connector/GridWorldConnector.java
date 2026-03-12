@@ -2,6 +2,7 @@ package com.ntros.model.world.connector;
 
 import com.ntros.model.entity.Entity;
 import com.ntros.model.entity.config.WorldCapabilities;
+import com.ntros.model.entity.movement.vectors.Vector4;
 import com.ntros.model.world.connector.ops.JoinOp;
 import com.ntros.model.world.connector.ops.MoveOp;
 import com.ntros.model.world.connector.ops.RemoveOp;
@@ -11,7 +12,7 @@ import com.ntros.model.world.protocol.WorldResult;
 import com.ntros.model.world.state.GridSnapshot;
 import com.ntros.model.world.state.GridSnapshot.EntityView;
 import com.ntros.model.world.state.solid.GridWorldState;
-import com.ntros.model.entity.movement.Position;
+import com.ntros.model.entity.movement.cell.Position;
 import com.ntros.model.world.protocol.TileType;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -120,7 +121,7 @@ public class GridWorldConnector implements WorldConnector {
    *
    * @param savedTerrain terrain map loaded from the snapshot repository; must not be null
    */
-  public void restoreTerrain(Map<Position, TileType> savedTerrain) {
+  public void restoreTerrain(Map<Vector4, TileType> savedTerrain) {
     state.terrain().clear();
     state.terrain().putAll(savedTerrain);
     log.info("[GridWorldConnector] Restored terrain for '{}' ({} tiles).",

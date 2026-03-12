@@ -1,21 +1,21 @@
-package com.ntros.model.entity.movement;
+package com.ntros.model.entity.movement.vectors;
 
 import java.util.Objects;
 
-public class Vector2D implements Vector {
+public class Vector2 implements Vector {
 
-  public static final Vector2D ZERO = new Vector2D(0, 0);
+  public static final Vector2 ZERO = new Vector2(0, 0);
 
   private final float x;
   private final float y;
 
-  private Vector2D(float x, float y) {
+  private Vector2(float x, float y) {
     this.x = x;
     this.y = y;
   }
 
-  public static Vector2D of(float x, float y) {
-    return new Vector2D(x, y);
+  public static Vector2 of(float x, float y) {
+    return new Vector2(x, y);
   }
 
   @Override
@@ -30,16 +30,16 @@ public class Vector2D implements Vector {
 
   // Basic arithmetic
 
-  public Vector2D add(Vector2D other) {
-    return new Vector2D(x + other.x, y + other.y);
+  public Vector2 add(Vector2 other) {
+    return new Vector2(x + other.x, y + other.y);
   }
 
-  public Vector2D subtract(Vector2D other) {
-    return new Vector2D(x - other.x, y - other.y);
+  public Vector2 subtract(Vector2 other) {
+    return new Vector2(x - other.x, y - other.y);
   }
 
-  public Vector2D scale(float factor) {
-    return new Vector2D(x * factor, y * factor);
+  public Vector2 scale(float factor) {
+    return new Vector2(x * factor, y * factor);
   }
 
   // Magnitude
@@ -54,27 +54,27 @@ public class Vector2D implements Vector {
 
   // Normalize
 
-  public Vector2D normalize() {
+  public Vector2 normalize() {
     float mag = magnitude();
     if (mag == 0) {
       return ZERO;
     }
-    return new Vector2D(x / mag, y / mag);
+    return new Vector2(x / mag, y / mag);
   }
 
   // Dot product
 
-  public float dot(Vector2D other) {
+  public float dot(Vector2 other) {
     return x * other.x + y * other.y;
   }
 
   // Distance
 
-  public float distance(Vector2D other) {
+  public float distance(Vector2 other) {
     return subtract(other).magnitude();
   }
 
-  public float distanceSquared(Vector2D other) {
+  public float distanceSquared(Vector2 other) {
     float dx = other.x - x;
     float dy = other.y - y;
     return dx * dx + dy * dy;
@@ -88,16 +88,16 @@ public class Vector2D implements Vector {
 
   // Rotate vector
 
-  public Vector2D rotate(float radians) {
+  public Vector2 rotate(float radians) {
     float cos = (float) Math.cos(radians);
     float sin = (float) Math.sin(radians);
 
-    return new Vector2D(x * cos - y * sin, x * sin + y * cos);
+    return new Vector2(x * cos - y * sin, x * sin + y * cos);
   }
 
   // Clamp magnitude (limit speed)
 
-  public Vector2D clampMagnitude(float maxLength) {
+  public Vector2 clampMagnitude(float maxLength) {
     float magSq = magnitudeSquared();
 
     if (magSq > maxLength * maxLength) {
@@ -109,13 +109,13 @@ public class Vector2D implements Vector {
 
   // Linear interpolation
 
-  public Vector2D lerp(Vector2D target, float t) {
-    return new Vector2D(x + (target.x - x) * t, y + (target.y - y) * t);
+  public Vector2 lerp(Vector2 target, float t) {
+    return new Vector2(x + (target.x - x) * t, y + (target.y - y) * t);
   }
 
-  public static Vector2D randomUnit() {
+  public static Vector2 randomUnit() {
     double angle = Math.random() * Math.PI * 2;
-    return new Vector2D(
+    return new Vector2(
         (float) Math.cos(angle),
         (float) Math.sin(angle)
     );
@@ -123,7 +123,7 @@ public class Vector2D implements Vector {
 
   @Override
   public boolean equals(Object o) {
-    if (!(o instanceof Vector2D v)) {
+    if (!(o instanceof Vector2 v)) {
       return false;
     }
     return Float.compare(x, v.x) == 0 && Float.compare(y, v.y) == 0;

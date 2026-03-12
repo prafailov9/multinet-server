@@ -1,27 +1,27 @@
-package com.ntros.model.entity.movement;
+package com.ntros.model.entity.movement.vectors;
 
 import java.util.Objects;
 
 /**
  * Immutable 3-dimensional float vector. Used for open-world positions and directions.
  */
-public final class Vector3D {
+public final class Vector3 {
 
-  public static final Vector3D ZERO = new Vector3D(0f, 0f, 0f);
-  public static final Vector3D UP   = new Vector3D(0f, 1f, 0f);
+  public static final Vector3 ZERO = new Vector3(0f, 0f, 0f);
+  public static final Vector3 UP   = new Vector3(0f, 1f, 0f);
 
   private final float x;
   private final float y;
   private final float z;
 
-  private Vector3D(float x, float y, float z) {
+  private Vector3(float x, float y, float z) {
     this.x = x;
     this.y = y;
     this.z = z;
   }
 
-  public static Vector3D of(float x, float y, float z) {
-    return new Vector3D(x, y, z);
+  public static Vector3 of(float x, float y, float z) {
+    return new Vector3(x, y, z);
   }
 
   // ── Accessors ─────────────────────────────────────────────────────────────
@@ -32,20 +32,20 @@ public final class Vector3D {
 
   // ── Arithmetic ────────────────────────────────────────────────────────────
 
-  public Vector3D add(Vector3D other) {
-    return new Vector3D(x + other.x, y + other.y, z + other.z);
+  public Vector3 add(Vector3 other) {
+    return new Vector3(x + other.x, y + other.y, z + other.z);
   }
 
-  public Vector3D subtract(Vector3D other) {
-    return new Vector3D(x - other.x, y - other.y, z - other.z);
+  public Vector3 subtract(Vector3 other) {
+    return new Vector3(x - other.x, y - other.y, z - other.z);
   }
 
-  public Vector3D scale(float factor) {
-    return new Vector3D(x * factor, y * factor, z * factor);
+  public Vector3 scale(float factor) {
+    return new Vector3(x * factor, y * factor, z * factor);
   }
 
-  public Vector3D negate() {
-    return new Vector3D(-x, -y, -z);
+  public Vector3 negate() {
+    return new Vector3(-x, -y, -z);
   }
 
   // ── Magnitude / normalise ─────────────────────────────────────────────────
@@ -61,19 +61,19 @@ public final class Vector3D {
   /**
    * Returns a unit vector in the same direction, or {@link #ZERO} if this vector has zero length.
    */
-  public Vector3D normalize() {
+  public Vector3 normalize() {
     float mag = magnitude();
     if (mag == 0f) {
       return ZERO;
     }
-    return new Vector3D(x / mag, y / mag, z / mag);
+    return new Vector3(x / mag, y / mag, z / mag);
   }
 
   /**
    * Clamps the magnitude to {@code maxLength}. Returns {@code this} unchanged if already within
    * the limit.
    */
-  public Vector3D clampMagnitude(float maxLength) {
+  public Vector3 clampMagnitude(float maxLength) {
     if (magnitudeSquared() > maxLength * maxLength) {
       return normalize().scale(maxLength);
     }
@@ -82,12 +82,12 @@ public final class Vector3D {
 
   // ── Products ──────────────────────────────────────────────────────────────
 
-  public float dot(Vector3D other) {
+  public float dot(Vector3 other) {
     return x * other.x + y * other.y + z * other.z;
   }
 
-  public Vector3D cross(Vector3D other) {
-    return new Vector3D(
+  public Vector3 cross(Vector3 other) {
+    return new Vector3(
         y * other.z - z * other.y,
         z * other.x - x * other.z,
         x * other.y - y * other.x
@@ -96,11 +96,11 @@ public final class Vector3D {
 
   // ── Distance ──────────────────────────────────────────────────────────────
 
-  public float distance(Vector3D other) {
+  public float distance(Vector3 other) {
     return subtract(other).magnitude();
   }
 
-  public float distanceSquared(Vector3D other) {
+  public float distanceSquared(Vector3 other) {
     float dx = other.x - x;
     float dy = other.y - y;
     float dz = other.z - z;
@@ -109,8 +109,8 @@ public final class Vector3D {
 
   // ── Interpolation ─────────────────────────────────────────────────────────
 
-  public Vector3D lerp(Vector3D target, float t) {
-    return new Vector3D(
+  public Vector3 lerp(Vector3 target, float t) {
+    return new Vector3(
         x + (target.x - x) * t,
         y + (target.y - y) * t,
         z + (target.z - z) * t
@@ -119,11 +119,11 @@ public final class Vector3D {
 
   // ── Factory helpers ───────────────────────────────────────────────────────
 
-  public static Vector3D randomUnit() {
+  public static Vector3 randomUnit() {
     // Uniform distribution on the sphere via spherical coordinates
     double theta = Math.random() * Math.PI * 2;      // azimuth [0, 2π)
     double phi   = Math.acos(1 - 2 * Math.random());  // polar   [0, π]
-    return new Vector3D(
+    return new Vector3(
         (float) (Math.sin(phi) * Math.cos(theta)),
         (float) (Math.sin(phi) * Math.sin(theta)),
         (float) Math.cos(phi)
@@ -134,7 +134,7 @@ public final class Vector3D {
 
   @Override
   public boolean equals(Object o) {
-    if (!(o instanceof Vector3D v)) {
+    if (!(o instanceof Vector3 v)) {
       return false;
     }
     return Float.compare(x, v.x) == 0

@@ -4,6 +4,7 @@ import com.ntros.lifecycle.session.Session;
 import com.ntros.lifecycle.session.SessionContext;
 import com.ntros.messageprocessing.client.validation.exception.MessageValidationException;
 import com.ntros.protocol.Message;
+import java.util.List;
 import java.util.function.Supplier;
 import lombok.extern.slf4j.Slf4j;
 
@@ -61,33 +62,47 @@ public class ClientCommandValidator implements CommandValidator {
 
   }
 
+  /**
+   * validates the values sent free and cell(one-step) movement are floats - whole numbers are
+   * allowed too.
+   * Prevents invalid float values: Infinity, Nan
+   * Prevents no movement, or too large movement.
+   */
   private void onMove(Message message, Session session) {
     SessionContext ctx = session.getSessionContext();
     check(() -> !ctx.isAuthenticated(),
-        "[Validator.Move]: Client: %s must be authenticated", ctx.toString());
-
-    // MOVE dx dy dz dw player
+        "[Validator.Move]: Client: %s must be authenticated",
+        ctx.toString());
     check(() -> message.args().size() != 5,
-        "[Validator.Move]: Invalid argument count: %s", message.toWireFormat());
+        "[Validator.Move]: Invalid argument count: %s",
+        message.toWireFormat());
 
     try {
-      int dx = Integer.parseInt(message.args().get(0));
-      int dy = Integer.parseInt(message.args().get(1));
-      int dz = Integer.parseInt(message.args().get(2));
-      int dw = Integer.parseInt(message.args().get(3));
+      List<String> args = message.args();
+      float dx = Float.parseFloat(args.get(0));
+      float dy = Float.parseFloat(args.get(1));
+      float dz = Float.parseFloat(args.get(2));
+      float dw = Float.parseFloat(args.get(3));
 
-      // prevent teleport cheats
+      check(() ->
+              Float.isNaN(dx) || Float.isNaN(dy) || Float.isNaN(dz) || Float.isNaN(dw) ||
+                  Float.isInfinite(dx) || Float.isInfinite(dy) || Float.isInfinite(dz)
+                  || Float.isInfinite(dw),
+          "[Validator.Move]: Invalid float values: %s",
+          message.toWireFormat());
+
       check(() -> Math.abs(dx) > 1 || Math.abs(dy) > 1 || Math.abs(dz) > 1 || Math.abs(dw) > 1,
           "[Validator.Move]: Movement too large: %s",
           message.toWireFormat());
 
-      // prevent zero movement
-      check(() -> dx == 0 && dy == 0 && dz == 0 && dw == 0,
+      check(() -> dx == 0f && dy == 0f && dz == 0f && dw == 0f,
           "[Validator.Move]: Zero movement not allowed: %s",
           message.toWireFormat());
 
     } catch (NumberFormatException e) {
-      throw new MessageValidationException("[Validator.Move]: Movement values must be integers");
+      throw new MessageValidationException(
+          "[Validator.Move]: Movement values must be floats"
+      );
     }
   }
 

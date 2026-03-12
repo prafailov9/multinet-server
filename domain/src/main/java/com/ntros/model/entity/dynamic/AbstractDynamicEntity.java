@@ -1,17 +1,17 @@
 package com.ntros.model.entity.dynamic;
 
-import com.ntros.model.entity.movement.Vector;
-import com.ntros.model.entity.movement.Vector2D;
-import com.ntros.model.entity.movement.Velocity;
-import com.ntros.model.entity.movement.Velocity2D;
+import com.ntros.model.entity.movement.vectors.Vector;
+import com.ntros.model.entity.movement.vectors.Vector2;
+import com.ntros.model.entity.movement.velocity.Velocity;
+import com.ntros.model.entity.movement.velocity.Velocity2;
 
 public abstract class AbstractDynamicEntity implements DynamicEntity {
 
 
-  protected Vector2D position;
-  protected Velocity2D velocity;
+  protected Vector2 position;
+  protected Velocity2 velocity;
 
-  public AbstractDynamicEntity(Vector2D position, Velocity2D velocity) {
+  public AbstractDynamicEntity(Vector2 position, Velocity2 velocity) {
     this.position = position;
     this.velocity = velocity;
   }
@@ -28,7 +28,7 @@ public abstract class AbstractDynamicEntity implements DynamicEntity {
 
   @Override
   public void setVelocity(Velocity velocity) {
-    if (velocity instanceof Velocity2D v) {
+    if (velocity instanceof Velocity2 v) {
       this.velocity = v;
     } else {
       throw new IllegalArgumentException("Velocity must be Velocity2D");
@@ -40,7 +40,7 @@ public abstract class AbstractDynamicEntity implements DynamicEntity {
     float dx = velocity.getDx() * deltaTime;
     float dy = velocity.getDy() * deltaTime;
 
-    position = Vector2D.of(
+    position = Vector2.of(
         position.getX() + dx,
         position.getY() + dy
     );

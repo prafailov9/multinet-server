@@ -1,8 +1,8 @@
 package com.ntros.model.world.state;
 
-import com.ntros.model.entity.Direction;
 import com.ntros.model.entity.Entity;
-import com.ntros.model.entity.movement.Position;
+import com.ntros.model.entity.movement.cell.Position;
+import com.ntros.model.entity.movement.vectors.Vector4;
 import com.ntros.model.world.protocol.TileType;
 import com.ntros.model.world.state.dimension.Dimension;
 import java.util.Map;
@@ -13,15 +13,15 @@ public interface GridState extends CoreState {
 
   Map<String, Entity> entities();
 
-  Map<Position, String> takenPositions();
+  Map<Vector4, String> takenPositions();
 
-  Map<String, Position> moveIntents();
+  Map<String, Vector4> moveIntents();
 
-  Map<Position, TileType> terrain();
+  Map<Vector4, TileType> terrain();
 
-  TileType getTileTypeAt(Position pos);
+  TileType getTileTypeAt(Vector4 pos);
 
-  boolean isLegalMove(Position position);
+  boolean isLegalMove(Vector4 position);
 
-  boolean isWithinBounds(Position position);
+  boolean isWithinBounds(Vector4 position);
 }

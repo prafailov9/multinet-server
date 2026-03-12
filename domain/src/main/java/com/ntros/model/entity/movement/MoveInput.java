@@ -1,9 +1,11 @@
 package com.ntros.model.entity.movement;
 
 
+import java.util.List;
+
 /**
  * Handles up to 4d worlds
  */
-public record MoveInput(int dx, int dy, int dz, int dw) {
+public record MoveInput(float dx, float dy, float dz, float dw) {
 
 }
