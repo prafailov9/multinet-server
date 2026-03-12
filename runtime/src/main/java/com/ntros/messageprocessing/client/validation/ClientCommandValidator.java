@@ -131,6 +131,9 @@ public class ClientCommandValidator implements CommandValidator {
     String sub = args.getFirst().toUpperCase();
 
     switch (sub) {
+      case "SEED" ->
+          check(() -> args.size() < 2, "RANDOM requires a density argument (0.0–1.0). Message: %s",
+              message.toWireFormat());
       case "RANDOM" -> {
         check(() -> args.size() < 2, "RANDOM requires a density argument (0.0–1.0). Message: %s",
             message.toWireFormat());

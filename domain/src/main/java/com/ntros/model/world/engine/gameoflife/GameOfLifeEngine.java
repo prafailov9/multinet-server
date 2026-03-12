@@ -12,7 +12,9 @@ import com.ntros.model.world.protocol.request.OrchestrateRequest;
 import com.ntros.model.world.protocol.request.JoinRequest;
 import com.ntros.model.world.protocol.request.MoveRequest;
 import com.ntros.model.world.state.GridState;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ThreadLocalRandom;
 import lombok.extern.slf4j.Slf4j;
@@ -125,7 +127,8 @@ public class GameOfLifeEngine implements WorldEngine {
 
   @Override
   public void reset(GridState state) {
-    state.terrain().replaceAll((pos, tile) -> TileType.EMPTY);
+    // Sparse: remove alive cells instead of overwriting all with EMPTY.
+    state.terrain().entrySet().removeIf(e -> !isStatic(e.getValue()));
     state.entities().clear();
     state.moveIntents().clear();
     log.info("[GoL] World reset — all cells cleared, spectators removed.");
@@ -134,69 +137,68 @@ public class GameOfLifeEngine implements WorldEngine {
   // ── Conway's rules ───────────────────────────────────────────────────────
 
   /**
-   * Advances the terrain by one generation.
+   * Advances the terrain by one generation using a sparse alive-cell voting algorithm.
    *
-   * <p>Only {@link TileType#EMPTY} and {@link TileType#ALIVE} cells participate in GoL rules.
-   * Static tiles (WALL, WATER, TRAP, FIRE) are copied unchanged and never contribute to
-   * the neighbour count — they act as permanent, inert obstacles.
+   * <p>Instead of iterating every cell in the W×H grid (O(W×H)), only alive cells iterate and
+   * cast votes to their 8 Moore neighbours (O(alive × 8)). This is dramatically faster for
+   * sparse or partially populated worlds (e.g. 1024×1024 with 30% density = 314k alive cells
+   * → ~2.5M operations vs 8M for the naive approach, and improving as the board stabilises).
+   *
+   * <p>The terrain map is kept <em>sparse</em>: only {@link TileType#ALIVE} entries (and any
+   * static obstacle tiles) are stored. EMPTY cells are simply absent from the map.
    */
   private void nextGeneration(GridState state) {
-    Map<Vector4, TileType> current = state.terrain();
+    Map<Vector4, TileType> terrain = state.terrain();
     int width  = state.dimension().getWidth();
     int height = state.dimension().getHeight();
 
-    Map<Vector4, TileType> next = new HashMap<>(current.size());
-
-    for (int x = 0; x < width; x++) {
-      for (int y = 0; y < height; y++) {
-        Vector4 pos = Vector4.of(x, y, 0, 0);
-        TileType tile = current.getOrDefault(pos, TileType.EMPTY);
-
-        // Static tiles pass through unchanged — they are not GoL participants.
-        if (isStatic(tile)) {
-          next.put(pos, tile);
-          continue;
-        }
-
-        int liveNeighbours = countLiveNeighbours(current, x, y, width, height);
-        boolean alive = tile == TileType.ALIVE;
-
-        TileType nextTile;
-        if (alive) {
-          // Survival: 2 or 3 live neighbours
-          nextTile = (liveNeighbours == 2 || liveNeighbours == 3) ? TileType.ALIVE : TileType.EMPTY;
-        } else {
-          // Birth: exactly 3 live neighbours
-          nextTile = (liveNeighbours == 3) ? TileType.ALIVE : TileType.EMPTY;
-        }
-        next.put(pos, nextTile);
-      }
-    }
-
-    current.clear();
-    current.putAll(next);
-  }
-
-  /**
-   * Counts the number of {@link TileType#ALIVE} tiles in the 8-cell Moore neighbourhood.
-   * Cells outside the grid boundary are treated as dead (bounded, non-toroidal world).
-   */
-  private int countLiveNeighbours(Map<Vector4, TileType> terrain, int x, int y,
-      int width, int height) {
-    int count = 0;
-    for (int dx = -1; dx <= 1; dx++) {
-      for (int dy = -1; dy <= 1; dy++) {
-        if (dx == 0 && dy == 0) continue;
-        int nx = x + dx;
-        int ny = y + dy;
-        if (nx >= 0 && nx < width && ny >= 0 && ny < height) {
-          if (terrain.getOrDefault(Vector4.of(nx, ny, 0, 0), TileType.EMPTY) == TileType.ALIVE) {
-            count++;
+    // ── Step 1: each alive cell casts a vote to each of its 8 neighbours ──────
+    // votes[pos] = number of alive neighbours that pos has
+    Map<Vector4, Integer> votes = new HashMap<>();
+    for (Map.Entry<Vector4, TileType> entry : terrain.entrySet()) {
+      if (entry.getValue() != TileType.ALIVE) continue;
+      int x = (int) entry.getKey().getX();
+      int y = (int) entry.getKey().getY();
+      for (int dx = -1; dx <= 1; dx++) {
+        for (int dy = -1; dy <= 1; dy++) {
+          if (dx == 0 && dy == 0) continue;
+          int nx = x + dx, ny = y + dy;
+          if (nx >= 0 && nx < width && ny >= 0 && ny < height) {
+            votes.merge(Vector4.of(nx, ny, 0, 0), 1, Integer::sum);
           }
         }
       }
     }
-    return count;
+
+    // ── Step 2: determine births and deaths from the vote map ──────────────────
+    List<Vector4> toKill  = new ArrayList<>();
+    List<Vector4> toBirth = new ArrayList<>();
+
+    for (Map.Entry<Vector4, Integer> e : votes.entrySet()) {
+      Vector4 pos   = e.getKey();
+      int     n     = e.getValue();
+      TileType tile = terrain.getOrDefault(pos, TileType.EMPTY);
+      if (isStatic(tile)) continue;
+
+      if (tile == TileType.ALIVE) {
+        // Survival: 2 or 3 neighbours → stay alive; any other count → die
+        if (n != 2 && n != 3) toKill.add(pos);
+      } else {
+        // Birth: exactly 3 neighbours
+        if (n == 3) toBirth.add(pos);
+      }
+    }
+
+    // Alive cells that received zero votes have no alive neighbours → they die
+    for (Map.Entry<Vector4, TileType> e : terrain.entrySet()) {
+      if (e.getValue() == TileType.ALIVE && !votes.containsKey(e.getKey())) {
+        toKill.add(e.getKey());
+      }
+    }
+
+    // ── Step 3: apply changes (sparse: remove dead, add born) ─────────────────
+    for (Vector4 pos : toKill)  terrain.remove(pos);
+    for (Vector4 pos : toBirth) terrain.put(pos, TileType.ALIVE);
   }
 
   /** Returns {@code true} for tiles that participate in GoL rules. */
@@ -234,15 +236,20 @@ public class GameOfLifeEngine implements WorldEngine {
     int width  = state.dimension().getWidth();
     int height = state.dimension().getHeight();
     int alive  = 0;
+
+    // Sparse: remove existing non-static cells first, then only insert ALIVE ones.
+    state.terrain().entrySet().removeIf(e -> !isStatic(e.getValue()));
+
     ThreadLocalRandom rng = ThreadLocalRandom.current();
     for (int x = 0; x < width; x++) {
       for (int y = 0; y < height; y++) {
-        Vector4 pos = Vector4.of(x, y, 0, 0);
-        TileType existing = state.terrain().getOrDefault(pos, TileType.EMPTY);
-        if (!isStatic(existing)) {
-          TileType next = rng.nextDouble() < density ? TileType.ALIVE : TileType.EMPTY;
-          state.terrain().put(pos, next);
-          if (next == TileType.ALIVE) alive++;
+        if (rng.nextDouble() < density) {
+          Vector4 pos = Vector4.of(x, y, 0, 0);
+          // Skip positions that hold a static obstacle (WALL, WATER, TRAP, …)
+          if (!isStatic(state.terrain().getOrDefault(pos, TileType.EMPTY))) {
+            state.terrain().put(pos, TileType.ALIVE);
+            alive++;
+          }
         }
       }
     }
@@ -262,7 +269,12 @@ public class GameOfLifeEngine implements WorldEngine {
       if (state.isWithinBounds(pos)) {
         TileType current = state.terrain().getOrDefault(pos, TileType.EMPTY);
         if (!isStatic(current)) {
-          state.terrain().put(pos, current == TileType.ALIVE ? TileType.EMPTY : TileType.ALIVE);
+          // Sparse: remove the entry for dead cells instead of writing EMPTY
+          if (current == TileType.ALIVE) {
+            state.terrain().remove(pos);
+          } else {
+            state.terrain().put(pos, TileType.ALIVE);
+          }
           toggled++;
         }
       } else {
@@ -275,7 +287,8 @@ public class GameOfLifeEngine implements WorldEngine {
   }
 
   private WorldResult applyClear(GridState state) {
-    state.terrain().replaceAll((pos, tile) -> isStatic(tile) ? tile : TileType.EMPTY);
+    // Sparse: remove alive cells instead of overwriting all with EMPTY
+    state.terrain().entrySet().removeIf(e -> !isStatic(e.getValue()));
     log.info("[GoL] CLEAR: all live cells removed.");
     return WorldResult.succeeded("orchestrator", state.worldName(), "CLEAR: simulation reset.");
   }

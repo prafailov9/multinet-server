@@ -53,7 +53,7 @@ public class ResponseServerMessageProcessor implements ServerMessageProcessor {
     var ctx = session.getSessionContext();
     var instance = Instances.getInstance(ctx.getWorldName());
     if (instance != null) {
-      log.info("Registering client to instance.");
+      log.info("Attaching client to instance.");
       instance.registerSession(session);
     }
 

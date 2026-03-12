@@ -63,13 +63,10 @@ public class GridWorldState implements GridState {
    * @return a fully initialised {@link GridWorldState} with an all-EMPTY terrain map
    */
   public static GridWorldState blank(String worldName, int width, int height) {
-    Map<Vector4, TileType> emptyTerrain = new HashMap<>();
-    for (int x = 0; x < width; x++) {
-      for (int y = 0; y < height; y++) {
-        emptyTerrain.put(Vector4.of(x, y, 0, 0), TileType.EMPTY);
-      }
-    }
-    return new GridWorldState(worldName, width, height, emptyTerrain);
+    // Sparse representation: no entries means all cells are implicitly EMPTY.
+    // Pre-filling 1M EMPTY entries for a 1024×1024 GoL world wastes memory and
+    // turns every snapshot/iteration into an O(W×H) operation.
+    return new GridWorldState(worldName, width, height, new HashMap<>());
   }
 
   /**

@@ -182,9 +182,10 @@ class ServerBootstrapWiringTest {
       WorldConnector connector = converter.toModelObject(record);
       var terrain = ((GridWorldConnector) connector).getState().terrain();
 
-      // GoL worlds start blank — every tile is EMPTY
-      assertThat(terrain.values()).allMatch(t -> t == TileType.EMPTY);
-      assertThat(terrain).hasSize(18 * 18);
+      // GoL worlds use a sparse representation: a freshly created world has NO entries
+      // (all cells are implicitly EMPTY). Pre-filling 1 M EMPTY entries for a 1024×1024
+      // world would make every snapshot/iteration O(W×H) instead of O(alive_cells).
+      assertThat(terrain).isEmpty();
     }
 
     @Test
@@ -195,7 +196,11 @@ class ServerBootstrapWiringTest {
       WorldConnector connector = converter.toModelObject(record);
       var terrain = ((GridWorldConnector) connector).getState().terrain();
 
-      assertThat(terrain).hasSize(1024 * 1024);
+      // Sparse terrain: no entries on a fresh world (all cells implicitly EMPTY).
+      // Dimension information is held in the state's Dimension object, not in the tile map.
+      assertThat(terrain).isEmpty();
+      assertThat(((GridWorldConnector) connector).getState().dimension().getWidth()).isEqualTo(1024);
+      assertThat(((GridWorldConnector) connector).getState().dimension().getHeight()).isEqualTo(1024);
     }
   }
 

@@ -58,10 +58,14 @@ public class GridWorldConnector implements WorldConnector {
    */
   @Override
   public Object snapshot() {
-    // tiles: "x,y" -> "EMPTY|WALL|TRAP|WATER"
+    // tiles: "x,y" -> tile type name — EMPTY tiles are excluded.
+    // The client treats absent keys as EMPTY, so omitting them keeps the
+    // JSON payload small (critical for large GoL worlds that are mostly empty).
     Map<String, String> tiles = new LinkedHashMap<>();
     state.terrain().forEach((pos, tile) -> {
-      tiles.put(pos.getX() + "," + pos.getY(), tile.name());
+      if (tile != TileType.EMPTY) {
+        tiles.put((int) pos.getX() + "," + (int) pos.getY(), tile.name());
+      }
     });
 
     // entities: "entityName" -> {x,y}
