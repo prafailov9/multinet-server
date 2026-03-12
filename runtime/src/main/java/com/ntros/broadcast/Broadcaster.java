@@ -1,6 +1,6 @@
-package com.ntros.event.broadcaster;
+package com.ntros.broadcast;
 
-import com.ntros.event.sessionmanager.SessionManager;
+import com.ntros.lifecycle.sessionmanager.SessionManager;
 
 /**
  * Pushes a pre-encoded binary frame to a set of sessions.

@@ -1,8 +1,9 @@
-package com.ntros.lifecycle.session.process;
+package com.ntros.messageprocessing.client;
 
 import com.ntros.dispatcher.Dispatcher;
 import com.ntros.dispatcher.MessageDispatcher;
 import com.ntros.lifecycle.session.Session;
+import com.ntros.messageprocessing.NoResponseFromServerException;
 import com.ntros.parser.MessageParser;
 import com.ntros.protocol.Message;
 import lombok.extern.slf4j.Slf4j;

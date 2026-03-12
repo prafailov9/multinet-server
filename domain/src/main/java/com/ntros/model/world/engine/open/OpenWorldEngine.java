@@ -69,10 +69,6 @@ public class OpenWorldEngine implements DynamicWorldEngine {
     state.moveIntents().clear();
   }
 
-  private void applyMoveIntent(Vector3D direction, OpenWorldEntity entity) {
-
-  }
-
   @Override
   public WorldResult storeMoveIntent(OpenMoveRequest req, DynamicWorldState state) {
     OpenWorldEntity entity = state.entities().get(req.playerId());
@@ -83,9 +79,9 @@ public class OpenWorldEngine implements DynamicWorldEngine {
       return failed(req.playerId(), state.worldName(), msg);
     }
 
-    Vector3D intent = Vector3D.of(req.dx(), req.dy(), req.dz());
-    state.moveIntents().put(req.playerId(), intent);
-    log.info("[OpenWorldEngine] Staged move intent for '{}': {}", req.playerId(), intent);
+    Vector3D moveIntent = Vector3D.of(req.dx(), req.dy(), req.dz());
+    state.moveIntents().put(req.playerId(), moveIntent);
+    log.info("[OpenWorldEngine] Staged move intent for '{}': {}", req.playerId(), moveIntent);
     return succeeded(req.playerId(), state.worldName(), "intent staged");
   }
 

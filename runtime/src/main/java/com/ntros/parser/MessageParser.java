@@ -13,10 +13,19 @@ import lombok.extern.slf4j.Slf4j;
 public class MessageParser implements Parser {
 
   private static final String DELIMITER = "\\s+";
+
+  /**
+   * minimum word count for a given message
+   * - "REG client_1" => valid
+   * - "client-42" => invalid
+   * - "REG c abc, 1118" => valid structure. Semantically it's wrong, REG command expects at least
+   * two words, but semantics are not validated here
+   */
   private static final int MIN_WORD_COUNT = 2;
 
   /**
-   * Parsing the raw network message to a Client Command that the server can process.
+   * Validates message structure and attempts to
+   * parse ot a Client Command that the server can process.
    */
   @Override
   public Message parse(String rawMessage) {
@@ -40,7 +49,10 @@ public class MessageParser implements Parser {
       log.error(err);
       throw new MessageParsingException(err);
     }
-    return new Message(command, args);
+    Message parsedMessage = new Message(command, args);
+    log.info("[Parser]: message parsed: {}", parsedMessage);
+
+    return parsedMessage;
   }
 
 }

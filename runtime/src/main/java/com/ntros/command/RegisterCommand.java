@@ -5,7 +5,7 @@ import static com.ntros.protocol.Message.registrationSuccess;
 
 import com.ntros.command.exception.RegisterCmdException;
 import com.ntros.lifecycle.session.Session;
-import com.ntros.message.SessionContext;
+import com.ntros.lifecycle.session.SessionContext;
 import com.ntros.persistence.db.PersistenceContext;
 import com.ntros.persistence.model.ClientRecord;
 import com.ntros.protocol.Message;
@@ -67,7 +67,8 @@ public class RegisterCommand extends AbstractCommand {
     if (username.isBlank()) {
       throw new RegisterCmdException("Blank username given");
     }
-    String password = args.get(1);
+    // for now, it's ok if password is empty, who cares
+    String password = args.getLast();
     return ClientRecord.newClient(username, password, ctx.getSessionId());
 
   }

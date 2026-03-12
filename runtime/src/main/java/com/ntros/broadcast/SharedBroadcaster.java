@@ -1,6 +1,6 @@
-package com.ntros.event.broadcaster;
+package com.ntros.broadcast;
 
-import com.ntros.event.sessionmanager.SessionManager;
+import com.ntros.lifecycle.sessionmanager.SessionManager;
 import com.ntros.lifecycle.session.Session;
 import lombok.extern.slf4j.Slf4j;
 

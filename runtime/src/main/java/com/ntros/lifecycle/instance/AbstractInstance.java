@@ -1,8 +1,8 @@
 package com.ntros.lifecycle.instance;
 
 import com.ntros.codec.PacketCodec;
-import com.ntros.event.broadcaster.Broadcaster;
-import com.ntros.event.sessionmanager.SessionManager;
+import com.ntros.broadcast.Broadcaster;
+import com.ntros.lifecycle.sessionmanager.SessionManager;
 import com.ntros.lifecycle.clock.Clock;
 import com.ntros.lifecycle.session.Session;
 import com.ntros.model.entity.config.access.Settings;

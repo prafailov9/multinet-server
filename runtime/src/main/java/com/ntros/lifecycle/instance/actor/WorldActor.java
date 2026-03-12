@@ -1,8 +1,9 @@
 package com.ntros.lifecycle.instance.actor;
 
-import com.ntros.event.sessionmanager.SessionManager;
+import com.ntros.lifecycle.sessionmanager.SessionManager;
 import com.ntros.lifecycle.session.Session;
 import com.ntros.model.entity.Direction;
+import com.ntros.model.entity.movement.MoveInput;
 import com.ntros.model.world.connector.WorldConnector;
 import com.ntros.model.world.connector.ops.JoinOp;
 import com.ntros.model.world.connector.ops.MoveOp;
@@ -35,7 +36,7 @@ public final class WorldActor implements Actor {
   /**
    * last-write-wins move coalescing
    */
-  private final ConcurrentHashMap<String, Direction> stagedMoves = new ConcurrentHashMap<>();
+  private final ConcurrentHashMap<String, MoveInput> stagedMoves = new ConcurrentHashMap<>();
 
   public WorldActor(String worldName) {
     this(true, worldName);
@@ -81,7 +82,7 @@ public final class WorldActor implements Actor {
 
   @Override
   public CompletableFuture<WorldResult> stageMove(WorldConnector world, MoveRequest move) {
-    stagedMoves.put(move.playerId(), move.direction());
+    stagedMoves.put(move.playerId(), move.moveInput());
     return CompletableFuture.completedFuture(
         WorldResult.succeeded(move.playerId(), world.getWorldName(), "queued"));
   }

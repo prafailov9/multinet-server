@@ -1,4 +1,4 @@
-package com.ntros.event.broadcaster;
+package com.ntros.broadcast;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;

@@ -10,10 +10,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ntros.TestClient.ServerCmd;
 import com.ntros.TestClient.ServerMessage;
-import com.ntros.event.broadcaster.SharedBroadcaster;
-import com.ntros.event.broadcaster.Broadcaster;
-import com.ntros.event.sessionmanager.ClientSessionManager;
-import com.ntros.event.sessionmanager.SessionManager;
+import com.ntros.broadcast.SharedBroadcaster;
+import com.ntros.broadcast.Broadcaster;
+import com.ntros.lifecycle.sessionmanager.ClientSessionManager;
+import com.ntros.lifecycle.sessionmanager.SessionManager;
 import com.ntros.lifecycle.instance.Instances;
 import com.ntros.lifecycle.instance.Instance;
 import com.ntros.lifecycle.instance.ServerInstance;
@@ -167,7 +167,9 @@ public class ServerBootstrapTest {
       // send move command to server
       log.info("[SingleCon_MoveCommand]: Sending MOVE request to server...");
 
-      ServerMessage actualMoveResponse = testClient.move(clientName, "UP", CMD_TIMEOUT_DEFAULT);
+      // MOVE UP
+      ServerMessage actualMoveResponse = testClient.move(clientName, 0, 1, 0, 0,
+          CMD_TIMEOUT_DEFAULT);
       // ticker will constantly stream the state, ack command is never sent or is lost between state broadcasts
       assertEquals(ServerCmd.STATE, actualMoveResponse.type());
 
@@ -243,7 +245,8 @@ public class ServerBootstrapTest {
 
         // send move command to server
         log.info("[MultiConn_MoveCommand]: Sending MOVE request to server...");
-        ServerMessage actualMoveResponse = client.move(name, "UP", CMD_TIMEOUT_DEFAULT);
+        // MOVE UP
+        ServerMessage actualMoveResponse = client.move(name, 0, 1, 0, 0, CMD_TIMEOUT_DEFAULT);
         assertEquals(ServerCmd.STATE, actualMoveResponse.type());
 
         String json = actualMoveResponse.args().getFirst();

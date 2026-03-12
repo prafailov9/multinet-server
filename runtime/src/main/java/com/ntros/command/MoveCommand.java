@@ -1,15 +1,16 @@
 package com.ntros.command;
 
 import static com.ntros.protocol.CommandType.ACK;
-import static com.ntros.protocol.CommandType.ERROR;
+import static com.ntros.protocol.Message.ack;
 import static com.ntros.protocol.Message.errorMsg;
 
 import com.ntros.command.exception.MoveCmdException;
 import com.ntros.lifecycle.instance.Instance;
 import com.ntros.lifecycle.instance.Instances;
 import com.ntros.lifecycle.session.Session;
-import com.ntros.message.SessionContext;
+import com.ntros.lifecycle.session.SessionContext;
 import com.ntros.model.entity.Direction;
+import com.ntros.model.entity.movement.MoveInput;
 import com.ntros.model.world.protocol.request.MoveRequest;
 import com.ntros.protocol.CommandType;
 import com.ntros.protocol.Message;
@@ -29,24 +30,34 @@ public class MoveCommand extends AbstractCommand {
 
       // move command curently only handles movement(n,w,s,e) within a grid(x, y)
       // TODO: extend to handle 3d + 4d movement. Need to extend the Movement semantics in domain
-      Direction dir = Direction.valueOf(message.args().getFirst().toUpperCase(Locale.ROOT));
+      MoveInput input = getMovementInput(message);
 
       String playerId = ctx.getEntityId();
       Instance instance = getInstance(ctx.getWorldName());
 
-      instance.storeMoveAsync(new MoveRequest(playerId, dir))
+      instance.storeMoveAsync(new MoveRequest(playerId, input))
           .exceptionally(ex -> {
             log.warn("MOVE failed later for player={} world={} : {}", playerId, ctx.getWorldName(),
                 ex.toString());
             return null;
           });
 
-      return new Message(ACK, List.of(dir.name()));
+      return ack(ctx.getSessionId());
 
     } catch (MoveCmdException | IllegalArgumentException ex) {
       log.error("Error during MoveCommand processing: {}", ex.getMessage(), ex);
       return errorMsg(ex.getMessage());
     }
+  }
+
+  private MoveInput getMovementInput(Message message) {
+    // capture first 4 args
+    int dx = Integer.parseInt(message.args().getFirst());
+    int dy = Integer.parseInt(message.args().get(1));
+    int dz = Integer.parseInt(message.args().get(2));
+    int dw = Integer.parseInt(message.args().get(3));
+
+    return new MoveInput(dx, dy, dz, dw);
   }
 
   private Instance getInstance(String world) {

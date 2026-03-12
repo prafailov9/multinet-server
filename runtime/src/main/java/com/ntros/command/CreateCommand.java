@@ -7,7 +7,7 @@ import com.ntros.lifecycle.instance.Instance;
 import com.ntros.lifecycle.instance.InstanceFactory;
 import com.ntros.lifecycle.instance.Instances;
 import com.ntros.lifecycle.session.Session;
-import com.ntros.message.SessionContext;
+import com.ntros.lifecycle.session.SessionContext;
 import com.ntros.model.entity.config.WorldCapabilities;
 import com.ntros.model.world.Connectors;
 import com.ntros.model.world.connector.GridWorldConnector;

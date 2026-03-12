@@ -1,7 +1,7 @@
 package com.ntros.lifecycle.instance.actor;
 
 
-import com.ntros.event.sessionmanager.SessionManager;
+import com.ntros.lifecycle.sessionmanager.SessionManager;
 import com.ntros.lifecycle.Shutdownable;
 import com.ntros.lifecycle.session.Session;
 import com.ntros.model.world.connector.WorldConnector;

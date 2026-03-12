@@ -1,4 +1,4 @@
-package com.ntros.message;
+package com.ntros.lifecycle.session;
 
 
 import com.ntros.model.entity.config.access.Role;

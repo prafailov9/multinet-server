@@ -22,4 +22,12 @@ public class DirectionUtil {
     }
   }
 
+  public static Position createPosition(Position currentPosition, int dx, int dy) {
+    return Position.of(currentPosition.getX() + dx, currentPosition.getY() + dy);
+  }
+
+  public static Position createPosition(Position currentPosition, Position newPosition) {
+    return Position.of(currentPosition.getX() + newPosition.getX(), currentPosition.getY() + newPosition.getY());
+  }
+
 }

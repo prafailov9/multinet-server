@@ -7,11 +7,10 @@ import static com.ntros.lifecycle.session.SessionState.TERMINATED;
 
 import com.ntros.connection.Connection;
 import com.ntros.lifecycle.instance.Instances;
-import com.ntros.lifecycle.session.process.ClientMessageProcessor;
-import com.ntros.lifecycle.session.process.RequestClientMessageProcessor;
-import com.ntros.lifecycle.session.process.ResponseServerMessageProcessor;
-import com.ntros.lifecycle.session.process.ServerMessageProcessor;
-import com.ntros.message.SessionContext;
+import com.ntros.messageprocessing.client.ClientMessageProcessor;
+import com.ntros.messageprocessing.client.RequestClientMessageProcessor;
+import com.ntros.messageprocessing.server.ResponseServerMessageProcessor;
+import com.ntros.messageprocessing.server.ServerMessageProcessor;
 import com.ntros.model.entity.sequence.IdSequenceGenerator;
 import com.ntros.protocol.Message;
 import java.util.concurrent.atomic.AtomicReference;

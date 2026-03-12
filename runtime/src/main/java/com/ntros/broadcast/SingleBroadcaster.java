@@ -1,6 +1,6 @@
-package com.ntros.event.broadcaster;
+package com.ntros.broadcast;
 
-import com.ntros.event.sessionmanager.SessionManager;
+import com.ntros.lifecycle.sessionmanager.SessionManager;
 
 /**
  * Broadcasts a binary frame to exactly one session — the session whose entity ID matches

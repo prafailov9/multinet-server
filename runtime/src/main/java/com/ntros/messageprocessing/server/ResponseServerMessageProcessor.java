@@ -1,4 +1,4 @@
-package com.ntros.lifecycle.session.process;
+package com.ntros.messageprocessing.server;
 
 import com.ntros.lifecycle.instance.Instances;
 import com.ntros.lifecycle.session.Session;

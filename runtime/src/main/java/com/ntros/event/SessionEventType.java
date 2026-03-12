@@ -1,7 +1,0 @@
-package com.ntros.event;
-
-public enum SessionEventType {
-
-  SESSION_STARTED, SESSION_CLOSED, SESSION_FAILED, SESSION_RESTARTED, SESSION_SHUTDOWN_ALL
-
-}

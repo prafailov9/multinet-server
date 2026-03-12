@@ -29,7 +29,7 @@ public class GridWorldState implements GridState {
 
   private final Map<String, Entity> entityMap;
   private final Map<Position, String> positionMap;
-  private final Map<String, Direction> moveIntentMap;
+  private final Map<String, Position> moveIntentMap;
   private final Map<Position, TileType> terrainMap;
 
   public GridWorldState(String worldName, int width, int height) {
@@ -106,7 +106,7 @@ public class GridWorldState implements GridState {
   }
 
   @Override
-  public Map<String, Direction> moveIntents() {
+  public Map<String, Position> moveIntents() {
     return moveIntentMap;
   }
 

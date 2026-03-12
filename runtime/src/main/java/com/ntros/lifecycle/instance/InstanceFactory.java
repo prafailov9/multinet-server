@@ -1,10 +1,10 @@
 package com.ntros.lifecycle.instance;
 
-import com.ntros.event.broadcaster.SharedBroadcaster;
-import com.ntros.event.broadcaster.SingleBroadcaster;
-import com.ntros.event.broadcaster.Broadcaster;
-import com.ntros.event.sessionmanager.ClientSessionManager;
-import com.ntros.event.sessionmanager.SessionManager;
+import com.ntros.broadcast.SharedBroadcaster;
+import com.ntros.broadcast.SingleBroadcaster;
+import com.ntros.broadcast.Broadcaster;
+import com.ntros.lifecycle.sessionmanager.ClientSessionManager;
+import com.ntros.lifecycle.sessionmanager.SessionManager;
 import com.ntros.model.entity.config.WorldCapabilities;
 import com.ntros.model.entity.config.access.Settings;
 import com.ntros.model.world.connector.GridWorldConnector;
@@ -63,7 +63,7 @@ public final class InstanceFactory {
       SessionManager sessions) {
     // If you have a LifeEngine/State, plug it here; otherwise reuse grid placeholder
     WorldConnector connector = new GridWorldConnector(new GridWorldState(name, 256, 256),
-        new GridWorldEngine(), new WorldCapabilities(true, true, false, true));
+        new GridWorldEngine(), new WorldCapabilities(true, true, true, true));
     Settings cfg = Settings.singlePlayerOrchestrator();
     Instance inst = new ServerInstance(connector, sessions, new FixedRateClock(20),
         new SingleBroadcaster(ownerUserId), cfg);

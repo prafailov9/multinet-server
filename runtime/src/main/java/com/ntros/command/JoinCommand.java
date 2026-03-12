@@ -7,7 +7,7 @@ import com.ntros.command.exception.JoinCmdException;
 import com.ntros.lifecycle.instance.Instance;
 import com.ntros.lifecycle.instance.Instances;
 import com.ntros.lifecycle.session.Session;
-import com.ntros.message.SessionContext;
+import com.ntros.lifecycle.session.SessionContext;
 import com.ntros.model.world.protocol.WorldResult;
 import com.ntros.model.world.protocol.request.JoinRequest;
 import com.ntros.protocol.Message;

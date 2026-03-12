@@ -8,7 +8,7 @@ import com.ntros.lifecycle.LifecycleHooks;
 import com.ntros.lifecycle.instance.Instance;
 import com.ntros.lifecycle.instance.Instances;
 import com.ntros.lifecycle.session.Session;
-import com.ntros.message.SessionContext;
+import com.ntros.lifecycle.session.SessionContext;
 import com.ntros.protocol.Message;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;

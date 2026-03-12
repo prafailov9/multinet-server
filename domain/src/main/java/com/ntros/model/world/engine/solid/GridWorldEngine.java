@@ -5,6 +5,7 @@ import static com.ntros.model.entity.DirectionUtil.createPosition;
 import com.ntros.model.entity.Direction;
 import com.ntros.model.entity.Entity;
 import com.ntros.model.entity.Player;
+import com.ntros.model.entity.movement.MoveInput;
 import com.ntros.model.entity.movement.Position;
 import com.ntros.model.entity.sequence.IdSequenceGenerator;
 import com.ntros.model.entity.solid.StaticEntity;
@@ -25,9 +26,8 @@ public class GridWorldEngine implements WorldEngine {
 
   @Override
   public void applyIntents(GridState state) {
-    for (Map.Entry<String, Direction> intent : state.moveIntents().entrySet()) {
+    for (var intent : state.moveIntents().entrySet()) {
       Entity entity = state.entities().get(intent.getKey());
-
       if (entity == null) {
         log.warn("No entity found for id: {}", intent.getKey());
         continue;
@@ -45,16 +45,20 @@ public class GridWorldEngine implements WorldEngine {
   @Override
   public WorldResult storeMoveIntent(MoveRequest moveRequest, GridState state) {
     Entity entity = state.entities().get(moveRequest.playerId());
-    Position position = createPosition(entity.getPosition(), moveRequest.direction());
+    MoveInput input = moveRequest.moveInput();
+    // 2d space
+
+    Position newPos = createPosition(entity.getPosition(), input.dx(), input.dy());
+//    Position position = createPosition(entity.getPosition(), moveRequest.direction());
 
     // allow all moves if within bounds
-    if (state.isWithinBounds(position)) {
-      state.moveIntents().put(moveRequest.playerId(), moveRequest.direction());
+    if (state.isWithinBounds(newPos)) {
+      state.moveIntents().put(moveRequest.playerId(), newPos);
       log.info("Added move intent: {}", moveRequest);
       return WorldResult.succeeded(entity.getName(), state.worldName(), "intent added");
     }
     String msg = String.format("[%s]: invalid move: %s. Out of bounds.", state.worldName(),
-        position);
+        newPos);
     log.info(msg);
     return WorldResult.failed(entity.getName(), state.worldName(), msg);
   }

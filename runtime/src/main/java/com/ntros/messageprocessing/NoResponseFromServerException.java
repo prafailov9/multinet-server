@@ -1,4 +1,4 @@
-package com.ntros.lifecycle.session.process;
+package com.ntros.messageprocessing;
 
 public class NoResponseFromServerException extends RuntimeException {
 

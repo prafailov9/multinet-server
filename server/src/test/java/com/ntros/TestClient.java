@@ -67,8 +67,10 @@ public class TestClient implements Closeable {
     return readUntilTypes(timeoutSeconds, ServerCmd.WELCOME, ServerCmd.ERROR);
   }
 
-  public ServerMessage move(String clientName, String direction, int timeoutSeconds) {
-    sendText("MOVE " + direction + " " + clientName);
+  public ServerMessage move(String clientName, int dx, int dy, int dz, int dw, int timeoutSeconds) {
+    sendText(String.format("MOVE %s %s %s %s %s", dx, dy, dz, dw, clientName)
+//        "MOVE " + moveInput + " " + clientName
+    );
     return readUntilTypes(timeoutSeconds, ServerCmd.STATE, ServerCmd.ERROR);
   }
 

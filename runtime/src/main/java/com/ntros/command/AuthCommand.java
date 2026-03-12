@@ -3,7 +3,7 @@ package com.ntros.command;
 import static com.ntros.protocol.Message.authSuccess;
 
 import com.ntros.lifecycle.session.Session;
-import com.ntros.message.SessionContext;
+import com.ntros.lifecycle.session.SessionContext;
 import com.ntros.protocol.Message;
 
 /**

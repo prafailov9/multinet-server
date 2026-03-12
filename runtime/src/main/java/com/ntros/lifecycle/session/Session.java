@@ -2,7 +2,6 @@ package com.ntros.lifecycle.session;
 
 import com.ntros.lifecycle.Lifecycle;
 import com.ntros.lifecycle.Shutdownable;
-import com.ntros.message.SessionContext;
 
 /**
  * Represents an active connection between a client and the server.

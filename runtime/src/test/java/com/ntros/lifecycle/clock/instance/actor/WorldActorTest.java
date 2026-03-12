@@ -14,11 +14,12 @@ import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.ntros.event.sessionmanager.SessionManager;
+import com.ntros.lifecycle.sessionmanager.SessionManager;
 import com.ntros.lifecycle.instance.actor.Actor;
 import com.ntros.lifecycle.instance.actor.WorldActor;
 import com.ntros.lifecycle.session.Session;
-import com.ntros.message.SessionContext;
+import com.ntros.lifecycle.session.SessionContext;
+import com.ntros.model.entity.movement.MoveInput;
 import com.ntros.model.world.connector.WorldConnector;
 import com.ntros.model.world.connector.ops.MoveOp;
 import com.ntros.model.world.connector.ops.RemoveOp;
@@ -35,6 +36,14 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
 class WorldActorTest {
+
+  ///  One-Step directional moves
+  private static final MoveInput MOVE_UP = new MoveInput(0, 1, 0, 0);
+  private static final MoveInput MOVE_DOWN = new MoveInput(0, -1, 0, 0);
+
+  private static final MoveInput MOVE_RIGHT = new MoveInput(1, 0, 0, 0);
+  private static final MoveInput MOVE_LEFT = new MoveInput(-1, 0, 0, 0);
+
 
   private final Runnable NO_OP_TASK = () -> {
   };
@@ -64,8 +73,8 @@ class WorldActorTest {
 
     // setup
     // queue 2 moves for same client. Last write wins
-    actor.stageMove(world, new MoveRequest("c1", UP));
-    actor.stageMove(world, new MoveRequest("c1", RIGHT));
+    actor.stageMove(world, new MoveRequest("c1", new MoveInput(0, 1, 0, 0)));
+    actor.stageMove(world, new MoveRequest("c1", new MoveInput(1, 0, 0, 0)));
 
     // act
     var onAfter = new AtomicBoolean(false);
@@ -76,7 +85,7 @@ class WorldActorTest {
     ArgumentCaptor<MoveOp> moveOp = ArgumentCaptor.forClass(MoveOp.class);
     verify(world).apply(moveOp.capture());
     assertThat(moveOp.getValue().req().playerId()).isEqualTo("c1");
-    assertThat(moveOp.getValue().req().direction()).isEqualTo(RIGHT);
+    assertThat(moveOp.getValue().req().moveInput()).isEqualTo(MOVE_RIGHT);
 
     // world updated and callback ran
     verify(world).update();
@@ -96,7 +105,7 @@ class WorldActorTest {
     when(ctx.getEntityId()).thenReturn("e1");
 
     // stage a move for e1 and then leave
-    actor.stageMove(world, new MoveRequest("e1", DOWN));
+    actor.stageMove(world, new MoveRequest("e1", MOVE_DOWN));
     actor.leave(world, sessionManager, session).join();
 
     InOrder order = inOrder(world, sessionManager);

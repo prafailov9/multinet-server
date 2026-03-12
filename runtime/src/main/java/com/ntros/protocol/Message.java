@@ -19,10 +19,6 @@ public record Message(CommandType commandType, List<String> args) {
 
   public Message {
     Objects.requireNonNull(commandType, "commandType must not be null");
-    Objects.requireNonNull(args, "args must not be null");
-    if (args.isEmpty()) {
-      throw new IllegalArgumentException("Argument list cannot be empty.");
-    }
     args = List.copyOf(args); // ensure immutability
   }
 

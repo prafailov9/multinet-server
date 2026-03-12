@@ -15,7 +15,7 @@ public interface GridState extends CoreState {
 
   Map<Position, String> takenPositions();
 
-  Map<String, Direction> moveIntents();
+  Map<String, Position> moveIntents();
 
   Map<Position, TileType> terrain();
 
