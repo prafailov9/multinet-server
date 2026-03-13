@@ -1,5 +1,6 @@
 package com.ntros.model.world.state;
 
+import com.ntros.model.world.state.core.GridState;
 import com.ntros.model.world.state.open.OpenWorldState;
 import com.ntros.model.world.state.solid.GridWorldState;
 

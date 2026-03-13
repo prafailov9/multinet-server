@@ -16,34 +16,25 @@ import java.util.concurrent.CompletableFuture;
  * Single-threaded actor, async running all world changes
  */
 public interface Actor extends Shutdownable {
-
   /**
    * updates the world state.
    */
   CompletableFuture<Object> step(WorldConnector world) ;
-
     CompletableFuture<Void> step(WorldConnector world,
       Runnable onAfterUpdate);
-
   CompletableFuture<WorldResult> join(WorldConnector world,
       JoinRequest joinRequest);
-
   CompletableFuture<WorldResult> stageMove(WorldConnector world,
       MoveRequest moveRequest);
-
   CompletableFuture<WorldResult> remove(WorldConnector world,
       RemoveRequest removeRequest);
-
   CompletableFuture<WorldResult> orchestrate(WorldConnector world,
       OrchestrateRequest req);
-
   CompletableFuture<Void> tell(Runnable action);
-
   /**
    * Remove entity (if any) and deregister session on the actor thread
    */
   CompletableFuture<Void> leave(WorldConnector world, SessionManager manager,
       Session session);
-
   boolean isRunning();
 }

@@ -1,15 +1,15 @@
-package com.ntros.model.world.engine.open;
+package com.ntros.model.world.engine.core;
 
 import com.ntros.model.entity.open.OpenWorldEntity;
 import com.ntros.model.world.protocol.WorldResult;
 import com.ntros.model.world.protocol.request.JoinRequest;
 import com.ntros.model.world.protocol.request.OpenMoveRequest;
-import com.ntros.model.world.state.open.DynamicWorldState;
+import com.ntros.model.world.state.core.OpenWorldState;
 
 /**
  * Engine contract for a continuous 3D open world.
  *
- * <p>Mirrors the structure of {@link com.ntros.model.world.engine.solid.WorldEngine} for grid
+ * <p>Mirrors the structure of {@link WorldEngine} for grid
  * worlds, adapted for physics-driven movement and float-precision positions.
  */
 public interface DynamicWorldEngine {
@@ -20,7 +20,7 @@ public interface DynamicWorldEngine {
    * @param state     mutable world state
    * @param deltaTime elapsed time since the last tick, in seconds
    */
-  void applyIntents(DynamicWorldState state, float deltaTime);
+  void applyIntents(OpenWorldState state, float deltaTime);
 
   /**
    * Stages a movement intent submitted by the session layer.
@@ -30,7 +30,7 @@ public interface DynamicWorldEngine {
    * @param state mutable world state
    * @return result indicating whether the intent was accepted
    */
-  WorldResult storeMoveIntent(OpenMoveRequest req, DynamicWorldState state);
+  WorldResult storeMoveIntent(OpenMoveRequest req, OpenWorldState state);
 
   /**
    * Spawns a new player entity at a random position within the world bounds.
@@ -39,7 +39,7 @@ public interface DynamicWorldEngine {
    * @param state mutable world state
    * @return result indicating success (with spawn coordinates) or failure
    */
-  WorldResult joinEntity(JoinRequest req, DynamicWorldState state);
+  WorldResult joinEntity(JoinRequest req, OpenWorldState state);
 
   /**
    * Removes the named entity from the world and returns it.
@@ -48,7 +48,7 @@ public interface DynamicWorldEngine {
    * @param state      mutable world state
    * @return the removed entity, or {@code null} if not found
    */
-  OpenWorldEntity removeEntity(String entityName, DynamicWorldState state);
+  OpenWorldEntity removeEntity(String entityName, OpenWorldState state);
 
   /**
    * Serialises the current world state to pretty-printed JSON.
@@ -56,7 +56,7 @@ public interface DynamicWorldEngine {
    * @param state world state to serialise
    * @return multi-line JSON string
    */
-  String serialize(DynamicWorldState state);
+  String serialize(OpenWorldState state);
 
   /**
    * Serialises the current world state to a single-line JSON string (for wire transport).
@@ -64,12 +64,12 @@ public interface DynamicWorldEngine {
    * @param state world state to serialise
    * @return single-line JSON string
    */
-  String serializeOneLine(DynamicWorldState state);
+  String serializeOneLine(OpenWorldState state);
 
   /**
    * Resets the world to a clean (empty) state.
    *
    * @param state world state to clear
    */
-  void reset(DynamicWorldState state);
+  void reset(OpenWorldState state);
 }

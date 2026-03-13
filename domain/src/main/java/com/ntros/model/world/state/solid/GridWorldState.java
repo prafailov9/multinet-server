@@ -1,10 +1,9 @@
 package com.ntros.model.world.state.solid;
 
 import com.ntros.model.entity.Entity;
-import com.ntros.model.entity.movement.cell.Position;
 import com.ntros.model.entity.movement.vectors.Vector4;
 import com.ntros.model.world.protocol.TileType;
-import com.ntros.model.world.state.GridState;
+import com.ntros.model.world.state.core.GridState;
 import com.ntros.model.world.state.dimension.Dimension;
 import com.ntros.model.world.state.dimension.Dimension2D;
 import java.util.HashMap;

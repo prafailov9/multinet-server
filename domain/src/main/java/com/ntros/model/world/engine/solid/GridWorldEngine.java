@@ -11,7 +11,7 @@ import com.ntros.model.world.protocol.TileType;
 import com.ntros.model.world.protocol.WorldResult;
 import com.ntros.model.world.protocol.request.JoinRequest;
 import com.ntros.model.world.protocol.request.MoveRequest;
-import com.ntros.model.world.state.GridState;
+import com.ntros.model.world.state.core.GridState;
 import java.util.Map;
 import java.util.concurrent.ThreadLocalRandom;
 import lombok.extern.slf4j.Slf4j;

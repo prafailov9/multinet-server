@@ -13,7 +13,7 @@ import java.util.Map;
  * <p>Constructor accepts explicit width/height/depth so the bounding volume matches the
  * {@link Dimension3D} used by the engine for boundary enforcement.
  */
-public class OpenWorldState implements DynamicWorldState {
+public class OpenWorldState implements com.ntros.model.world.state.core.OpenWorldState {
 
   private final String     worldName;
   private final Dimension3D dimension;

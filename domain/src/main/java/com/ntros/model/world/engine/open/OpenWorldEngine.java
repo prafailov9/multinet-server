@@ -8,11 +8,12 @@ import com.ntros.model.entity.movement.velocity.Velocity3;
 import com.ntros.model.entity.open.OpenWorldEntity;
 import com.ntros.model.entity.open.OpenWorldPlayer;
 import com.ntros.model.entity.sequence.IdSequenceGenerator;
+import com.ntros.model.world.engine.core.DynamicWorldEngine;
 import com.ntros.model.world.protocol.WorldResult;
 import com.ntros.model.world.protocol.request.JoinRequest;
 import com.ntros.model.world.protocol.request.OpenMoveRequest;
 import com.ntros.model.world.state.dimension.Dimension3D;
-import com.ntros.model.world.state.open.DynamicWorldState;
+import com.ntros.model.world.state.core.OpenWorldState;
 import java.util.Map;
 import java.util.concurrent.ThreadLocalRandom;
 import lombok.extern.slf4j.Slf4j;
@@ -36,7 +37,7 @@ import lombok.extern.slf4j.Slf4j;
 public class OpenWorldEngine implements DynamicWorldEngine {
 
   @Override
-  public void applyIntents(DynamicWorldState state, float deltaTime) {
+  public void applyIntents(OpenWorldState state, float deltaTime) {
     for (Map.Entry<String, Vector3> entry : state.moveIntents().entrySet()) {
       String name = entry.getKey();
       Vector3 intent = entry.getValue();
@@ -70,7 +71,7 @@ public class OpenWorldEngine implements DynamicWorldEngine {
   }
 
   @Override
-  public WorldResult storeMoveIntent(OpenMoveRequest req, DynamicWorldState state) {
+  public WorldResult storeMoveIntent(OpenMoveRequest req, OpenWorldState state) {
     OpenWorldEntity entity = state.entities().get(req.playerId());
     if (entity == null) {
       String msg = String.format("[%s] storeMoveIntent: unknown entity '%s'.",
@@ -86,7 +87,7 @@ public class OpenWorldEngine implements DynamicWorldEngine {
   }
 
   @Override
-  public WorldResult joinEntity(JoinRequest req, DynamicWorldState state) {
+  public WorldResult joinEntity(JoinRequest req, OpenWorldState state) {
     if (state.entities().containsKey(req.playerName())) {
       return failed(req.playerName(), state.worldName(),
           String.format("Player '%s' is already in the world.", req.playerName()));
@@ -104,7 +105,7 @@ public class OpenWorldEngine implements DynamicWorldEngine {
   }
 
   @Override
-  public OpenWorldEntity removeEntity(String entityName, DynamicWorldState state) {
+  public OpenWorldEntity removeEntity(String entityName, OpenWorldState state) {
     OpenWorldEntity removed = state.entities().remove(entityName);
     if (removed != null) {
       state.moveIntents().remove(entityName);
@@ -117,7 +118,7 @@ public class OpenWorldEngine implements DynamicWorldEngine {
   }
 
   @Override
-  public String serialize(DynamicWorldState state) {
+  public String serialize(OpenWorldState state) {
     StringBuilder sb = new StringBuilder();
     sb.append("{\n");
 
@@ -152,7 +153,7 @@ public class OpenWorldEngine implements DynamicWorldEngine {
   }
 
   @Override
-  public String serializeOneLine(DynamicWorldState state) {
+  public String serializeOneLine(OpenWorldState state) {
     StringBuilder sb = new StringBuilder();
     sb.append("{");
 
@@ -183,7 +184,7 @@ public class OpenWorldEngine implements DynamicWorldEngine {
   }
 
   @Override
-  public void reset(DynamicWorldState state) {
+  public void reset(OpenWorldState state) {
     state.entities().clear();
     state.moveIntents().clear();
     log.info("[OpenWorldEngine] World '{}' reset.", state.worldName());

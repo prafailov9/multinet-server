@@ -12,7 +12,7 @@ import com.ntros.model.world.protocol.request.OrchestrateRequest;
 import com.ntros.model.world.protocol.request.JoinRequest;
 import com.ntros.model.world.protocol.request.MoveRequest;
 import com.ntros.model.world.state.GridSnapshot;
-import com.ntros.model.world.state.GridState;
+import com.ntros.model.world.state.core.GridState;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;

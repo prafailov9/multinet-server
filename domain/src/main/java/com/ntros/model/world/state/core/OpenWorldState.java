@@ -1,4 +1,4 @@
-package com.ntros.model.world.state.open;
+package com.ntros.model.world.state.core;
 
 import com.ntros.model.entity.movement.vectors.Vector3;
 import com.ntros.model.entity.open.OpenWorldEntity;
@@ -12,15 +12,11 @@ import java.util.Map;
  * The {@code moveIntents} map accumulates thrust vectors submitted by player sessions between
  * ticks; the engine drains it during {@code applyIntents}.
  */
-public interface DynamicWorldState {
+public interface OpenWorldState extends CoreState {
 
-  /** Human-readable name of this world instance. */
-  String worldName();
-
-  /** World-type tag, always {@code "OPEN"}. */
-  String worldType();
-
-  /** Bounding volume of the world. */
+  /**
+   * Bounding volume of the world.
+   */
   Dimension3D dimension();
 
   /**

@@ -7,7 +7,7 @@ import com.ntros.model.world.connector.ops.MoveOp;
 import com.ntros.model.world.connector.ops.OrchestrateOp;
 import com.ntros.model.world.connector.ops.RemoveOp;
 import com.ntros.model.world.connector.ops.WorldOp;
-import com.ntros.model.world.engine.solid.WorldEngine;
+import com.ntros.model.world.engine.core.WorldEngine;
 import com.ntros.model.world.protocol.WorldResult;
 import com.ntros.model.world.state.solid.GridWorldState;
 import java.util.List;

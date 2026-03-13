@@ -3,9 +3,9 @@ package com.ntros.model.world.connector;
 import com.ntros.model.entity.Entity;
 import com.ntros.model.entity.config.WorldCapabilities;
 import com.ntros.model.world.connector.ops.WorldOp;
-import com.ntros.model.world.engine.sim.TrafficEngine;
+import com.ntros.model.world.engine.core.TrafficEngine;
 import com.ntros.model.world.protocol.WorldResult;
-import com.ntros.model.world.state.TrafficState;
+import com.ntros.model.world.state.core.TrafficState;
 import java.util.List;
 
 public final class TrafficConnector implements WorldConnector {
