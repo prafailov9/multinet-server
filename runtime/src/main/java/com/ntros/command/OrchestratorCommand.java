@@ -8,7 +8,7 @@ import com.ntros.lifecycle.instance.Instance;
 import com.ntros.lifecycle.instance.Instances;
 import com.ntros.lifecycle.session.Session;
 import com.ntros.lifecycle.session.SessionContext;
-import com.ntros.model.entity.movement.cell.Position;
+import com.ntros.model.entity.movement.grid.Position;
 import com.ntros.model.world.protocol.result.WorldResult;
 import com.ntros.model.world.protocol.request.OrchestrateAction;
 import com.ntros.model.world.protocol.request.OrchestrateRequest;
@@ -18,17 +18,6 @@ import java.util.ArrayList;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 
-/**
- * Handles {@code ORCHESTRATE} commands for Game-of-Life (and similar) worlds.
- *
- * <p>Wire format (args after "ORCHESTRATE"):
- * <ul>
- *   <li>{@code SEED x1 y1 x2 y2 ...}   — make the listed cells alive (additive)</li>
- *   <li>{@code RANDOM <density>}         — random seed at the given density (0.0–1.0)</li>
- *   <li>{@code TOGGLE x y}              — flip the live/dead state of one cell</li>
- *   <li>{@code CLEAR}                   — kill all live cells</li>
- * </ul>
- */
 @Slf4j
 public class OrchestratorCommand extends AbstractCommand {
 
@@ -65,6 +54,8 @@ public class OrchestratorCommand extends AbstractCommand {
     }
   }
 
+
+  // TODO: move parsing into diff abstraction
   // ── Parsing ────────────────────────────────────────────────────────────────
 
   private OrchestrateRequest parseRequest(List<String> args) {

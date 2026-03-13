@@ -1,6 +1,6 @@
 package com.ntros.model.world.protocol.request;
 
-import com.ntros.model.entity.movement.cell.Position;
+import com.ntros.model.entity.movement.grid.Position;
 import java.util.List;
 
 /**

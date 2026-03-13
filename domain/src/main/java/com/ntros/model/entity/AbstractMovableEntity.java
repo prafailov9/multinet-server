@@ -1,6 +1,6 @@
 package com.ntros.model.entity;
 
-import com.ntros.model.entity.movement.cell.Position;
+import com.ntros.model.entity.movement.grid.Position;
 import com.ntros.model.entity.solid.StaticEntity;
 
 public abstract class AbstractMovableEntity implements StaticEntity {

@@ -6,46 +6,22 @@ import com.ntros.model.world.engine.d2.grid.gameoflife.fast.BitGrid;
 import com.ntros.model.world.state.core.GridState;
 import com.ntros.model.world.state.dimension.Dimension;
 import com.ntros.model.world.state.dimension.Dimension2D;
-
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-public class GameOfLifeState implements GridState {
+public class FallingSandState implements GridState {
 
   private final String worldName;
   private final Dimension dimension;
-
-  private final BitGrid grid;
-  private final BitGrid next;
 
   private final Map<String, Entity> entityMap = new LinkedHashMap<>();
   private final Map<Vector4, String> positionMap = new HashMap<>();
   private final Map<String, Vector4> moveIntentMap = new HashMap<>();
 
-  public GameOfLifeState(String worldName, int width, int height) {
+  public FallingSandState(String worldName, int width, int height) {
     this.worldName = worldName;
     this.dimension = new Dimension2D(width, height);
-    this.grid = new BitGrid(width, height);
-    this.next = new BitGrid(width, height);
-  }
-
-  public BitGrid grid() {
-    return grid;
-  }
-
-  public BitGrid next() {
-    return next;
-  }
-
-  @Override
-  public String worldName() {
-    return worldName;
-  }
-
-  @Override
-  public String worldType() {
-    return "GAME_OF_LIFE";
   }
 
   @Override
@@ -60,7 +36,7 @@ public class GameOfLifeState implements GridState {
 
   @Override
   public Map<Vector4, String> takenPositions() {
-    return positionMap;
+    return takenPositions();
   }
 
   @Override
@@ -70,26 +46,31 @@ public class GameOfLifeState implements GridState {
 
   @Override
   public Map<Vector4, CellType> terrain() {
-    throw new UnsupportedOperationException("GameOfLife World world does not expose terrain map");
+    throw new UnsupportedOperationException("FallingSand World world does not expose terrain map");
   }
 
   @Override
   public CellType getCellTypeAt(Vector4 pos) {
-    return grid.get((int) pos.getX(), (int) pos.getY())
-        ? CellType.ALIVE
-        : CellType.EMPTY;
+    return null;
   }
 
   @Override
-  public boolean isLegalMove(Vector4 vector4) {
-    return isWithinBounds(vector4);
+  public boolean isLegalMove(Vector4 position) {
+    return false;
   }
 
   @Override
-  public boolean isWithinBounds(Vector4 vec) {
-    return vec.getX() >= 0 &&
-        vec.getX() < dimension.getWidth() &&
-        vec.getY() >= 0 &&
-        vec.getY() < dimension.getHeight();
+  public boolean isWithinBounds(Vector4 position) {
+    return false;
+  }
+
+  @Override
+  public String worldName() {
+    return "";
+  }
+
+  @Override
+  public String worldType() {
+    return "";
   }
 }

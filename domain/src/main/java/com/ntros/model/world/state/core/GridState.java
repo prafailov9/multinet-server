@@ -6,6 +6,7 @@ import com.ntros.model.world.state.d2.grid.CellType;
 import com.ntros.model.world.state.dimension.Dimension;
 import java.util.Map;
 
+//TODO: Substitute Map + Vector4 usage with float arrays
 public interface GridState extends WorldState {
 
   Dimension dimension();
@@ -18,7 +19,7 @@ public interface GridState extends WorldState {
 
   Map<Vector4, CellType> terrain();
 
-  CellType getTileTypeAt(Vector4 pos);
+  CellType getCellTypeAt(Vector4 pos);
 
   boolean isLegalMove(Vector4 position);
 

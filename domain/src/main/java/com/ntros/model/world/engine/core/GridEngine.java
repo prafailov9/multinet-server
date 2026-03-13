@@ -2,7 +2,6 @@ package com.ntros.model.world.engine.core;
 
 import com.ntros.model.entity.Entity;
 import com.ntros.model.world.engine.d2.grid.GridWorldEngine;
-import com.ntros.model.world.engine.d2.grid.gameoflife.GridGolEngine;
 import com.ntros.model.world.protocol.result.WorldResult;
 import com.ntros.model.world.protocol.request.JoinRequest;
 import com.ntros.model.world.protocol.request.MoveRequest;

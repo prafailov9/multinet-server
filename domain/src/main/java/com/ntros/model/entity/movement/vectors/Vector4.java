@@ -1,9 +1,7 @@
 package com.ntros.model.entity.movement.vectors;
 
 
-import com.ntros.model.entity.movement.cell.Position;
-import java.util.Objects;
-import lombok.Data;
+import com.ntros.model.entity.movement.grid.Position;
 
 /**
  * Immutable 4-dimensional float vector.

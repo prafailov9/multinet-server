@@ -2,7 +2,7 @@ package com.ntros.model.entity.open;
 
 import com.ntros.model.entity.movement.vectors.Vector3;
 import com.ntros.model.entity.movement.velocity.Velocity3;
-import com.ntros.model.entity.movement.cell.Position;
+import com.ntros.model.entity.movement.grid.Position;
 
 /**
  * A freely-moving entity that lives in a continuous 3D open world.

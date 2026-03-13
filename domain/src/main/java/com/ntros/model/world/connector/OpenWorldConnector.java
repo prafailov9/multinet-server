@@ -2,7 +2,7 @@ package com.ntros.model.world.connector;
 
 import com.ntros.model.entity.Entity;
 import com.ntros.model.entity.config.WorldCapabilities;
-import com.ntros.model.entity.movement.cell.Position;
+import com.ntros.model.entity.movement.grid.Position;
 import com.ntros.model.entity.open.OpenWorldEntity;
 import com.ntros.model.world.connector.ops.JoinOp;
 import com.ntros.model.world.connector.ops.OpenMoveOp;

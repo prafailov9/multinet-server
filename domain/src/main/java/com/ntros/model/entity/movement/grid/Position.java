@@ -1,4 +1,4 @@
-package com.ntros.model.entity.movement.cell;
+package com.ntros.model.entity.movement.grid;
 
 import com.ntros.model.entity.movement.vectors.Vector4;
 import java.util.Objects;

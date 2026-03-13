@@ -2,7 +2,7 @@ package com.ntros.model.world.engine.d2.grid.gameoflife;
 
 import com.ntros.model.entity.Entity;
 import com.ntros.model.entity.Player;
-import com.ntros.model.entity.movement.cell.Position;
+import com.ntros.model.entity.movement.grid.Position;
 import com.ntros.model.entity.movement.vectors.Vector4;
 import com.ntros.model.entity.sequence.IdSequenceGenerator;
 import com.ntros.model.world.engine.d2.grid.AbstractGridEngine;

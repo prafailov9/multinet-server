@@ -132,7 +132,7 @@ public class GridWorldState implements GridState {
   }
 
   @Override
-  public CellType getTileTypeAt(Vector4 pos) {
+  public CellType getCellTypeAt(Vector4 pos) {
     return terrainMap.get(pos);
   }
 

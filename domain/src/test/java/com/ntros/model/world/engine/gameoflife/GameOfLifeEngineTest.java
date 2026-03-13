@@ -2,7 +2,7 @@ package com.ntros.model.world.engine.gameoflife;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.ntros.model.entity.movement.cell.Position;
+import com.ntros.model.entity.movement.grid.Position;
 import com.ntros.model.entity.movement.vectors.Vector4;
 import com.ntros.model.entity.sequence.IdSequenceGenerator;
 import com.ntros.model.world.engine.d2.grid.GridWorldEngine;
