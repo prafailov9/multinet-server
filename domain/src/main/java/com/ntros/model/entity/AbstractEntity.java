@@ -1,9 +1,8 @@
 package com.ntros.model.entity;
 
 import com.ntros.model.entity.movement.grid.Position;
-import com.ntros.model.entity.solid.StaticEntity;
 
-public abstract class AbstractMovableEntity implements StaticEntity {
+public abstract class AbstractEntity implements Entity {
 
   protected long id;
   protected int hp;
@@ -11,11 +10,11 @@ public abstract class AbstractMovableEntity implements StaticEntity {
   protected Position currentPosition;
   protected Position movementIntent;
 
-  public AbstractMovableEntity(Position position) {
+  public AbstractEntity(Position position) {
     this.currentPosition = position;
   }
 
-  public AbstractMovableEntity(Position position, String name, long id, int hp) {
+  public AbstractEntity(Position position, String name, long id, int hp) {
     this.currentPosition = position;
     this.name = name;
     this.id = id;

@@ -6,7 +6,6 @@ import com.ntros.model.entity.movement.MoveInput;
 import com.ntros.model.entity.movement.grid.Position;
 import com.ntros.model.entity.movement.vectors.Vector4;
 import com.ntros.model.entity.sequence.IdSequenceGenerator;
-import com.ntros.model.entity.solid.StaticEntity;
 import com.ntros.model.world.state.d2.grid.CellType;
 import com.ntros.model.world.protocol.result.WorldResult;
 import com.ntros.model.world.protocol.request.JoinRequest;
@@ -180,7 +179,7 @@ public class GridWorldEngine extends AbstractGridEngine {
     gridState.terrain().clear();
   }
 
-  private void addEntity(StaticEntity entity, GridState worldState) {
+  private void addEntity(Entity entity, GridState worldState) {
     worldState.entities().put(entity.getName(), entity);
     worldState.takenPositions()
         .put(Vector4.of2dGridPosition(entity.getPosition()), entity.getName());

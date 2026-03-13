@@ -3,7 +3,7 @@ package com.ntros.model.entity;
 
 import com.ntros.model.entity.movement.grid.Position;
 
-public class Player extends AbstractMovableEntity {
+public class Player extends AbstractEntity {
 
   public Player(Position position, String name, long id, int hp) {
     super(position, name, id, hp);
@@ -20,8 +20,6 @@ public class Player extends AbstractMovableEntity {
         "id=" + id +
         ", hp=" + hp +
         ", name='" + name + '\'' +
-        ", currentPosition=" + currentPosition +
-        ", movementIntent=" + movementIntent +
-        '}';
+        ", currentPosition=" + currentPosition + "}";
   }
 }

@@ -87,45 +87,27 @@ public class GameOfLifeEngine extends AbstractGridEngine {
    */
   private boolean needsFullSnapshot = true;
 
-  private GridDiff lastDiff;
+  // ── Snapshot (called only when a broadcast will actually be sent) ─────────
 
   /**
-   * Allocates (or re-uses) the engine's working buffers for a world of the given size.
-   * Called at the start of every tick; the inner check is a single int comparison,
-   * so it adds no measurable overhead once sized.
+   * Handles an orchestrator command against the live terrain.
+   * Runs on the actor thread — terrain mutations are safe without additional locking.
    */
-  private void ensureBuffers(int W, int H, Map<Vector4, CellType> terrain) {
-    if (curr != null && bufW == W && bufH == H) {
-      return;
-    }
-    rowLongs = (W + 63) >>> 6;
-    int words = H * rowLongs;
-    curr = new long[words];
-    next = new long[words];
-    broadcastBasis = new long[words];
-    votesBuf = new int[W * H];
-    dirtyBuf = new int[W * H];
-    staticMask = new boolean[W * H];
-    bufW = W;
-    bufH = H;
-    needsFullSnapshot = true; // force a terrain reload on the first tick after resize
-
-    // Mark permanently-blocked cells so we never birth on top of them.
-    // For blank GoL worlds this loop is a no-op (terrain is empty at init time).
-    for (Map.Entry<Vector4, CellType> e : terrain.entrySet()) {
-      if (isStatic(e.getValue())) {
-        int x = (int) e.getKey().getX();
-        int y = (int) e.getKey().getY();
-        if (x >= 0 && x < W && y >= 0 && y < H) {
-          staticMask[y * W + x] = true;
-        }
-      }
-    }
-    log.debug("[GoL] Allocated bitset buffers for {}×{} world ({} KB).",
-        W, H, (words * 8 + W * H * 5) / 1024);
+  @Override
+  public WorldResult orchestrate(OrchestrateRequest req, GridState state) {
+    return switch (req.action()) {
+      case SEED -> applySeed(req, state);
+      case RANDOM_SEED -> applyRandomSeed(req.density(), state);
+      case TOGGLE -> applyToggle(req, state);
+      case CLEAR -> applyClear(state);
+    };
   }
 
-  // ── Snapshot (called only when a broadcast will actually be sent) ─────────
+  @Override
+  public void applyIntents(GridState state) {
+    nextGeneration(state);
+    state.moveIntents().clear(); // GoL has no player-driven move intents
+  }
 
   /**
    * Returns either a full {@link GridSnapshot} or a compact {@link GridDiff}, depending on
@@ -179,26 +161,6 @@ public class GameOfLifeEngine extends AbstractGridEngine {
     }
     System.arraycopy(curr, 0, broadcastBasis, 0, curr.length);
     return new GridDiff(bornList, diedList, buildEntityView(state));
-  }
-
-  @Override
-  public void applyIntents(GridState state) {
-    nextGeneration(state);
-    state.moveIntents().clear(); // GoL has no player-driven move intents
-  }
-
-  /**
-   * Handles an orchestrator command against the live terrain.
-   * Runs on the actor thread — terrain mutations are safe without additional locking.
-   */
-  @Override
-  public WorldResult orchestrate(OrchestrateRequest req, GridState state) {
-    return switch (req.action()) {
-      case SEED -> applySeed(req, state);
-      case RANDOM_SEED -> applyRandomSeed(req.density(), state);
-      case TOGGLE -> applyToggle(req, state);
-      case CLEAR -> applyClear(state);
-    };
   }
 
   /**
@@ -261,6 +223,81 @@ public class GameOfLifeEngine extends AbstractGridEngine {
     state.entities().clear();
     state.moveIntents().clear();
     log.info("[GoL] World reset — all cells cleared, spectators removed.");
+  }
+
+  /**
+   * Allocates (or re-uses) the engine's working buffers for a world of the given size.
+   * Called at the start of every tick; the inner check is a single int comparison,
+   * so it adds no measurable overhead once sized.
+   * <p>
+   * /**
+   * * example: 256x256
+   * * rowLongs = ceil(256/64) = 4
+   * * words = 256 * 4 = 1024
+   * * array sizes become 1024
+   * * each long holds 64 cells, so: 1024 longs × 64 bits = 65536 cells
+   * * which matches: 256 × 256 = 65536
+   * * visual rep:row 0
+   * * curr[0] -> cells 0–63
+   * * curr[1] -> cells 64–127
+   * * curr[2] -> cells 128–191
+   * * curr[3] -> cells 192–255
+   * * row 1
+   * * curr[4] -> cells 256–320
+   * * curr[5] -> ...
+   * * curr[6] -> ...
+   * * curr[7] -> ...
+   * * // >>> 6 means divide by 64
+   * * // longs needed per row, same as ceil(W / 64)
+   * * // total number of longs for the grid
+   * * // Example for 10x10: Setting Cell (x=7,y=3)
+   * * // rowLongs = w + 63 = 10 + 63 = 73 / 64 = 1 // each row will use 64 bits(1 long)
+   * * // words = 10 * 1 = 10 (size of array)
+   * * // y = 3
+   * * // rowLongs = 1
+   * * // x >>> 6 = 7 / 64 = 0
+   * * // ! Each long contains 64 bits, but only 10 bits are used.
+   * * // index = y * rowLongs + (x >>> 6);
+   * * // index = 3 * 1 + 0 = 3
+   * * // the cell lives at curr[3]
+   * * // bit   = x & 63
+   * * // bit = 7 &  63 = 7
+   * * // create a mask: 1L << 7: 0000000010000000
+   * * // set the bit: curr[3] |= 1L << 7
+   * * // now curr[3] looks like: 0000000010000000
+   * *
+   *
+   */
+  private void ensureBuffers(int W, int H, Map<Vector4, CellType> terrain) {
+    if (curr != null && bufW == W && bufH == H) {
+      return;
+    }
+    rowLongs = (W + 63) >>> 6;
+    // words = the number of long values needed to store the entire grid bitset
+    int words = H * rowLongs;
+    curr = new long[words];
+    next = new long[words];
+    broadcastBasis = new long[words];
+    votesBuf = new int[W * H];
+    dirtyBuf = new int[W * H];
+    staticMask = new boolean[W * H];
+    bufW = W;
+    bufH = H;
+    needsFullSnapshot = true; // force a terrain reload on the first tick after resize
+
+    // Mark permanently-blocked cells so we never birth on top of them.
+    // For blank GoL worlds this loop is a no-op (terrain is empty at init time).
+    for (Map.Entry<Vector4, CellType> e : terrain.entrySet()) {
+      if (isStatic(e.getValue())) {
+        int x = (int) e.getKey().getX();
+        int y = (int) e.getKey().getY();
+        if (x >= 0 && x < W && y >= 0 && y < H) {
+          staticMask[y * W + x] = true;
+        }
+      }
+    }
+    log.debug("[GoL] Allocated bitset buffers for {}×{} world ({} KB).",
+        W, H, (words * 8 + W * H * 5) / 1024);
   }
 
   // ── Conway's rules ───────────────────────────────────────────────────────

@@ -42,13 +42,13 @@ public class ServerBootstrap {
   private static final int TICK_RATE = 120;
   // emits 70 messages per second
   private static final int BROADCAST_RATE = 70;
-  private static final int GOL_BROADCAST_RATE   = 10;
+  private static final int GOL_BROADCAST_RATE = 10;
   private static final int WATOR_BROADCAST_RATE = 10;
 
   // Wa-Tor initial population
   private static final int WATOR_INITIAL_PREDATORS = 40;
-  private static final int WATOR_INITIAL_PREY      = 120;
-  private static final int WATOR_INITIAL_PLANTS    = 180;
+  private static final int WATOR_INITIAL_PREY = 120;
+  private static final int WATOR_INITIAL_PLANTS = 180;
 
   public static void startServer() {
     log.info("Starting server on port {}", PORT);
@@ -174,12 +174,16 @@ public class ServerBootstrap {
   private static void bootstrapWaTorWorlds() {
     String[] watorNames = {"wator"};
     for (String name : watorNames) {
-      WaTorWorld world  = new WaTorWorld(name);
+      WaTorWorld world = new WaTorWorld(name);
       WaTorEngineImpl engine = new WaTorEngineImpl();
 
       // Seed initial population
-      for (int i = 0; i < WATOR_INITIAL_PREDATORS; i++) world.spawnPredator();
-      for (int i = 0; i < WATOR_INITIAL_PREY;      i++) world.spawnPrey();
+      for (int i = 0; i < WATOR_INITIAL_PREDATORS; i++) {
+        world.spawnPredator();
+      }
+      for (int i = 0; i < WATOR_INITIAL_PREY; i++) {
+        world.spawnPrey();
+      }
       for (int i = 0; i < WATOR_INITIAL_PLANTS; i++) {
         float x = (float) (Math.random() * com.ntros.model.world.wator.WaTorWorldState.WIDTH);
         float y = (float) (Math.random() * com.ntros.model.world.wator.WaTorWorldState.HEIGHT);
@@ -189,10 +193,10 @@ public class ServerBootstrap {
       WorldCapabilities caps = new WorldCapabilities(true, false, true, false);
       WaTorConnector connector = new WaTorConnector(world, engine, caps);
 
-      SessionManager   sessionManager = new ClientSessionManager();
-      Clock            clock          = new FixedRateClock(TICK_RATE);
-      Settings         settings       = Settings.autonomousSimulation(WATOR_BROADCAST_RATE);
-      ServerInstance   instance       = new ServerInstance(connector, sessionManager, clock,
+      SessionManager sessionManager = new ClientSessionManager();
+      Clock clock = new FixedRateClock(TICK_RATE);
+      Settings settings = Settings.autonomousSimulation(WATOR_BROADCAST_RATE);
+      ServerInstance instance = new ServerInstance(connector, sessionManager, clock,
           new SharedBroadcaster(), settings);
 
       Instances.registerInstance(instance);

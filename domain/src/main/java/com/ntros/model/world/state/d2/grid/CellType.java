@@ -12,6 +12,7 @@ public enum CellType {
   SAND,
   OIL,
   STONE,
-  ACID
+  ACID,
+  ASH
 
 }
