@@ -1,4 +1,4 @@
-package com.ntros.model.world.protocol;
+package com.ntros.model.world.state.d2.grid;
 
 public enum CellType {
   EMPTY,

@@ -1,8 +1,7 @@
-package com.ntros.model.world.state.solid;
+package com.ntros.model.world.state.d2.grid;
 
 import com.ntros.model.entity.Entity;
 import com.ntros.model.entity.movement.vectors.Vector4;
-import com.ntros.model.world.protocol.CellType;
 import com.ntros.model.world.state.core.GridState;
 import com.ntros.model.world.state.dimension.Dimension;
 import com.ntros.model.world.state.dimension.Dimension2D;

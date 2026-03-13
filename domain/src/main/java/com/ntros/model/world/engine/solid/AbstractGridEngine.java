@@ -2,7 +2,7 @@ package com.ntros.model.world.engine.solid;
 
 import com.ntros.model.world.engine.core.GridEngine;
 import com.ntros.model.world.state.EntityView;
-import com.ntros.model.world.state.GridSnapshot;
+import com.ntros.model.world.state.d2.grid.GridSnapshot;
 import com.ntros.model.world.state.core.GridState;
 import java.util.LinkedHashMap;
 import java.util.Map;

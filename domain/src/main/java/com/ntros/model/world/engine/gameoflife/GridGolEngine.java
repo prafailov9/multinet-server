@@ -6,7 +6,7 @@ import com.ntros.model.entity.movement.cell.Position;
 import com.ntros.model.entity.movement.vectors.Vector4;
 import com.ntros.model.entity.sequence.IdSequenceGenerator;
 import com.ntros.model.world.engine.solid.AbstractGridEngine;
-import com.ntros.model.world.protocol.CellType;
+import com.ntros.model.world.state.d2.grid.CellType;
 import com.ntros.model.world.protocol.WorldResult;
 import com.ntros.model.world.protocol.request.OrchestrateRequest;
 import com.ntros.model.world.protocol.request.JoinRequest;

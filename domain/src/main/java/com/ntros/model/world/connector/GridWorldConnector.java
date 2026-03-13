@@ -9,7 +9,7 @@ import com.ntros.model.world.connector.ops.RemoveOp;
 import com.ntros.model.world.connector.ops.WorldOp;
 import com.ntros.model.world.engine.core.GridEngine;
 import com.ntros.model.world.protocol.WorldResult;
-import com.ntros.model.world.state.solid.GridWorldState;
+import com.ntros.model.world.state.d2.grid.GridWorldState;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 

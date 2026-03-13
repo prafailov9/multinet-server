@@ -23,7 +23,7 @@ import com.ntros.model.entity.sequence.IdSequenceGenerator;
 import com.ntros.model.world.connector.GridWorldConnector;
 import com.ntros.model.world.connector.WorldConnector;
 import com.ntros.model.world.engine.solid.GridWorldEngine;
-import com.ntros.model.world.state.solid.GridWorldState;
+import com.ntros.model.world.state.d2.grid.GridWorldState;
 import com.ntros.persistence.db.DatabaseBuilder;
 import com.ntros.server.TcpServer;
 import java.io.IOException;

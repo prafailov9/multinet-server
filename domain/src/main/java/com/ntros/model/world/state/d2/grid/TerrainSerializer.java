@@ -1,10 +1,9 @@
-package com.ntros.model.world.state;
+package com.ntros.model.world.state.d2.grid;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.ntros.model.entity.movement.vectors.Vector4;
-import com.ntros.model.world.protocol.CellType;
 import java.io.IOException;
 
 /**

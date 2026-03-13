@@ -2,7 +2,7 @@ package com.ntros.model.world.state.core;
 
 import com.ntros.model.entity.Entity;
 import com.ntros.model.entity.movement.vectors.Vector4;
-import com.ntros.model.world.protocol.CellType;
+import com.ntros.model.world.state.d2.grid.CellType;
 import com.ntros.model.world.state.dimension.Dimension;
 import java.util.Map;
 

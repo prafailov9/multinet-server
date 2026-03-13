@@ -4,7 +4,7 @@ import com.ntros.model.entity.config.WorldCapabilities;
 import com.ntros.model.world.connector.GridWorldConnector;
 import com.ntros.model.world.connector.WorldConnector;
 import com.ntros.model.world.engine.solid.GridWorldEngine;
-import com.ntros.model.world.state.solid.GridWorldState;
+import com.ntros.model.world.state.d2.grid.GridWorldState;
 import java.util.HashMap;
 import java.util.Map;
 

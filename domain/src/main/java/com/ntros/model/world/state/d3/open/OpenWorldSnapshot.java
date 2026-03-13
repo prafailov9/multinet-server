@@ -1,5 +1,6 @@
-package com.ntros.model.world.state;
+package com.ntros.model.world.state.d3.open;
 
+import com.ntros.model.world.state.d2.grid.GridSnapshot;
 import java.util.Map;
 
 /**

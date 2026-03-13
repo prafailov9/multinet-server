@@ -5,7 +5,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import com.ntros.model.entity.sequence.IdSequenceGenerator;
 import com.ntros.model.world.protocol.WorldResult;
 import com.ntros.model.world.protocol.request.JoinRequest;
-import com.ntros.model.world.state.solid.GridWorldState;
+import com.ntros.model.world.state.d2.grid.GridWorldState;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 

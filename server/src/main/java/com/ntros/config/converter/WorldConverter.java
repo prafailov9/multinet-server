@@ -6,7 +6,7 @@ import com.ntros.model.world.connector.WorldConnector;
 import com.ntros.model.world.engine.gameoflife.GameOfLifeEngine;
 import com.ntros.model.world.engine.solid.GridWorldEngine;
 import com.ntros.model.world.engine.core.GridEngine;
-import com.ntros.model.world.state.solid.GridWorldState;
+import com.ntros.model.world.state.d2.grid.GridWorldState;
 import com.ntros.persistence.model.WorldRecord;
 
 /**
