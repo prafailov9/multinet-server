@@ -4,7 +4,7 @@ target/
 !**/src/test/**/target/
 
 .claude/**
-data/snapshots/**
+data/snapshots/
 *.jfr
 *.txt
 ### IntelliJ IDEA ###

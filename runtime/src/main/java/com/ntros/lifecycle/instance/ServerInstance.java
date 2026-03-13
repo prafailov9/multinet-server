@@ -51,9 +51,27 @@ public class ServerInstance extends AbstractInstance {
       return;
     }
     clock.tick(() -> {
-      Object snapshot = tryWorldUpdate();
-      broadcastWorldUpdate(snapshot);
+      // Decide broadcast eligibility before touching the actor so we can tell it
+      // whether to take a snapshot (expensive) or just advance the simulation.
+      boolean broadcast = shouldBroadcastNow();
+      Object snapshot = tryWorldUpdate(broadcast);
+      if (snapshot != null) {
+        broadcastWorldUpdate(snapshot);
+      }
     });
+  }
+
+  /**
+   * Returns true and advances {@link #lastBroadcastNanos} when the configured broadcast
+   * interval has elapsed.  Called once per clock tick, on the clock-worker thread.
+   */
+  private boolean shouldBroadcastNow() {
+    long now = System.nanoTime();
+    if (now - lastBroadcastNanos >= broadcastIntervalNanos) {
+      lastBroadcastNanos = now;
+      return true;
+    }
+    return false;
   }
 
   @Override
@@ -147,17 +165,28 @@ public class ServerInstance extends AbstractInstance {
   }
 
   /**
-   * Runs on the clock worker thread. Blocks until the actor completes the step so that
-   * {@code world.snapshot()} is taken on the actor thread — guaranteeing consistency.
+   * Advances the world simulation on the actor thread.
    *
-   * @return the world snapshot captured by the actor, or {@code null} if the world hasn't started
+   * <p>When {@code takeSnapshot} is {@code true} the actor runs a full step (update + snapshot)
+   * and the snapshot object is returned for broadcasting.  When {@code false} only the world
+   * update is performed; no snapshot is taken and {@code null} is returned.  This avoids
+   * computing and serialising a diff for every tick when the broadcast interval has not yet
+   * elapsed, keeping the engine's {@code broadcastBasis} aligned with ticks that actually
+   * produce a frame.
+   *
+   * @param takeSnapshot whether a snapshot should be taken this tick
+   * @return the world snapshot, or {@code null} if the world hasn't started or no snapshot taken
    */
-  private Object tryWorldUpdate() {
+  private Object tryWorldUpdate(boolean takeSnapshot) {
     if (!isInstanceLive()) {
       return null;
     }
     try {
-      return actor.step(world).join();
+      if (takeSnapshot) {
+        return actor.step(world).join(); // update + snapshot
+      }
+      actor.step(world, () -> { }).join(); // update only — no snapshot
+      return null;
     } catch (Throwable t) {
       log.error("[{}] tick failed: {}", getWorldName(), t.getMessage(), t);
       return null;
@@ -169,9 +198,6 @@ public class ServerInstance extends AbstractInstance {
    * Runs on the clock worker thread — off the actor, so the actor is free for the next tick.
    */
   private void broadcastWorldUpdate(Object snapshot) {
-    if (snapshot == null) {
-      return;
-    }
     byte[] body = encoder.encodeBody(snapshot);
     try {
       byte[] frame = CODEC.encode(new StatePacket(seq.incrementAndGet(), getWorldName(), body));

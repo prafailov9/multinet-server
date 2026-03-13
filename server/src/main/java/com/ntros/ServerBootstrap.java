@@ -38,6 +38,7 @@ public class ServerBootstrap {
   private static final int TICK_RATE = 120;
   // emits 70 messages per second
   private static final int BROADCAST_RATE = 70;
+  private static final int GOL_BROADCAST_RATE = 10;
 
   public static void startServer() {
     log.info("Starting server on port {}", PORT);
@@ -142,7 +143,7 @@ public class ServerBootstrap {
 
       // orchestrated worlds (GoL etc.) require an ORCHESTRATE command to seed them before ticking
       Settings settings = world.getCapabilities().supportsOrchestrator()
-          ? Settings.multiplayerOrchestrator(BROADCAST_RATE)
+          ? Settings.multiplayerOrchestrator(GOL_BROADCAST_RATE)
           : Settings.multiplayer(BROADCAST_RATE);
 
       Instances.registerInstance(

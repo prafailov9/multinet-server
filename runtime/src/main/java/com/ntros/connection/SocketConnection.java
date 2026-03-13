@@ -37,7 +37,10 @@ import lombok.extern.slf4j.Slf4j;
 public class SocketConnection implements Connection {
 
   private static final int MAX_TIMEOUT_MILLIS = 5000;
-  private static final int MAX_QUEUE_SIZE = 1024;
+  // 8 slots: enough for burst handling without allowing hundreds of MB of stale frames
+  // to queue up for a slow client. Excess frames are dropped (oldest-first) so the client
+  // always sees the most recent state when it catches up.
+  private static final int MAX_QUEUE_SIZE = 8;
   private static final int MAX_LINE_LENGTH = 8192;
   private static final int MAX_LINE_BUFFER_SIZE = 256;
 

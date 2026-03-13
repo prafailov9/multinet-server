@@ -5,52 +5,38 @@ package com.ntros.ds;
  */
 public class ArrayRingBuffer<E> implements RingBuffer<E> {
 
-  private final Object[] buffer;
   private final int mask;
+  private final Object[] buf;
 
-  // written only by producer
-  private volatile int head = 0;
+  // Padding prevents false sharing: head and tail on separate cache lines.
+  // Without it, the CPU treats them as one unit and forces cache coherence
+  // traffic between producer and consumer cores — killing the whole point.
+  private volatile long head = 0;   // written only by producer
 
-  // written only by consumer
-  private volatile int tail = 0;
+  private volatile long tail = 0;   // written only by consumer
 
-  public ArrayRingBuffer(int capacity) {
-    if (Integer.bitCount(capacity) != 1) {
-      throw new IllegalArgumentException("Capacity must be a power of 2");
-    }
-
-    this.buffer = new Object[capacity];
-    this.mask = capacity - 1;
+  public ArrayRingBuffer(int capacity) {  // capacity must be power of 2
+    mask = capacity - 1;
+    buf = new Object[capacity];
   }
 
-  // producer only
   @Override
   public boolean offer(E item) {
-    int nextHead = (head + 1) & mask;
-
-    if (nextHead == tail) {
-      return false; // buffer full
-    }
-
-    buffer[head] = item;
-    head = nextHead;
+    long h = head;
+    if (h - tail >= buf.length) return false; // full
+    buf[(int) (h & mask)] = item;
+    head = h + 1;                        // volatile write = release barrier
     return true;
   }
 
-  // consumer only
-  @Override
   @SuppressWarnings("unchecked")
   public E poll() {
-    if (tail == head) {
-      return null; // buffer empty
+    long t = tail;
+    if (t == head) {
+      return null;          // empty
     }
-
-    int index = tail;
-    E item = (E) buffer[index];
-
-    buffer[index] = null; // avoid memory leak
-    tail = (tail + 1) & mask;
-
+    E item = (E) buf[(int) (t & mask)];
+    tail = t + 1;                        // volatile write = release barrier
     return item;
   }
 
@@ -61,7 +47,7 @@ public class ArrayRingBuffer<E> implements RingBuffer<E> {
     if (tail == head) {
       return null;
     }
-    return (E) buffer[tail];
+    return (E) buf[(int) (tail & mask)];
   }
 
   @Override
@@ -70,7 +56,7 @@ public class ArrayRingBuffer<E> implements RingBuffer<E> {
     if (head == tail) {
       return null;
     }
-    return (E) buffer[head];
+    return (E) buf[(int) (tail & mask)];
   }
 
   @Override
@@ -80,16 +66,16 @@ public class ArrayRingBuffer<E> implements RingBuffer<E> {
 
   @Override
   public boolean isFull() {
-    return ((head + 1) & mask) == tail;
+    return head - tail > mask;
   }
 
   @Override
   public int capacity() {
-    return buffer.length;
+    return buf.length;
   }
 
   @Override
   public int size() {
-    return (head - tail) & mask;
+    return (int) (head - tail);
   }
 }
