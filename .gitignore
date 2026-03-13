@@ -3,6 +3,9 @@ target/
 !**/src/main/**/target/
 !**/src/test/**/target/
 
+data/snapshots/
+*.jfr
+*.txt
 ### IntelliJ IDEA ###
 .idea/*
 .idea/modules.xml
