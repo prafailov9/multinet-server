@@ -9,7 +9,7 @@ import com.ntros.model.world.state.core.OpenWorldState;
 /**
  * Engine contract for a continuous 3D open world.
  *
- * <p>Mirrors the structure of {@link WorldEngine} for grid
+ * <p>Mirrors the structure of {@link GridEngine} for grid
  * worlds, adapted for physics-driven movement and float-precision positions.
  */
 public interface DynamicWorldEngine {

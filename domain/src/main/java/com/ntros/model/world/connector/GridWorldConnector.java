@@ -7,7 +7,7 @@ import com.ntros.model.world.connector.ops.MoveOp;
 import com.ntros.model.world.connector.ops.OrchestrateOp;
 import com.ntros.model.world.connector.ops.RemoveOp;
 import com.ntros.model.world.connector.ops.WorldOp;
-import com.ntros.model.world.engine.core.WorldEngine;
+import com.ntros.model.world.engine.core.GridEngine;
 import com.ntros.model.world.protocol.WorldResult;
 import com.ntros.model.world.state.solid.GridWorldState;
 import java.util.List;
@@ -17,10 +17,10 @@ import lombok.extern.slf4j.Slf4j;
 public class GridWorldConnector implements WorldConnector {
 
   private final GridWorldState state;
-  private final WorldEngine engine;
+  private final GridEngine engine;
   private final WorldCapabilities caps;
 
-  public GridWorldConnector(GridWorldState state, WorldEngine engine, WorldCapabilities caps) {
+  public GridWorldConnector(GridWorldState state, GridEngine engine, WorldCapabilities caps) {
     this.state = state;
     this.engine = engine;
     this.caps = caps;

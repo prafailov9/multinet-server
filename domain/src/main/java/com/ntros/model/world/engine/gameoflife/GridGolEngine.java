@@ -6,7 +6,7 @@ import com.ntros.model.entity.movement.cell.Position;
 import com.ntros.model.entity.movement.vectors.Vector4;
 import com.ntros.model.entity.sequence.IdSequenceGenerator;
 import com.ntros.model.world.engine.solid.AbstractGridEngine;
-import com.ntros.model.world.protocol.TileType;
+import com.ntros.model.world.protocol.CellType;
 import com.ntros.model.world.protocol.WorldResult;
 import com.ntros.model.world.protocol.request.OrchestrateRequest;
 import com.ntros.model.world.protocol.request.JoinRequest;
@@ -23,8 +23,8 @@ import lombok.extern.slf4j.Slf4j;
  * Conway's Game of Life engine.
  *
  * <h3>Cell representation</h3>
- * Live cells are stored as {@link TileType#ALIVE} in the world's terrain map.
- * Dead cells are {@link TileType#EMPTY}. All other tile types (WALL, WATER, …) act as
+ * Live cells are stored as {@link CellType#ALIVE} in the world's terrain map.
+ * Dead cells are {@link CellType#EMPTY}. All other tile types (WALL, WATER, …) act as
  * permanent obstacles — they never become alive and are never killed.
  *
  * <h3>Tick contract</h3>
@@ -145,19 +145,19 @@ public class GridGolEngine extends AbstractGridEngine {
    * sparse or partially populated worlds (e.g. 1024×1024 with 30% density = 314k alive cells
    * → ~2.5M operations vs 8M for the naive approach, and improving as the board stabilises).
    *
-   * <p>The terrain map is kept <em>sparse</em>: only {@link TileType#ALIVE} entries (and any
+   * <p>The terrain map is kept <em>sparse</em>: only {@link CellType#ALIVE} entries (and any
    * static obstacle tiles) are stored. EMPTY cells are simply absent from the map.
    */
   private void nextGeneration(GridState state) {
-    Map<Vector4, TileType> terrain = state.terrain();
+    Map<Vector4, CellType> terrain = state.terrain();
     int width = state.dimension().getWidth();
     int height = state.dimension().getHeight();
 
     // ── Step 1: each alive cell casts a vote to each of its 8 neighbours ──────
     // votes[pos] = number of alive neighbours that pos has
     Map<Vector4, Integer> votes = new HashMap<>();
-    for (Map.Entry<Vector4, TileType> entry : terrain.entrySet()) {
-      if (entry.getValue() != TileType.ALIVE) {
+    for (Map.Entry<Vector4, CellType> entry : terrain.entrySet()) {
+      if (entry.getValue() != CellType.ALIVE) {
         continue;
       }
       int x = (int) entry.getKey().getX();
@@ -182,12 +182,12 @@ public class GridGolEngine extends AbstractGridEngine {
     for (Map.Entry<Vector4, Integer> e : votes.entrySet()) {
       Vector4 pos = e.getKey();
       int n = e.getValue();
-      TileType tile = terrain.getOrDefault(pos, TileType.EMPTY);
+      CellType tile = terrain.getOrDefault(pos, CellType.EMPTY);
       if (isStatic(tile)) {
         continue;
       }
 
-      if (tile == TileType.ALIVE) {
+      if (tile == CellType.ALIVE) {
         // Survival: 2 or 3 neighbours → stay alive; any other count → die
         if (n != 2 && n != 3) {
           toKill.add(pos);
@@ -201,8 +201,8 @@ public class GridGolEngine extends AbstractGridEngine {
     }
 
     // Alive cells that received zero votes have no alive neighbours → they die
-    for (Map.Entry<Vector4, TileType> e : terrain.entrySet()) {
-      if (e.getValue() == TileType.ALIVE && !votes.containsKey(e.getKey())) {
+    for (Map.Entry<Vector4, CellType> e : terrain.entrySet()) {
+      if (e.getValue() == CellType.ALIVE && !votes.containsKey(e.getKey())) {
         toKill.add(e.getKey());
       }
     }
@@ -212,15 +212,15 @@ public class GridGolEngine extends AbstractGridEngine {
       terrain.remove(pos);
     }
     for (Vector4 pos : toBirth) {
-      terrain.put(pos, TileType.ALIVE);
+      terrain.put(pos, CellType.ALIVE);
     }
   }
 
   /**
    * Returns {@code true} for tiles that participate in GoL rules.
    */
-  private static boolean isStatic(TileType tile) {
-    return tile != TileType.EMPTY && tile != TileType.ALIVE;
+  private static boolean isStatic(CellType tile) {
+    return tile != CellType.EMPTY && tile != CellType.ALIVE;
   }
 
   // ── Orchestrate actions ──────────────────────────────────────────────────
@@ -234,7 +234,7 @@ public class GridGolEngine extends AbstractGridEngine {
     for (Position cell : req.cells()) {
       Vector4 pos = Vector4.of(cell.getX(), cell.getY(), 0, 0);
       if (state.isWithinBounds(pos)) {
-        state.terrain().put(pos, TileType.ALIVE);
+        state.terrain().put(pos, CellType.ALIVE);
         set++;
       } else {
         log.warn("[GoL] SEED: position {} is out of bounds — skipped.", cell);
@@ -263,8 +263,8 @@ public class GridGolEngine extends AbstractGridEngine {
         if (rng.nextDouble() < density) {
           Vector4 pos = Vector4.of(x, y, 0, 0);
           // Skip positions that hold a static obstacle (WALL, WATER, TRAP, …)
-          if (!isStatic(state.terrain().getOrDefault(pos, TileType.EMPTY))) {
-            state.terrain().put(pos, TileType.ALIVE);
+          if (!isStatic(state.terrain().getOrDefault(pos, CellType.EMPTY))) {
+            state.terrain().put(pos, CellType.ALIVE);
             alive++;
           }
         }
@@ -284,13 +284,13 @@ public class GridGolEngine extends AbstractGridEngine {
     for (Position cell : req.cells()) {
       Vector4 pos = Vector4.of(cell.getX(), cell.getY(), 0, 0);
       if (state.isWithinBounds(pos)) {
-        TileType current = state.terrain().getOrDefault(pos, TileType.EMPTY);
+        CellType current = state.terrain().getOrDefault(pos, CellType.EMPTY);
         if (!isStatic(current)) {
           // Sparse: remove the entry for dead cells instead of writing EMPTY
-          if (current == TileType.ALIVE) {
+          if (current == CellType.ALIVE) {
             state.terrain().remove(pos);
           } else {
-            state.terrain().put(pos, TileType.ALIVE);
+            state.terrain().put(pos, CellType.ALIVE);
           }
           toggled++;
         }

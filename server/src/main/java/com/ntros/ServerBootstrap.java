@@ -11,9 +11,13 @@ import com.ntros.lifecycle.clock.FixedRateClock;
 import com.ntros.lifecycle.clock.PacedRateClock;
 import com.ntros.lifecycle.instance.Instances;
 import com.ntros.lifecycle.instance.ServerInstance;
+import com.ntros.model.entity.config.WorldCapabilities;
 import com.ntros.model.entity.config.access.Settings;
 import com.ntros.model.world.connector.GridWorldConnector;
+import com.ntros.model.world.connector.WaTorConnector;
 import com.ntros.model.world.connector.WorldConnector;
+import com.ntros.model.world.wator.WaTorEngineImpl;
+import com.ntros.model.world.wator.WaTorWorld;
 import com.ntros.persistence.db.ConnectionProvider;
 import com.ntros.persistence.db.DatabaseBuilder;
 import com.ntros.persistence.db.PersistenceContext;
@@ -38,7 +42,13 @@ public class ServerBootstrap {
   private static final int TICK_RATE = 120;
   // emits 70 messages per second
   private static final int BROADCAST_RATE = 70;
-  private static final int GOL_BROADCAST_RATE = 10;
+  private static final int GOL_BROADCAST_RATE   = 10;
+  private static final int WATOR_BROADCAST_RATE = 10;
+
+  // Wa-Tor initial population
+  private static final int WATOR_INITIAL_PREDATORS = 40;
+  private static final int WATOR_INITIAL_PREY      = 120;
+  private static final int WATOR_INITIAL_PLANTS    = 180;
 
   public static void startServer() {
     log.info("Starting server on port {}", PORT);
@@ -50,9 +60,12 @@ public class ServerBootstrap {
     // Convenience for skipping REG/AUTH flow during dev
     ClientSeedLoader.seedIfEmpty();
 
-    // seed + load worlds from DB, then init instances
+    // seed + load grid/GoL worlds from DB, then init instances
     List<WorldConnector> worlds = loadWorlds();
     initInstances(worlds);
+
+    // Bootstrap autonomous simulations (not DB-backed — seeded programmatically)
+    bootstrapWaTorWorlds();
 
     // on server-stop - run cleanup and save world state
     registerShutdownHook(worlds);
@@ -148,6 +161,44 @@ public class ServerBootstrap {
 
       Instances.registerInstance(
           new ServerInstance(world, sessionManager, clock, new SharedBroadcaster(), settings));
+    }
+  }
+
+  /**
+   * Creates and starts Wa-Tor worlds with a seeded initial population.
+   *
+   * <p>Wa-Tor worlds are not persisted in the DB — they are always bootstrapped fresh on
+   * server start.  The simulation runs autonomously from boot; observer sessions may join
+   * and leave without affecting the clock.
+   */
+  private static void bootstrapWaTorWorlds() {
+    String[] watorNames = {"wator"};
+    for (String name : watorNames) {
+      WaTorWorld world  = new WaTorWorld(name);
+      WaTorEngineImpl engine = new WaTorEngineImpl();
+
+      // Seed initial population
+      for (int i = 0; i < WATOR_INITIAL_PREDATORS; i++) world.spawnPredator();
+      for (int i = 0; i < WATOR_INITIAL_PREY;      i++) world.spawnPrey();
+      for (int i = 0; i < WATOR_INITIAL_PLANTS; i++) {
+        float x = (float) (Math.random() * com.ntros.model.world.wator.WaTorWorldState.WIDTH);
+        float y = (float) (Math.random() * com.ntros.model.world.wator.WaTorWorldState.HEIGHT);
+        world.spawnPlant(x, y);
+      }
+
+      WorldCapabilities caps = new WorldCapabilities(true, false, true, false);
+      WaTorConnector connector = new WaTorConnector(world, engine, caps);
+
+      SessionManager   sessionManager = new ClientSessionManager();
+      Clock            clock          = new FixedRateClock(TICK_RATE);
+      Settings         settings       = Settings.autonomousSimulation(WATOR_BROADCAST_RATE);
+      ServerInstance   instance       = new ServerInstance(connector, sessionManager, clock,
+          new SharedBroadcaster(), settings);
+
+      Instances.registerInstance(instance);
+      instance.start();   // autonomous — runs immediately, independent of observer count
+      log.info("[ServerBootstrap] Wa-Tor world '{}' started ({} predators, {} prey, {} plants).",
+          name, WATOR_INITIAL_PREDATORS, WATOR_INITIAL_PREY, WATOR_INITIAL_PLANTS);
     }
   }
 

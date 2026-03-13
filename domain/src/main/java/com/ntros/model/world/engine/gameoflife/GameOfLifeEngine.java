@@ -6,7 +6,7 @@ import com.ntros.model.entity.movement.cell.Position;
 import com.ntros.model.entity.movement.vectors.Vector4;
 import com.ntros.model.entity.sequence.IdSequenceGenerator;
 import com.ntros.model.world.engine.solid.AbstractGridEngine;
-import com.ntros.model.world.protocol.TileType;
+import com.ntros.model.world.protocol.CellType;
 import com.ntros.model.world.protocol.WorldResult;
 import com.ntros.model.world.protocol.request.OrchestrateRequest;
 import com.ntros.model.world.protocol.request.JoinRequest;
@@ -24,8 +24,8 @@ import lombok.extern.slf4j.Slf4j;
  * Conway's Game of Life engine.
  *
  * <h3>Cell representation</h3>
- * Live cells are stored as {@link TileType#ALIVE} in the world's terrain map.
- * Dead cells are {@link TileType#EMPTY}. All other tile types (WALL, WATER, …) act as
+ * Live cells are stored as {@link CellType#ALIVE} in the world's terrain map.
+ * Dead cells are {@link CellType#EMPTY}. All other tile types (WALL, WATER, …) act as
  * permanent obstacles — they never become alive and are never killed.
  *
  * <h3>Tick contract</h3>
@@ -94,7 +94,7 @@ public class GameOfLifeEngine extends AbstractGridEngine {
    * Called at the start of every tick; the inner check is a single int comparison,
    * so it adds no measurable overhead once sized.
    */
-  private void ensureBuffers(int W, int H, Map<Vector4, TileType> terrain) {
+  private void ensureBuffers(int W, int H, Map<Vector4, CellType> terrain) {
     if (curr != null && bufW == W && bufH == H) {
       return;
     }
@@ -112,7 +112,7 @@ public class GameOfLifeEngine extends AbstractGridEngine {
 
     // Mark permanently-blocked cells so we never birth on top of them.
     // For blank GoL worlds this loop is a no-op (terrain is empty at init time).
-    for (Map.Entry<Vector4, TileType> e : terrain.entrySet()) {
+    for (Map.Entry<Vector4, CellType> e : terrain.entrySet()) {
       if (isStatic(e.getValue())) {
         int x = (int) e.getKey().getX();
         int y = (int) e.getKey().getY();
@@ -305,7 +305,7 @@ public class GameOfLifeEngine extends AbstractGridEngine {
    * </ol>
    */
   private void nextGeneration(GridState state) {
-    Map<Vector4, TileType> terrain = state.terrain();
+    Map<Vector4, CellType> terrain = state.terrain();
     final int W = state.dimension().getWidth();
     final int H = state.dimension().getHeight();
     ensureBuffers(W, H, terrain);
@@ -314,8 +314,8 @@ public class GameOfLifeEngine extends AbstractGridEngine {
     // In steady state this block is skipped — curr was swapped from last tick's next.
     if (needsFullSnapshot) {
       Arrays.fill(curr, 0L);
-      for (Map.Entry<Vector4, TileType> entry : terrain.entrySet()) {
-        if (entry.getValue() != TileType.ALIVE) {
+      for (Map.Entry<Vector4, CellType> entry : terrain.entrySet()) {
+        if (entry.getValue() != CellType.ALIVE) {
           continue;
         }
         int x = (int) entry.getKey().getX();
@@ -402,7 +402,7 @@ public class GameOfLifeEngine extends AbstractGridEngine {
         b &= b - 1;
         final int x = colBase + bit;
         if (x < W) {
-          terrain.put(Vector4.of(x, row, 0, 0), TileType.ALIVE);
+          terrain.put(Vector4.of(x, row, 0, 0), CellType.ALIVE);
         }
       }
     }
@@ -418,8 +418,8 @@ public class GameOfLifeEngine extends AbstractGridEngine {
   /**
    * Returns {@code true} for tiles that participate in GoL rules.
    */
-  private static boolean isStatic(TileType tile) {
-    return tile != TileType.EMPTY && tile != TileType.ALIVE;
+  private static boolean isStatic(CellType tile) {
+    return tile != CellType.EMPTY && tile != CellType.ALIVE;
   }
 
   // ── Orchestrate actions ──────────────────────────────────────────────────
@@ -433,7 +433,7 @@ public class GameOfLifeEngine extends AbstractGridEngine {
     for (Position cell : req.cells()) {
       Vector4 pos = Vector4.of(cell.getX(), cell.getY(), 0, 0);
       if (state.isWithinBounds(pos)) {
-        state.terrain().put(pos, TileType.ALIVE);
+        state.terrain().put(pos, CellType.ALIVE);
         set++;
       } else {
         log.warn("[GoL] SEED: position {} is out of bounds — skipped.", cell);
@@ -458,7 +458,7 @@ public class GameOfLifeEngine extends AbstractGridEngine {
     // removeIf retains the HashMap's internal backing array at its current capacity,
     // so the subsequent put loop won't trigger any resizes — even on a freshly seeded
     // 314k-entry world going straight into a second RANDOM_SEED call.
-    Map<Vector4, TileType> terrain = state.terrain();
+    Map<Vector4, CellType> terrain = state.terrain();
     terrain.entrySet().removeIf(e -> !isStatic(e.getValue()));
 
     ThreadLocalRandom rng = ThreadLocalRandom.current();
@@ -467,8 +467,8 @@ public class GameOfLifeEngine extends AbstractGridEngine {
         if (rng.nextDouble() < density) {
           Vector4 pos = Vector4.of(x, y, 0, 0);
           // Skip positions that hold a static obstacle (WALL, WATER, TRAP, …)
-          if (!isStatic(state.terrain().getOrDefault(pos, TileType.EMPTY))) {
-            state.terrain().put(pos, TileType.ALIVE);
+          if (!isStatic(state.terrain().getOrDefault(pos, CellType.EMPTY))) {
+            state.terrain().put(pos, CellType.ALIVE);
             alive++;
           }
         }
@@ -489,13 +489,13 @@ public class GameOfLifeEngine extends AbstractGridEngine {
     for (Position cell : req.cells()) {
       Vector4 pos = Vector4.of(cell.getX(), cell.getY(), 0, 0);
       if (state.isWithinBounds(pos)) {
-        TileType current = state.terrain().getOrDefault(pos, TileType.EMPTY);
+        CellType current = state.terrain().getOrDefault(pos, CellType.EMPTY);
         if (!isStatic(current)) {
           // Sparse: remove the entry for dead cells instead of writing EMPTY
-          if (current == TileType.ALIVE) {
+          if (current == CellType.ALIVE) {
             state.terrain().remove(pos);
           } else {
-            state.terrain().put(pos, TileType.ALIVE);
+            state.terrain().put(pos, CellType.ALIVE);
           }
           toggled++;
         }

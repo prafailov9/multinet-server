@@ -2,7 +2,7 @@ package com.ntros.model.world.state.core;
 
 import com.ntros.model.entity.Entity;
 import com.ntros.model.entity.movement.vectors.Vector4;
-import com.ntros.model.world.protocol.TileType;
+import com.ntros.model.world.protocol.CellType;
 import com.ntros.model.world.state.dimension.Dimension;
 import java.util.Map;
 
@@ -16,9 +16,9 @@ public interface GridState extends WorldState {
 
   Map<String, Vector4> moveIntents();
 
-  Map<Vector4, TileType> terrain();
+  Map<Vector4, CellType> terrain();
 
-  TileType getTileTypeAt(Vector4 pos);
+  CellType getTileTypeAt(Vector4 pos);
 
   boolean isLegalMove(Vector4 position);
 

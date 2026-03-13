@@ -2,7 +2,7 @@ package com.ntros.model.world.state.solid;
 
 import com.ntros.model.entity.Entity;
 import com.ntros.model.entity.movement.vectors.Vector4;
-import com.ntros.model.world.protocol.TileType;
+import com.ntros.model.world.protocol.CellType;
 import com.ntros.model.world.state.core.GridState;
 import com.ntros.model.world.state.dimension.Dimension;
 import com.ntros.model.world.state.dimension.Dimension2D;
@@ -29,7 +29,7 @@ public class GridWorldState implements GridState {
   private final Map<String, Entity> entityMap;
   private final Map<Vector4, String> positionMap;
   private final Map<String, Vector4> moveIntentMap;
-  private final Map<Vector4, TileType> terrainMap;
+  private final Map<Vector4, CellType> terrainMap;
 
   public GridWorldState(String worldName, int width, int height) {
     this(worldName, width, height, ThreadLocalRandom.current()); // default
@@ -51,10 +51,10 @@ public class GridWorldState implements GridState {
   }
 
   /**
-   * Creates a blank world state — every cell is {@link TileType#EMPTY}, no walls, no traps.
+   * Creates a blank world state — every cell is {@link CellType#EMPTY}, no walls, no traps.
    *
    * <p>Used for Game-of-Life worlds where the simulation itself controls tile states via
-   * {@link TileType#ALIVE}; random terrain generation would interfere with Conway's rules.
+   * {@link CellType#ALIVE}; random terrain generation would interfere with Conway's rules.
    *
    * @param worldName unique world name
    * @param width     number of columns
@@ -81,7 +81,7 @@ public class GridWorldState implements GridState {
    * @param savedTerrain pre-built terrain map loaded from a snapshot; must not be null
    */
   public GridWorldState(String worldName, int width, int height,
-      Map<Vector4, TileType> savedTerrain) {
+      Map<Vector4, CellType> savedTerrain) {
     this.worldName = worldName;
     this.width = width;
     this.height = height;
@@ -128,12 +128,12 @@ public class GridWorldState implements GridState {
   }
 
   @Override
-  public Map<Vector4, TileType> terrain() {
+  public Map<Vector4, CellType> terrain() {
     return terrainMap;
   }
 
   @Override
-  public TileType getTileTypeAt(Vector4 pos) {
+  public CellType getTileTypeAt(Vector4 pos) {
     return terrainMap.get(pos);
   }
 
@@ -154,8 +154,8 @@ public class GridWorldState implements GridState {
 
   private boolean isIntendedMoveValid(Vector4 vector4) {
     return isWithinBounds(vector4)
-        && terrainMap.getOrDefault(vector4, TileType.EMPTY)
-        != TileType.WALL; // if position is a tile
+        && terrainMap.getOrDefault(vector4, CellType.EMPTY)
+        != CellType.WALL; // if position is a tile
   }
 
   private void generateTerrain() {
@@ -163,10 +163,10 @@ public class GridWorldState implements GridState {
       for (int y = 0; y < height; y++) {
         Vector4 vec = Vector4.of(x, y, 0, 0);
         double r = rng.nextDouble(); // use injected RNG
-        TileType tile = r < 0.10 ? TileType.WALL
-            : r < 0.15 ? TileType.TRAP
-                : r < 0.17 ? TileType.WATER
-                    : TileType.EMPTY;
+        CellType tile = r < 0.10 ? CellType.WALL
+            : r < 0.15 ? CellType.TRAP
+                : r < 0.17 ? CellType.WATER
+                    : CellType.EMPTY;
         terrainMap.put(vec, tile);
       }
     }

@@ -1,11 +1,17 @@
 package com.ntros.model.world.protocol;
 
-public enum TileType {
+public enum CellType {
   EMPTY,
   WALL,
   WATER,
   FIRE,
   TRAP,
   /** A live cell in a Game-of-Life simulation. */
-  ALIVE
+  ALIVE,
+  /**Additional cells for Falling Sand simulation.*/
+  SAND,
+  OIL,
+  STONE,
+  ACID
+
 }

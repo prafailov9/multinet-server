@@ -5,7 +5,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.ntros.model.entity.movement.cell.Position;
 import com.ntros.model.entity.movement.vectors.Vector4;
 import com.ntros.model.entity.sequence.IdSequenceGenerator;
-import com.ntros.model.world.protocol.TileType;
+import com.ntros.model.world.protocol.CellType;
 import com.ntros.model.world.protocol.WorldResult;
 import com.ntros.model.entity.movement.MoveInput;
 import com.ntros.model.world.protocol.request.JoinRequest;
@@ -40,11 +40,11 @@ class GameOfLifeEngineTest {
   // ── Helper ──────────────────────────────────────────────────────────────
 
   private void setAlive(int x, int y) {
-    state.terrain().put(Vector4.of(x, y, 0, 0), TileType.ALIVE);
+    state.terrain().put(Vector4.of(x, y, 0, 0), CellType.ALIVE);
   }
 
-  private TileType tileAt(int x, int y) {
-    return state.terrain().getOrDefault(Vector4.of(x, y, 0, 0), TileType.EMPTY);
+  private CellType tileAt(int x, int y) {
+    return state.terrain().getOrDefault(Vector4.of(x, y, 0, 0), CellType.EMPTY);
   }
 
   // ── Conway survival rules ────────────────────────────────────────────────
@@ -61,7 +61,7 @@ class GameOfLifeEngineTest {
 
       engine.applyIntents(state);
 
-      assertThat(tileAt(5, 5)).isEqualTo(TileType.ALIVE);
+      assertThat(tileAt(5, 5)).isEqualTo(CellType.ALIVE);
     }
 
     @Test
@@ -74,7 +74,7 @@ class GameOfLifeEngineTest {
 
       engine.applyIntents(state);
 
-      assertThat(tileAt(5, 5)).isEqualTo(TileType.ALIVE);
+      assertThat(tileAt(5, 5)).isEqualTo(CellType.ALIVE);
     }
 
     @Test
@@ -84,7 +84,7 @@ class GameOfLifeEngineTest {
 
       engine.applyIntents(state);
 
-      assertThat(tileAt(5, 5)).isEqualTo(TileType.EMPTY);
+      assertThat(tileAt(5, 5)).isEqualTo(CellType.EMPTY);
     }
 
     @Test
@@ -97,7 +97,7 @@ class GameOfLifeEngineTest {
 
       engine.applyIntents(state);
 
-      assertThat(tileAt(5, 5)).isEqualTo(TileType.EMPTY);
+      assertThat(tileAt(5, 5)).isEqualTo(CellType.EMPTY);
     }
 
     @Test
@@ -106,7 +106,7 @@ class GameOfLifeEngineTest {
 
       engine.applyIntents(state);
 
-      assertThat(tileAt(5, 5)).isEqualTo(TileType.EMPTY);
+      assertThat(tileAt(5, 5)).isEqualTo(CellType.EMPTY);
     }
   }
 
@@ -124,7 +124,7 @@ class GameOfLifeEngineTest {
 
       engine.applyIntents(state);
 
-      assertThat(tileAt(5, 5)).isEqualTo(TileType.ALIVE);
+      assertThat(tileAt(5, 5)).isEqualTo(CellType.ALIVE);
     }
 
     @Test
@@ -134,7 +134,7 @@ class GameOfLifeEngineTest {
 
       engine.applyIntents(state);
 
-      assertThat(tileAt(5, 5)).isEqualTo(TileType.EMPTY);
+      assertThat(tileAt(5, 5)).isEqualTo(CellType.EMPTY);
     }
 
     @Test
@@ -146,7 +146,7 @@ class GameOfLifeEngineTest {
 
       engine.applyIntents(state);
 
-      assertThat(tileAt(5, 5)).isEqualTo(TileType.EMPTY);
+      assertThat(tileAt(5, 5)).isEqualTo(CellType.EMPTY);
     }
   }
 
@@ -174,11 +174,11 @@ class GameOfLifeEngineTest {
       //  . . .
       //  X X X
       //  . . .
-      assertThat(tileAt(5, 5)).isEqualTo(TileType.ALIVE);
-      assertThat(tileAt(4, 5)).isEqualTo(TileType.ALIVE);
-      assertThat(tileAt(6, 5)).isEqualTo(TileType.ALIVE);
-      assertThat(tileAt(5, 4)).isEqualTo(TileType.EMPTY);
-      assertThat(tileAt(5, 6)).isEqualTo(TileType.EMPTY);
+      assertThat(tileAt(5, 5)).isEqualTo(CellType.ALIVE);
+      assertThat(tileAt(4, 5)).isEqualTo(CellType.ALIVE);
+      assertThat(tileAt(6, 5)).isEqualTo(CellType.ALIVE);
+      assertThat(tileAt(5, 4)).isEqualTo(CellType.EMPTY);
+      assertThat(tileAt(5, 6)).isEqualTo(CellType.EMPTY);
     }
 
     /** Block (2×2 square) is a still life — it must not change. */
@@ -191,10 +191,10 @@ class GameOfLifeEngineTest {
 
       engine.applyIntents(state);
 
-      assertThat(tileAt(4, 4)).isEqualTo(TileType.ALIVE);
-      assertThat(tileAt(5, 4)).isEqualTo(TileType.ALIVE);
-      assertThat(tileAt(4, 5)).isEqualTo(TileType.ALIVE);
-      assertThat(tileAt(5, 5)).isEqualTo(TileType.ALIVE);
+      assertThat(tileAt(4, 4)).isEqualTo(CellType.ALIVE);
+      assertThat(tileAt(5, 4)).isEqualTo(CellType.ALIVE);
+      assertThat(tileAt(4, 5)).isEqualTo(CellType.ALIVE);
+      assertThat(tileAt(5, 5)).isEqualTo(CellType.ALIVE);
     }
   }
 
@@ -205,7 +205,7 @@ class GameOfLifeEngineTest {
 
     @Test
     void wallTile_isNeverAffectedByConwaysRules() {
-      state.terrain().put(Vector4.of(5, 5, 0, 0), TileType.WALL);
+      state.terrain().put(Vector4.of(5, 5, 0, 0), CellType.WALL);
       // Surround with live cells — would normally trigger overcrowding
       setAlive(4, 4); setAlive(5, 4); setAlive(6, 4);
       setAlive(4, 5);                  setAlive(6, 5);
@@ -213,7 +213,7 @@ class GameOfLifeEngineTest {
 
       engine.applyIntents(state);
 
-      assertThat(tileAt(5, 5)).isEqualTo(TileType.WALL);
+      assertThat(tileAt(5, 5)).isEqualTo(CellType.WALL);
     }
 
     @Test
@@ -222,21 +222,21 @@ class GameOfLifeEngineTest {
       // Without WALL counting: only 2 live → cell stays dead
       setAlive(4, 5);
       setAlive(6, 5);
-      state.terrain().put(Vector4.of(5, 4, 0, 0), TileType.WALL);
+      state.terrain().put(Vector4.of(5, 4, 0, 0), CellType.WALL);
 
       engine.applyIntents(state);
 
-      assertThat(tileAt(5, 5)).isEqualTo(TileType.EMPTY);
+      assertThat(tileAt(5, 5)).isEqualTo(CellType.EMPTY);
     }
 
     @Test
     void waterTile_passesThrough() {
-      state.terrain().put(Vector4.of(3, 3, 0, 0), TileType.WATER);
+      state.terrain().put(Vector4.of(3, 3, 0, 0), CellType.WATER);
       setAlive(2, 2); setAlive(3, 2); setAlive(4, 2);
 
       engine.applyIntents(state);
 
-      assertThat(tileAt(3, 3)).isEqualTo(TileType.WATER);
+      assertThat(tileAt(3, 3)).isEqualTo(CellType.WATER);
     }
   }
 
@@ -253,9 +253,9 @@ class GameOfLifeEngineTest {
       WorldResult result = engine.orchestrate(req, state);
 
       assertThat(result.success()).isTrue();
-      assertThat(tileAt(1, 1)).isEqualTo(TileType.ALIVE);
-      assertThat(tileAt(2, 2)).isEqualTo(TileType.ALIVE);
-      assertThat(tileAt(3, 3)).isEqualTo(TileType.ALIVE);
+      assertThat(tileAt(1, 1)).isEqualTo(CellType.ALIVE);
+      assertThat(tileAt(2, 2)).isEqualTo(CellType.ALIVE);
+      assertThat(tileAt(3, 3)).isEqualTo(CellType.ALIVE);
     }
 
     @Test
@@ -266,8 +266,8 @@ class GameOfLifeEngineTest {
 
       engine.orchestrate(req, state);
 
-      assertThat(tileAt(0, 0)).isEqualTo(TileType.ALIVE);
-      assertThat(tileAt(9, 9)).isEqualTo(TileType.ALIVE);
+      assertThat(tileAt(0, 0)).isEqualTo(CellType.ALIVE);
+      assertThat(tileAt(9, 9)).isEqualTo(CellType.ALIVE);
     }
 
     @Test
@@ -279,7 +279,7 @@ class GameOfLifeEngineTest {
 
       // Succeeds but the OOB cell is skipped — world remains empty
       assertThat(result.success()).isTrue();
-      assertThat(state.terrain().values()).doesNotContain(TileType.ALIVE);
+      assertThat(state.terrain().values()).doesNotContain(CellType.ALIVE);
     }
 
     @Test
@@ -302,7 +302,7 @@ class GameOfLifeEngineTest {
       WorldResult result = engine.orchestrate(OrchestrateRequest.randomSeed(1.0f), state);
 
       assertThat(result.success()).isTrue();
-      assertThat(state.terrain().values()).allMatch(t -> t == TileType.ALIVE);
+      assertThat(state.terrain().values()).allMatch(t -> t == CellType.ALIVE);
     }
 
     @Test
@@ -311,16 +311,16 @@ class GameOfLifeEngineTest {
       WorldResult result = engine.orchestrate(OrchestrateRequest.randomSeed(0.0f), state);
 
       assertThat(result.success()).isTrue();
-      assertThat(state.terrain().values()).doesNotContain(TileType.ALIVE);
+      assertThat(state.terrain().values()).doesNotContain(CellType.ALIVE);
     }
 
     @Test
     void randomSeed_doesNotOverwriteStaticTiles() {
-      state.terrain().put(Vector4.of(5, 5, 0, 0), TileType.WALL);
+      state.terrain().put(Vector4.of(5, 5, 0, 0), CellType.WALL);
 
       engine.orchestrate(OrchestrateRequest.randomSeed(1.0f), state);
 
-      assertThat(tileAt(5, 5)).isEqualTo(TileType.WALL);
+      assertThat(tileAt(5, 5)).isEqualTo(CellType.WALL);
     }
 
     @Test
@@ -343,7 +343,7 @@ class GameOfLifeEngineTest {
 
       engine.orchestrate(req, state);
 
-      assertThat(tileAt(3, 3)).isEqualTo(TileType.ALIVE);
+      assertThat(tileAt(3, 3)).isEqualTo(CellType.ALIVE);
     }
 
     @Test
@@ -354,18 +354,18 @@ class GameOfLifeEngineTest {
 
       engine.orchestrate(req, state);
 
-      assertThat(tileAt(3, 3)).isEqualTo(TileType.EMPTY);
+      assertThat(tileAt(3, 3)).isEqualTo(CellType.EMPTY);
     }
 
     @Test
     void toggle_staticTile_isNotFlipped() {
-      state.terrain().put(Vector4.of(3, 3, 0, 0), TileType.WALL);
+      state.terrain().put(Vector4.of(3, 3, 0, 0), CellType.WALL);
       OrchestrateRequest req = new OrchestrateRequest(OrchestrateAction.TOGGLE,
           List.of(Position.of(3, 3)), 0f);
 
       engine.orchestrate(req, state);
 
-      assertThat(tileAt(3, 3)).isEqualTo(TileType.WALL);
+      assertThat(tileAt(3, 3)).isEqualTo(CellType.WALL);
     }
   }
 
@@ -381,18 +381,18 @@ class GameOfLifeEngineTest {
       WorldResult result = engine.orchestrate(OrchestrateRequest.clear(), state);
 
       assertThat(result.success()).isTrue();
-      assertThat(state.terrain().values()).doesNotContain(TileType.ALIVE);
+      assertThat(state.terrain().values()).doesNotContain(CellType.ALIVE);
     }
 
     @Test
     void clear_preservesStaticTiles() {
-      state.terrain().put(Vector4.of(5, 5, 0, 0), TileType.WALL);
+      state.terrain().put(Vector4.of(5, 5, 0, 0), CellType.WALL);
       setAlive(1, 1);
 
       engine.orchestrate(OrchestrateRequest.clear(), state);
 
-      assertThat(tileAt(5, 5)).isEqualTo(TileType.WALL);
-      assertThat(tileAt(1, 1)).isEqualTo(TileType.EMPTY);
+      assertThat(tileAt(5, 5)).isEqualTo(CellType.WALL);
+      assertThat(tileAt(1, 1)).isEqualTo(CellType.EMPTY);
     }
   }
 
@@ -463,7 +463,7 @@ class GameOfLifeEngineTest {
 
     engine.reset(state);
 
-    assertThat(state.terrain().values()).doesNotContain(TileType.ALIVE);
+    assertThat(state.terrain().values()).doesNotContain(CellType.ALIVE);
     assertThat(state.entities()).isEmpty();
   }
 }

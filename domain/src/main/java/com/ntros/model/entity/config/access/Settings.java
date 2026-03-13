@@ -85,4 +85,19 @@ public record Settings(
     );
   }
 
+  /**
+   * Autonomous simulation world (e.g. Wa-Tor predator-prey).
+   * Observers may join to watch, but the simulation runs continuously from server boot —
+   * it does not start/stop based on player presence.
+   * {@code autoStartOnPlayerJoin = false}: lifecycle is managed externally by the bootstrap.
+   */
+  public static Settings autonomousSimulation(int broadcastHz) {
+    return new Settings(
+        100, false, Visibility.PUBLIC, false,
+        broadcastHz,
+        120, 10, 30,
+        false, null
+    );
+  }
+
 }

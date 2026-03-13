@@ -1,13 +1,13 @@
 package com.ntros.model.world.engine.solid;
 
-import com.ntros.model.world.engine.core.WorldEngine;
+import com.ntros.model.world.engine.core.GridEngine;
 import com.ntros.model.world.state.EntityView;
 import com.ntros.model.world.state.GridSnapshot;
 import com.ntros.model.world.state.core.GridState;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-public abstract class AbstractGridEngine implements WorldEngine {
+public abstract class AbstractGridEngine implements GridEngine {
 
 
   @Override

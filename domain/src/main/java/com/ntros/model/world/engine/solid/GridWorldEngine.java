@@ -7,7 +7,7 @@ import com.ntros.model.entity.movement.cell.Position;
 import com.ntros.model.entity.movement.vectors.Vector4;
 import com.ntros.model.entity.sequence.IdSequenceGenerator;
 import com.ntros.model.entity.solid.StaticEntity;
-import com.ntros.model.world.protocol.TileType;
+import com.ntros.model.world.protocol.CellType;
 import com.ntros.model.world.protocol.WorldResult;
 import com.ntros.model.world.protocol.request.JoinRequest;
 import com.ntros.model.world.protocol.request.MoveRequest;
@@ -113,7 +113,7 @@ public class GridWorldEngine extends AbstractGridEngine {
     // Terrain first
     sb.append("\"tiles\": {\n");
     int t = 0;
-    for (Map.Entry<Vector4, TileType> entry : worldState.terrain().entrySet()) {
+    for (Map.Entry<Vector4, CellType> entry : worldState.terrain().entrySet()) {
       Vector4 p = entry.getKey();
       sb.append(String.format("\t\"%f,%f\": \"%s\"", p.getX(), p.getY(), entry.getValue().name()));
       if (++t < worldState.terrain().size()) {
@@ -146,7 +146,7 @@ public class GridWorldEngine extends AbstractGridEngine {
     // Terrain first
     sb.append("\"tiles\": {");
     int t = 0;
-    for (Map.Entry<Vector4, TileType> entry : worldState.terrain().entrySet()) {
+    for (Map.Entry<Vector4, CellType> entry : worldState.terrain().entrySet()) {
       Vector4 p = entry.getKey();
       sb.append(String.format("\t\"%f,%f\": \"%s\"", p.getX(), p.getY(), entry.getValue().name()));
       if (++t < worldState.terrain().size()) {

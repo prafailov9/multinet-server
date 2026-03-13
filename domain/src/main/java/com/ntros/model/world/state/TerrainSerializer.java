@@ -4,7 +4,7 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.ntros.model.entity.movement.vectors.Vector4;
-import com.ntros.model.world.protocol.TileType;
+import com.ntros.model.world.protocol.CellType;
 import java.io.IOException;
 
 /**
@@ -27,7 +27,7 @@ public class TerrainSerializer extends JsonSerializer<GridSnapshot> {
     gen.writeFieldName("tiles");
     gen.writeStartObject();
     for (var entry : snapshot.terrain().entrySet()) {
-      if (entry.getValue() == TileType.EMPTY) {
+      if (entry.getValue() == CellType.EMPTY) {
         continue;
       }
       Vector4 pos = entry.getKey();

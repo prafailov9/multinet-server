@@ -5,7 +5,7 @@ import com.ntros.model.world.connector.GridWorldConnector;
 import com.ntros.model.world.connector.WorldConnector;
 import com.ntros.model.world.engine.gameoflife.GameOfLifeEngine;
 import com.ntros.model.world.engine.solid.GridWorldEngine;
-import com.ntros.model.world.engine.core.WorldEngine;
+import com.ntros.model.world.engine.core.GridEngine;
 import com.ntros.model.world.state.solid.GridWorldState;
 import com.ntros.persistence.model.WorldRecord;
 
@@ -31,7 +31,7 @@ public class WorldConverter implements Converter<WorldRecord, WorldConnector> {
   public WorldConnector toModelObject(WorldRecord record) {
     boolean isGoL = "GOL".equalsIgnoreCase(record.engineType());
 
-    WorldEngine engine = isGoL ? new GameOfLifeEngine() : new GridWorldEngine();
+    GridEngine engine = isGoL ? new GameOfLifeEngine() : new GridWorldEngine();
 
     GridWorldState state = isGoL
         ? GridWorldState.blank(record.name(), record.width(), record.height())
