@@ -1,7 +1,7 @@
 package com.ntros.model.world.connector;
 
 import com.ntros.model.entity.config.WorldCapabilities;
-import com.ntros.model.world.engine.solid.GridWorldEngine;
+import com.ntros.model.world.engine.d2.grid.GridWorldEngine;
 import com.ntros.model.world.state.d2.grid.GridWorldState;
 import org.junit.jupiter.api.BeforeEach;
 

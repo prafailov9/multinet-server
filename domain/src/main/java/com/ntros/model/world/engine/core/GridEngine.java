@@ -1,6 +1,8 @@
 package com.ntros.model.world.engine.core;
 
 import com.ntros.model.entity.Entity;
+import com.ntros.model.world.engine.d2.grid.GridWorldEngine;
+import com.ntros.model.world.engine.d2.grid.gameoflife.GridGolEngine;
 import com.ntros.model.world.protocol.result.WorldResult;
 import com.ntros.model.world.protocol.request.JoinRequest;
 import com.ntros.model.world.protocol.request.MoveRequest;
@@ -14,8 +16,8 @@ import com.ntros.model.world.state.core.GridState;
  * thread-safety is guaranteed by the caller ({@link com.ntros.model.world.connector.GridWorldConnector}
  * always dispatches through the single-threaded {@code CommandActor}).
  *
- * @see com.ntros.model.world.engine.solid.GridWorldEngine
- * @see com.ntros.model.world.engine.gameoflife.GridGolEngine
+ * @see GridWorldEngine
+ * @see GridGolEngine
  */
 public interface GridEngine {
 
@@ -38,7 +40,7 @@ public interface GridEngine {
    * Handles an orchestrator command (seed, toggle, clear, random-seed).
    *
    * <p>The default implementation returns a "not supported" failure so that
-   * non-orchestrated engines (e.g. {@link com.ntros.model.world.engine.solid.GridWorldEngine})
+   * non-orchestrated engines (e.g. {@link GridWorldEngine})
    * do not need to override this method.
    */
   default WorldResult orchestrate(OrchestrateRequest req, GridState state) {

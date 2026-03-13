@@ -1,4 +1,4 @@
-package com.ntros.model.world.engine.solid;
+package com.ntros.model.world.engine.d2.grid;
 
 import com.ntros.model.entity.Entity;
 import com.ntros.model.entity.Player;

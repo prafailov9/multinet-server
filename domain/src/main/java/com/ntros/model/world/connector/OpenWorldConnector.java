@@ -8,7 +8,7 @@ import com.ntros.model.world.connector.ops.JoinOp;
 import com.ntros.model.world.connector.ops.OpenMoveOp;
 import com.ntros.model.world.connector.ops.RemoveOp;
 import com.ntros.model.world.connector.ops.WorldOp;
-import com.ntros.model.world.engine.open.OpenWorldEngine;
+import com.ntros.model.world.engine.d3.open.OpenWorldEngine;
 import com.ntros.model.world.protocol.result.WorldResult;
 import com.ntros.model.world.state.d3.open.OpenWorldSnapshot;
 import com.ntros.model.world.state.d3.open.OpenWorldSnapshot.BoundsView;

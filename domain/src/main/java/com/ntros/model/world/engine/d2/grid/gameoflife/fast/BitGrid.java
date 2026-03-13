@@ -1,4 +1,4 @@
-package com.ntros.model.world.engine.gameoflife.fast;
+package com.ntros.model.world.engine.d2.grid.gameoflife.fast;
 
 public final class BitGrid {
 

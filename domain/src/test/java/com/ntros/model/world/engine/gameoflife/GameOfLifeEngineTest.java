@@ -5,6 +5,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.ntros.model.entity.movement.cell.Position;
 import com.ntros.model.entity.movement.vectors.Vector4;
 import com.ntros.model.entity.sequence.IdSequenceGenerator;
+import com.ntros.model.world.engine.d2.grid.GridWorldEngine;
+import com.ntros.model.world.engine.d2.grid.gameoflife.GameOfLifeEngine;
 import com.ntros.model.world.state.d2.grid.CellType;
 import com.ntros.model.world.protocol.result.WorldResult;
 import com.ntros.model.entity.movement.MoveInput;
@@ -401,7 +403,7 @@ class GameOfLifeEngineTest {
   @Test
   void nonOrchestratedEngine_defaultOrchestrate_returnsFailed() {
     // GridWorldEngine inherits the default WorldEngine.orchestrate() impl
-    var gridEngine = new com.ntros.model.world.engine.solid.GridWorldEngine();
+    var gridEngine = new GridWorldEngine();
     WorldResult result = gridEngine.orchestrate(OrchestrateRequest.clear(), state);
 
     assertThat(result.success()).isFalse();

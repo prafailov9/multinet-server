@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.ntros.model.entity.movement.vectors.Vector4;
+import com.ntros.model.world.engine.d2.grid.gameoflife.GridDiff;
 import java.io.IOException;
 
 /**
@@ -11,7 +12,7 @@ import java.io.IOException;
  * <pre>{"type":"full","tiles":{"x,y":"TILETYPE",...},"entities":{"name":{"x":1,"y":2},...}}</pre>
  *
  * <p>The {@code "type":"full"} field lets the client distinguish a complete snapshot from an
- * incremental {@link com.ntros.model.world.engine.gameoflife.GridDiff} frame.
+ * incremental {@link GridDiff} frame.
  * EMPTY tiles are skipped — only alive/wall/etc. tiles are emitted.
  */
 public class TerrainSerializer extends JsonSerializer<GridSnapshot> {

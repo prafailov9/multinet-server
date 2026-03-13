@@ -1,4 +1,4 @@
-package com.ntros.model.world.engine.gameoflife;
+package com.ntros.model.world.engine.d2.grid.gameoflife;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonSerializer;

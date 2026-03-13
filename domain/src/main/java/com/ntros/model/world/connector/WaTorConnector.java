@@ -33,17 +33,19 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class WaTorConnector implements WorldConnector {
 
-  /** Fixed physics step: 120 Hz → ~8.33 ms per tick. */
+  /**
+   * Fixed physics step: 120 Hz → ~8.33 ms per tick.
+   */
   private static final float TICK_DT_SECONDS = 1f / 120f;
 
-  private final WaTorWorld        world;
-  private final WaTorEngine       engine;
+  private final WaTorWorld world;
+  private final WaTorEngine engine;
   private final WorldCapabilities caps;
 
   public WaTorConnector(WaTorWorld world, WaTorEngine engine, WorldCapabilities caps) {
-    this.world  = world;
+    this.world = world;
     this.engine = engine;
-    this.caps   = caps;
+    this.caps = caps;
   }
 
   // ── WorldConnector ────────────────────────────────────────────────────────
@@ -51,8 +53,8 @@ public class WaTorConnector implements WorldConnector {
   @Override
   public WorldResult apply(WorldOp op) {
     return switch (op) {
-      case JoinOp    j -> engine.joinObserver(j.req(), world);
-      case RemoveOp  r -> {
+      case JoinOp j -> engine.joinObserver(j.req(), world);
+      case RemoveOp r -> {
         engine.removeObserver(r.removeRequest().entityId(), world);
         yield WorldResult.succeeded(r.removeRequest().entityId(),
             world.getState().worldName(), "Observer removed.");
@@ -78,7 +80,9 @@ public class WaTorConnector implements WorldConnector {
     return engine.snapshot(world);
   }
 
-  /** Not used for Wa-Tor — snapshot() returns typed POJOs. */
+  /**
+   * Not used for Wa-Tor — snapshot() returns typed POJOs.
+   */
   @Override
   public String snapshot(boolean oneLine) {
     return "";

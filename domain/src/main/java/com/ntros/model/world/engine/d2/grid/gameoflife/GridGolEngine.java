@@ -1,11 +1,11 @@
-package com.ntros.model.world.engine.gameoflife;
+package com.ntros.model.world.engine.d2.grid.gameoflife;
 
 import com.ntros.model.entity.Entity;
 import com.ntros.model.entity.Player;
 import com.ntros.model.entity.movement.cell.Position;
 import com.ntros.model.entity.movement.vectors.Vector4;
 import com.ntros.model.entity.sequence.IdSequenceGenerator;
-import com.ntros.model.world.engine.solid.AbstractGridEngine;
+import com.ntros.model.world.engine.d2.grid.AbstractGridEngine;
 import com.ntros.model.world.state.d2.grid.CellType;
 import com.ntros.model.world.protocol.result.WorldResult;
 import com.ntros.model.world.protocol.request.OrchestrateRequest;

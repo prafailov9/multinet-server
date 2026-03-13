@@ -1,4 +1,4 @@
-package com.ntros.model.world.engine.solid;
+package com.ntros.model.world.engine.d2.grid;
 
 import com.ntros.model.world.engine.core.GridEngine;
 import com.ntros.model.world.state.EntityView;

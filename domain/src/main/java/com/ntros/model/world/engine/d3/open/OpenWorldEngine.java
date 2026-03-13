@@ -1,4 +1,4 @@
-package com.ntros.model.world.engine.open;
+package com.ntros.model.world.engine.d3.open;
 
 import static com.ntros.model.world.protocol.result.WorldResult.failed;
 import static com.ntros.model.world.protocol.result.WorldResult.succeeded;
