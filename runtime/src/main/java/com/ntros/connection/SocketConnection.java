@@ -141,7 +141,9 @@ public class SocketConnection implements Connection {
           }
         }
       } catch (IOException ex) {
-        log.error("Send failed: {}", ex.getMessage());
+        int dropped = sendQueue.size();
+        log.warn("Send failed ({} queued frames dropped): {}", dropped, ex.toString());
+        // any IOException means the connection is most likely unrecoverable. Just close.
         close();
       }
     });

@@ -6,16 +6,13 @@ import com.ntros.model.entity.movement.cell.Position;
 import com.ntros.model.entity.movement.vectors.Vector4;
 import com.ntros.model.entity.sequence.IdSequenceGenerator;
 import com.ntros.model.world.engine.solid.AbstractGridEngine;
-import com.ntros.model.world.engine.solid.WorldEngine;
 import com.ntros.model.world.protocol.TileType;
 import com.ntros.model.world.protocol.WorldResult;
 import com.ntros.model.world.protocol.request.OrchestrateRequest;
 import com.ntros.model.world.protocol.request.JoinRequest;
 import com.ntros.model.world.protocol.request.MoveRequest;
 import com.ntros.model.world.state.GridState;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
+import java.util.Arrays;
 import java.util.Map;
 import java.util.concurrent.ThreadLocalRandom;
 import lombok.extern.slf4j.Slf4j;
@@ -47,15 +44,68 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class GameOfLifeEngine extends AbstractGridEngine {
 
-  // ── WorldEngine – tick ────────────────────────────────────────────────────
+  // ── Pre-allocated bitset buffers (sized lazily on first tick) ─────────────
+  //
+  // curr / next  : one bit per cell — set = ALIVE, clear = DEAD.
+  //   Layout: word index = y * rowLongs + (x >>> 6), bit = x & 63.
+  //   Size for gol-big (1024×1024): 16 384 longs = 128 KB — fits in L2 cache.
+  //
+  // votesBuf     : int per cell — alive-neighbour count cast during voting.
+  //   Only entries listed in dirtyBuf are non-zero; we clear them inline,
+  //   so we never pay the O(W×H) Arrays.fill cost.
+  //
+  // dirtyBuf     : int[] of flat indices (y*W+x) that received at least one vote.
+  //   Capped at W×H entries (4 MB for gol-big); typical usage << W×H.
+  //
+  // staticMask   : boolean[] — true if the cell holds a permanent obstacle tile.
+  //   Built once per world. Guards against accidental birth on a WALL/TRAP cell.
+  //
+  private long[] curr, next;
+  private int[] votesBuf, dirtyBuf;
+  private boolean[] staticMask;
+  private int dirtyCount;
+  private int bufW, bufH, rowLongs;
+
+  /**
+   * Allocates (or re-uses) the engine's working buffers for a world of the given size.
+   * Called at the start of every tick; the inner check is a single int comparison,
+   * so it adds no measurable overhead once sized.
+   */
+  private void ensureBuffers(int W, int H, Map<Vector4, TileType> terrain) {
+    if (curr != null && bufW == W && bufH == H) {
+      return;
+    }
+    rowLongs = (W + 63) >>> 6;
+    int words = H * rowLongs;
+    curr = new long[words];
+    next = new long[words];
+    votesBuf = new int[W * H];
+    dirtyBuf = new int[W * H];
+    staticMask = new boolean[W * H];
+    bufW = W;
+    bufH = H;
+
+    // Mark permanently-blocked cells so we never birth on top of them.
+    // For blank GoL worlds this loop is a no-op (terrain is empty at init time).
+    for (Map.Entry<Vector4, TileType> e : terrain.entrySet()) {
+      if (isStatic(e.getValue())) {
+        int x = (int) e.getKey().getX();
+        int y = (int) e.getKey().getY();
+        if (x >= 0 && x < W && y >= 0 && y < H) {
+          staticMask[y * W + x] = true;
+        }
+      }
+    }
+    log.debug("[GoL] Allocated bitset buffers for {}×{} world ({} KB).",
+        W, H, (words * 8 + W * H * 5) / 1024);
+  }
+
 
   @Override
   public void applyIntents(GridState state) {
     nextGeneration(state);
     state.moveIntents().clear(); // GoL has no player-driven move intents
   }
-
-  // ── WorldEngine – orchestrate (GoL-specific) ──────────────────────────────
 
   /**
    * Handles an orchestrator command against the live terrain.
@@ -70,8 +120,6 @@ public class GameOfLifeEngine extends AbstractGridEngine {
       case CLEAR -> applyClear(state);
     };
   }
-
-  // ── WorldEngine – player lifecycle ───────────────────────────────────────
 
   /**
    * Registers the joining player as a spectator.
@@ -115,13 +163,10 @@ public class GameOfLifeEngine extends AbstractGridEngine {
         "MOVE not supported in Game of Life. Use ORCHESTRATE to modify cell state.");
   }
 
-  // ── WorldEngine – serialisation (delegates to shared helpers) ────────────
-
   @Override
   public String serialize(GridState state) {
     return buildJson(state, false);
   }
-
 
   @Override
   public String serializeOneLine(GridState state) {
@@ -140,81 +185,147 @@ public class GameOfLifeEngine extends AbstractGridEngine {
   // ── Conway's rules ───────────────────────────────────────────────────────
 
   /**
-   * Advances the terrain by one generation using a sparse alive-cell voting algorithm.
+   * Advances the terrain by one generation using a bitset double-buffer + flat vote array.
    *
-   * <p>Instead of iterating every cell in the W×H grid (O(W×H)), only alive cells iterate and
-   * cast votes to their 8 Moore neighbours (O(alive × 8)). This is dramatically faster for
-   * sparse or partially populated worlds (e.g. 1024×1024 with 30% density = 314k alive cells
-   * → ~2.5M operations vs 8M for the naive approach, and improving as the board stabilises).
+   * <h3>Why this is fast</h3>
+   * <ul>
+   *   <li><b>Zero allocation in the hot path.</b> All working buffers ({@code curr}, {@code next},
+   *       {@code votesBuf}, {@code dirtyBuf}) are pre-allocated engine fields reused across ticks.
+   *       The old approach created ~2.5 M {@link Vector4} objects per tick (one per vote cast)
+   *       and a {@code HashMap} to accumulate them.</li>
+   *   <li><b>Cache-sequential access.</b> {@code curr}/{@code next} are contiguous {@code long[]}
+   *       arrays; iterating them with the NTZL (numberOfTrailingZeros) bit-scan trick reads memory
+   *       in order, giving near-perfect L2/L3 cache utilisation.  The old HashMap pointer-chases
+   *       scattered across the heap caused cache misses on virtually every entry.</li>
+   *   <li><b>O(alive) with tiny constant.</b> Complexity is the same as before (sparse voting),
+   *       but the constant is ~10–50× smaller: array indexing vs HashMap.merge + equals/hashCode
+   *       on {@link Vector4}.</li>
+   *   <li><b>Near-zero steady-state cost.</b> Step 4 diffs the two bitsets word-by-word;
+   *       words that didn't change are skipped in one branch.  When the pattern stabilises,
+   *       almost no HashMap mutations happen.</li>
+   * </ul>
    *
-   * <p>The terrain map is kept <em>sparse</em>: only {@link TileType#ALIVE} entries (and any
-   * static obstacle tiles) are stored. EMPTY cells are simply absent from the map.
+   * <h3>Algorithm</h3>
+   * <ol>
+   *   <li><b>Load terrain → {@code curr}.</b>  Scan terrain HashMap for ALIVE entries; set
+   *       the corresponding bit in {@code curr}.  O(alive).</li>
+   *   <li><b>Vote.</b>  NTZL-scan {@code curr}; each alive cell increments {@code votesBuf} for
+   *       its 8 Moore neighbours and records the index in {@code dirtyBuf} on first write.
+   *       O(alive × 8).</li>
+   *   <li><b>Determine {@code next}.</b>  Iterate only {@code dirtyBuf} entries; apply Conway's
+   *       rules; clear {@code votesBuf} inline (no O(W×H) fill needed).  Alive cells with 0
+   *       votes never appear in {@code dirtyBuf} → never set in {@code next} → die naturally.
+   *       O(dirty ≤ alive × 8).</li>
+   *   <li><b>Diff → update terrain.</b>  Compare {@code curr}/{@code next} word-by-word;
+   *       for changed bits remove (deaths) or put (births) from/into the terrain HashMap.
+   *       O(cells.length = W×H/64).</li>
+   * </ol>
    */
   private void nextGeneration(GridState state) {
     Map<Vector4, TileType> terrain = state.terrain();
-    int width = state.dimension().getWidth();
-    int height = state.dimension().getHeight();
+    final int W = state.dimension().getWidth();
+    final int H = state.dimension().getHeight();
+    ensureBuffers(W, H, terrain);
 
-    // ── Step 1: each alive cell casts a vote to each of its 8 neighbours ──────
-    // votes[pos] = number of alive neighbours that pos has
-    Map<Vector4, Integer> votes = new HashMap<>();
+    // ── Step 1: build curr from terrain ──────────────────────────────────────
+    Arrays.fill(curr, 0L);
     for (Map.Entry<Vector4, TileType> entry : terrain.entrySet()) {
       if (entry.getValue() != TileType.ALIVE) {
         continue;
       }
       int x = (int) entry.getKey().getX();
       int y = (int) entry.getKey().getY();
-      for (int dx = -1; dx <= 1; dx++) {
-        for (int dy = -1; dy <= 1; dy++) {
-          if (dx == 0 && dy == 0) {
-            continue;
-          }
-          int nx = x + dx, ny = y + dy;
-          if (nx >= 0 && nx < width && ny >= 0 && ny < height) {
-            votes.merge(Vector4.of(nx, ny, 0, 0), 1, Integer::sum);
-          }
-        }
-      }
+      curr[y * rowLongs + (x >>> 6)] |= 1L << (x & 63);
     }
 
-    // ── Step 2: determine births and deaths from the vote map ──────────────────
-    List<Vector4> toKill = new ArrayList<>();
-    List<Vector4> toBirth = new ArrayList<>();
-
-    for (Map.Entry<Vector4, Integer> e : votes.entrySet()) {
-      Vector4 pos = e.getKey();
-      int n = e.getValue();
-      TileType tile = terrain.getOrDefault(pos, TileType.EMPTY);
-      if (isStatic(tile)) {
+    // ── Step 2: each alive cell votes to its 8 Moore neighbours ──────────────
+    // votesBuf[ny*W+nx] counts how many alive neighbours (nx,ny) has.
+    // dirtyBuf records each index the first time it is written (votesBuf was 0).
+    // This lets us clear exactly the written slots in step 3 without an O(W×H) fill.
+    dirtyCount = 0;
+    for (int wi = 0; wi < curr.length; wi++) {
+      long word = curr[wi];
+      if (word == 0L) {
         continue;
       }
-
-      if (tile == TileType.ALIVE) {
-        // Survival: 2 or 3 neighbours → stay alive; any other count → die
-        if (n != 2 && n != 3) {
-          toKill.add(pos);
+      final int row = wi / rowLongs;
+      final int colBase = (wi % rowLongs) << 6;
+      while (word != 0L) {
+        final int bit = Long.numberOfTrailingZeros(word);
+        final int x = colBase + bit;
+        word &= word - 1;
+        if (x >= W) {
+          continue; // skip padding bits in the last long of a row
         }
-      } else {
-        // Birth: exactly 3 neighbours
-        if (n == 3) {
-          toBirth.add(pos);
+        for (int dy = -1; dy <= 1; dy++) {
+          final int ny = row + dy;
+          if (ny < 0 || ny >= H) {
+            continue;
+          }
+          for (int dx = -1; dx <= 1; dx++) {
+            if (dx == 0 && dy == 0) {
+              continue;
+            }
+            final int nx = x + dx;
+            if (nx < 0 || nx >= W) {
+              continue;
+            }
+            final int idx = ny * W + nx;
+            if (votesBuf[idx] == 0) {
+              dirtyBuf[dirtyCount++] = idx;
+            }
+            votesBuf[idx]++;
+          }
         }
       }
     }
 
-    // Alive cells that received zero votes have no alive neighbours → they die
-    for (Map.Entry<Vector4, TileType> e : terrain.entrySet()) {
-      if (e.getValue() == TileType.ALIVE && !votes.containsKey(e.getKey())) {
-        toKill.add(e.getKey());
+    // ── Step 3: determine next generation ────────────────────────────────────
+    // next starts all-zero.  We only set bits for cells that survive or are born.
+    // Alive cells with 0 votes never appear in dirtyBuf → not set in next → die.
+    Arrays.fill(next, 0L);
+    for (int i = 0; i < dirtyCount; i++) {
+      final int idx = dirtyBuf[i];
+      final int n = votesBuf[idx];
+      votesBuf[idx] = 0; // clear inline — avoids a separate O(W×H) fill pass
+      final int x = idx % W;
+      final int y = idx / W;
+      final boolean alive = (curr[y * rowLongs + (x >>> 6)] >>> (x & 63) & 1L) != 0;
+      final boolean survives = alive ? (n == 2 || n == 3) : (n == 3 && !staticMask[idx]);
+      if (survives) {
+        next[y * rowLongs + (x >>> 6)] |= 1L << (x & 63);
       }
     }
 
-    // ── Step 3: apply changes (sparse: remove dead, add born) ─────────────────
-    for (Vector4 pos : toKill) {
-      terrain.remove(pos);
-    }
-    for (Vector4 pos : toBirth) {
-      terrain.put(pos, TileType.ALIVE);
+    // ── Step 4: diff curr / next → update terrain ────────────────────────────
+    // Only cells that actually changed are touched.
+    // In steady-state (stable / oscillating patterns) most words are identical → near-zero work.
+    for (int wi = 0; wi < curr.length; wi++) {
+      final long died = curr[wi] & ~next[wi]; // was alive, now dead
+      final long born = next[wi] & ~curr[wi]; // was dead, now alive
+      if ((died | born) == 0L) {
+        continue;
+      }
+      final int row = wi / rowLongs;
+      final int colBase = (wi % rowLongs) << 6;
+      long d = died;
+      while (d != 0L) {
+        final int bit = Long.numberOfTrailingZeros(d);
+        d &= d - 1;
+        final int x = colBase + bit;
+        if (x < W) {
+          terrain.remove(Vector4.of(x, row, 0, 0));
+        }
+      }
+      long b = born;
+      while (b != 0L) {
+        final int bit = Long.numberOfTrailingZeros(b);
+        b &= b - 1;
+        final int x = colBase + bit;
+        if (x < W) {
+          terrain.put(Vector4.of(x, row, 0, 0), TileType.ALIVE);
+        }
+      }
     }
   }
 

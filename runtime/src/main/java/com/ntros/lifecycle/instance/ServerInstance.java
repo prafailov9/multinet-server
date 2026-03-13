@@ -197,7 +197,7 @@ public class ServerInstance extends AbstractInstance {
 
       @Override
       public void onTickEnd(long n, long nanos) {
-        if (n % 60 == 0) {
+        if (n % 120 == 0) {
           log.info("[{}] tick={} duration={}µs", getWorldName(), n, nanos / 1_000);
         }
       }
