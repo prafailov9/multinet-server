@@ -3,7 +3,8 @@ target/
 !**/src/main/**/target/
 !**/src/test/**/target/
 
-data/snapshots/
+.claude/**
+data/snapshots/**
 *.jfr
 *.txt
 ### IntelliJ IDEA ###
@@ -37,6 +38,5 @@ build/
 
 ### VS Code ###
 .vscode/
-.claude/
 ### Mac OS ###
 .DS_Store
