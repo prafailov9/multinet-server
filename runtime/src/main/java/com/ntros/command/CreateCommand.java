@@ -14,7 +14,7 @@ import com.ntros.model.world.connector.GridWorldConnector;
 import com.ntros.model.world.connector.WorldConnector;
 import com.ntros.model.world.engine.solid.GridWorldEngine;
 import com.ntros.protocol.Message;
-import com.ntros.model.world.protocol.WorldType;
+import com.ntros.model.world.state.WorldType;
 import com.ntros.model.world.state.WorldStateFactory;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;

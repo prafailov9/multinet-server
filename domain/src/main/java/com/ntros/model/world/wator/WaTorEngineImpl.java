@@ -1,6 +1,6 @@
 package com.ntros.model.world.wator;
 
-import com.ntros.model.world.protocol.WorldResult;
+import com.ntros.model.world.protocol.result.WorldResult;
 import com.ntros.model.world.protocol.request.JoinRequest;
 import com.ntros.model.world.wator.system.DeathSystem;
 import com.ntros.model.world.wator.WaTorSnapshot.AgentView;

@@ -5,7 +5,7 @@ import com.ntros.lifecycle.sessionmanager.SessionManager;
 import com.ntros.lifecycle.Shutdownable;
 import com.ntros.lifecycle.session.Session;
 import com.ntros.model.world.connector.WorldConnector;
-import com.ntros.model.world.protocol.WorldResult;
+import com.ntros.model.world.protocol.result.WorldResult;
 import com.ntros.model.world.protocol.request.JoinRequest;
 import com.ntros.model.world.protocol.request.MoveRequest;
 import com.ntros.model.world.protocol.request.OrchestrateRequest;

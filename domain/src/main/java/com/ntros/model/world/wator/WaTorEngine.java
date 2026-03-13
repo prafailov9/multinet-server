@@ -1,6 +1,6 @@
 package com.ntros.model.world.wator;
 
-import com.ntros.model.world.protocol.WorldResult;
+import com.ntros.model.world.protocol.result.WorldResult;
 import com.ntros.model.world.protocol.request.JoinRequest;
 
 /**

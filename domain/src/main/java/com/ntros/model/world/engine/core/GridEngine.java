@@ -1,7 +1,7 @@
 package com.ntros.model.world.engine.core;
 
 import com.ntros.model.entity.Entity;
-import com.ntros.model.world.protocol.WorldResult;
+import com.ntros.model.world.protocol.result.WorldResult;
 import com.ntros.model.world.protocol.request.JoinRequest;
 import com.ntros.model.world.protocol.request.MoveRequest;
 import com.ntros.model.world.protocol.request.OrchestrateRequest;

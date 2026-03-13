@@ -1,7 +1,7 @@
 package com.ntros.model.world.engine.open;
 
-import static com.ntros.model.world.protocol.WorldResult.failed;
-import static com.ntros.model.world.protocol.WorldResult.succeeded;
+import static com.ntros.model.world.protocol.result.WorldResult.failed;
+import static com.ntros.model.world.protocol.result.WorldResult.succeeded;
 
 import com.ntros.model.entity.movement.vectors.Vector3;
 import com.ntros.model.entity.movement.velocity.Velocity3;
@@ -9,7 +9,7 @@ import com.ntros.model.entity.open.OpenWorldEntity;
 import com.ntros.model.entity.open.OpenWorldPlayer;
 import com.ntros.model.entity.sequence.IdSequenceGenerator;
 import com.ntros.model.world.engine.core.DynamicWorldEngine;
-import com.ntros.model.world.protocol.WorldResult;
+import com.ntros.model.world.protocol.result.WorldResult;
 import com.ntros.model.world.protocol.request.JoinRequest;
 import com.ntros.model.world.protocol.request.OpenMoveRequest;
 import com.ntros.model.world.state.dimension.Dimension3D;

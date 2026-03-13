@@ -1,4 +1,4 @@
-package com.ntros.model.world.protocol;
+package com.ntros.model.world.protocol.result;
 
 public record WorldResult(boolean success, String playerName, String worldName, String reason) {
 

@@ -2,14 +2,13 @@ package com.ntros.lifecycle.instance.actor;
 
 import com.ntros.lifecycle.sessionmanager.SessionManager;
 import com.ntros.lifecycle.session.Session;
-import com.ntros.model.entity.Direction;
 import com.ntros.model.entity.movement.MoveInput;
 import com.ntros.model.world.connector.WorldConnector;
 import com.ntros.model.world.connector.ops.JoinOp;
 import com.ntros.model.world.connector.ops.MoveOp;
 import com.ntros.model.world.connector.ops.OrchestrateOp;
 import com.ntros.model.world.connector.ops.RemoveOp;
-import com.ntros.model.world.protocol.WorldResult;
+import com.ntros.model.world.protocol.result.WorldResult;
 import com.ntros.model.world.protocol.request.JoinRequest;
 import com.ntros.model.world.protocol.request.MoveRequest;
 import com.ntros.model.world.protocol.request.OrchestrateRequest;

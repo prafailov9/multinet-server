@@ -1,4 +1,4 @@
-package com.ntros.model.world.protocol;
+package com.ntros.model.world.state;
 
 public enum WorldType {
 
