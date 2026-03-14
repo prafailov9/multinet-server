@@ -18,7 +18,7 @@ import com.ntros.model.world.connector.WaTorConnector;
 import com.ntros.model.world.connector.WorldConnector;
 import com.ntros.model.world.engine.d2.grid.fallingsand.FallingSandEngine;
 import com.ntros.model.world.protocol.request.OrchestrateRequest;
-import com.ntros.model.world.state.d2.grid.FallingSandState;
+import com.ntros.model.world.state.grid.FallingSandState;
 import com.ntros.model.world.wator.WaTorEngineImpl;
 import com.ntros.model.world.wator.WaTorWorld;
 import com.ntros.persistence.db.ConnectionProvider;
@@ -83,7 +83,7 @@ public class ServerBootstrap {
     bootstrapWaTorWorlds();
 
     // on server-stop - run cleanup and save world state
-    registerShutdownHook(worlds);
+//    registerShutdownHook(worlds);
 
     Server server = new TcpServer(PORT);
     try {
@@ -257,30 +257,30 @@ public class ServerBootstrap {
    * Registers a JVM shutdown hook. Graceful save of final terrain snapshots for all grid
    * worlds and drops db. This runs on Ctrl-C or a normal JVM exit.
    */
-  private static void registerShutdownHook(List<WorldConnector> worlds) {
-    Runtime.getRuntime().addShutdownHook(Thread.ofVirtual().unstarted(() -> {
-      log.info("[ServerBootstrap] Shutdown hook: saving terrain snapshots...");
-
-      // Terrain snapshots are only meaningful for GRID worlds — GoL worlds always restart blank.
-      Set<String> golNames = PersistenceContext.worlds().findAll().stream()
-          .filter(r -> "GOL".equalsIgnoreCase(r.engineType()))
-          .map(WorldRecord::name)
-          .collect(Collectors.toSet());
-
-      for (WorldConnector connector : worlds) {
-        if (connector instanceof GridWorldConnector gridConnector
-            && !golNames.contains(connector.getWorldName())) {
-          try {
-            var terrain = gridConnector.getState().terrain();
-            PersistenceContext.terrain().save(connector.getWorldName(), terrain);
-            log.info("[ServerBootstrap] Saved terrain for '{}'.", connector.getWorldName());
-          } catch (Exception e) {
-            log.error("[ServerBootstrap] Failed to save terrain for '{}': {}",
-                connector.getWorldName(), e.getMessage(), e);
-          }
-        }
-      }
-      DatabaseBuilder.dropDatabase();
-    }));
-  }
+//  private static void registerShutdownHook(List<WorldConnector> worlds) {
+//    Runtime.getRuntime().addShutdownHook(Thread.ofVirtual().unstarted(() -> {
+//      log.info("[ServerBootstrap] Shutdown hook: saving terrain snapshots...");
+//
+//      // Terrain snapshots are only meaningful for GRID worlds — GoL worlds always restart blank.
+//      Set<String> golNames = PersistenceContext.worlds().findAll().stream()
+//          .filter(r -> "GOL".equalsIgnoreCase(r.engineType()))
+//          .map(WorldRecord::name)
+//          .collect(Collectors.toSet());
+//
+//      for (WorldConnector connector : worlds) {
+//        if (connector instanceof GridWorldConnector gridConnector
+//            && !golNames.contains(connector.getWorldName())) {
+//          try {
+//            var terrain = gridConnector.getState().terrain();
+//            PersistenceContext.terrain().save(connector.getWorldName(), terrain);
+//            log.info("[ServerBootstrap] Saved terrain for '{}'.", connector.getWorldName());
+//          } catch (Exception e) {
+//            log.error("[ServerBootstrap] Failed to save terrain for '{}': {}",
+//                connector.getWorldName(), e.getMessage(), e);
+//          }
+//        }
+//      }
+//      DatabaseBuilder.dropDatabase();
+//    }));
+//  }
 }

@@ -1,4 +1,4 @@
-package com.ntros.model.world.state.d3.open;
+package com.ntros.model.world.state.open;
 
 import com.ntros.model.entity.movement.vectors.Vector3;
 import com.ntros.model.entity.open.OpenWorldEntity;

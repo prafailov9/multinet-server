@@ -3,7 +3,7 @@ package com.ntros.persistence.repository.impl;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.ntros.model.entity.movement.vectors.Vector4;
-import com.ntros.model.world.state.d2.grid.CellType;
+import com.ntros.model.world.state.grid.CellType;
 import com.ntros.persistence.repository.TerrainSnapshotRepository;
 import java.nio.file.Path;
 import java.util.LinkedHashMap;

@@ -1,29 +1,25 @@
 package com.ntros.model.world.engine.d2.grid.fallingsand;
 
-import static com.ntros.model.world.state.d2.grid.CellType.ACID;
-import static com.ntros.model.world.state.d2.grid.CellType.ASH;
-import static com.ntros.model.world.state.d2.grid.CellType.EMPTY;
-import static com.ntros.model.world.state.d2.grid.CellType.FIRE;
-import static com.ntros.model.world.state.d2.grid.CellType.OBSIDIAN;
-import static com.ntros.model.world.state.d2.grid.CellType.OIL;
-import static com.ntros.model.world.state.d2.grid.CellType.SAND;
-import static com.ntros.model.world.state.d2.grid.CellType.STONE;
-import static com.ntros.model.world.state.d2.grid.CellType.SMOKE;
-import static com.ntros.model.world.state.d2.grid.CellType.WATER;
+import static com.ntros.model.world.state.grid.CellType.ACID;
+import static com.ntros.model.world.state.grid.CellType.ASH;
+import static com.ntros.model.world.state.grid.CellType.EMPTY;
+import static com.ntros.model.world.state.grid.CellType.FIRE;
+import static com.ntros.model.world.state.grid.CellType.OBSIDIAN;
+import static com.ntros.model.world.state.grid.CellType.OIL;
+import static com.ntros.model.world.state.grid.CellType.SAND;
+import static com.ntros.model.world.state.grid.CellType.STONE;
+import static com.ntros.model.world.state.grid.CellType.SMOKE;
+import static com.ntros.model.world.state.grid.CellType.WATER;
 
-import com.ntros.model.entity.Entity;
-import com.ntros.model.entity.Player;
-import com.ntros.model.entity.movement.grid.Position;
 import com.ntros.model.entity.movement.vectors.Vector4;
-import com.ntros.model.entity.sequence.IdSequenceGenerator;
-import com.ntros.model.world.engine.d2.grid.AbstractGridEngine;
+import com.ntros.model.world.engine.core.SimulationGridEngine;
 import com.ntros.model.world.protocol.result.WorldResult;
-import com.ntros.model.world.protocol.request.JoinRequest;
-import com.ntros.model.world.protocol.request.MoveRequest;
 import com.ntros.model.world.protocol.request.OrchestrateRequest;
-import com.ntros.model.world.state.d2.grid.CellType;
-import com.ntros.model.world.state.d2.grid.GridSnapshot;
+import com.ntros.model.world.state.grid.CellType;
+import com.ntros.model.world.state.grid.GridSnapshot;
 import com.ntros.model.world.state.core.GridState;
+import com.ntros.model.world.state.core.SimulationGridState;
+import com.ntros.model.world.state.grid.FallingSandState;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
@@ -37,7 +33,7 @@ import lombok.extern.slf4j.Slf4j;
  * The engine owns the authoritative world state as two flat {@code CellType[]} arrays
  * ({@code current} / {@code next}) indexed by {@code y * W + x}.  The {@link GridState}
  * terrain map is never read or written during simulation; it is intentionally left
- * unsupported in {@link com.ntros.model.world.state.d2.grid.FallingSandState}.
+ * unsupported in {@link FallingSandState}.
  * The sync point is {@link #snapshot(GridState)}, which builds a transient terrain view
  * from {@code current[]} only when a broadcast frame is due (at broadcast rate, not sim rate).
  *
@@ -59,7 +55,7 @@ import lombok.extern.slf4j.Slf4j;
  * {@code takenPositions} and do not interact with the cell grid.
  */
 @Slf4j
-public class FallingSandEngine extends AbstractGridEngine {
+public class FallingSandEngine implements SimulationGridEngine {
 
   // ── Engine buffers (owned by this engine, not by GridState) ───────────────
 
@@ -116,45 +112,12 @@ public class FallingSandEngine extends AbstractGridEngine {
   public void applyIntents(GridState state) {
     ensureBuffers(state);
     nextGeneration();
-    state.moveIntents().clear(); // Falling Sand has no player-driven move intents
   }
 
   @Override
   public Object snapshot(GridState state) {
     needsFullSnapshot = false;
-    return new GridSnapshot(buildTerrainView(), buildEntityView(state));
-  }
-
-  @Override
-  public WorldResult joinEntity(JoinRequest req, GridState state) {
-    if (state.entities().containsKey(req.playerName())) {
-      return WorldResult.failed(req.playerName(), state.worldName(),
-          "Observer already registered: " + req.playerName());
-    }
-    long id = IdSequenceGenerator.getInstance().nextPlayerEntityId();
-    Player observer = new Player(Position.of(0, 0), req.playerName(), id, 0);
-    state.entities().put(req.playerName(), observer);
-    needsFullSnapshot = true; // new observer receives the full state on next broadcast
-    log.info("[FallingSand] Observer joined: '{}'.", req.playerName());
-    return WorldResult.succeeded(req.playerName(), state.worldName(),
-        "Joined Falling Sand simulation as observer.");
-  }
-
-  @Override
-  public Entity removeEntity(String entityId, GridState state) {
-    Entity removed = state.entities().remove(entityId);
-    if (removed != null) {
-      log.info("[FallingSand] Observer removed: '{}'.", entityId);
-    }
-    return removed;
-  }
-
-  @Override
-  public WorldResult storeMoveIntent(MoveRequest req, GridState state) {
-    log.warn("[FallingSand] MOVE rejected for '{}' — player movement not supported.",
-        req.playerId());
-    return WorldResult.failed(req.playerId(), state.worldName(),
-        "MOVE not supported in Falling Sand. Use ORCHESTRATE to place materials.");
+    return new GridSnapshot(buildTerrainView(), Map.of());
   }
 
   @Override
@@ -168,7 +131,7 @@ public class FallingSandEngine extends AbstractGridEngine {
   }
 
   @Override
-  public WorldResult orchestrate(OrchestrateRequest req, GridState state) {
+  public WorldResult orchestrate(OrchestrateRequest req, SimulationGridState state) {
     ensureBuffers(state);
     return switch (req.action()) {
       case PLACE -> applyPlace(req, state);
@@ -245,10 +208,8 @@ public class FallingSandEngine extends AbstractGridEngine {
       Arrays.fill(metadata, 0);
       Arrays.fill(nextMetadata, 0);
     }
-    state.entities().clear();
-    state.moveIntents().clear();
     needsFullSnapshot = true;
-    log.info("[FallingSand] World reset — all cells cleared, observers removed.");
+    log.info("[FallingSand] World reset — all cells cleared.");
   }
 
   private void ensureBuffers(GridState state) {

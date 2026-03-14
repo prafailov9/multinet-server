@@ -2,7 +2,7 @@ package com.ntros.model.world.connector;
 
 import com.ntros.model.entity.config.WorldCapabilities;
 import com.ntros.model.world.engine.d2.grid.GridWorldEngine;
-import com.ntros.model.world.state.d2.grid.GridWorldState;
+import com.ntros.model.world.state.grid.ArenaGridState;
 import org.junit.jupiter.api.BeforeEach;
 
 class GridWorldOpConnectorTest {
@@ -11,7 +11,7 @@ class GridWorldOpConnectorTest {
   private static final int DEFAULT_WORLD_WIDTH = 10;
   private static final int DEFAULT_WORLD_HEIGHT = 10;
 
-  private GridWorldState state;
+  private ArenaGridState state;
   private GridWorldEngine engine;
   private GridWorldConnector connector;
 
@@ -31,8 +31,8 @@ class GridWorldOpConnectorTest {
 //  }
 
 
-  private GridWorldState createWorldState(String name, int width, int height) {
-    return new GridWorldState(name, width, height);
+  private ArenaGridState createWorldState(String name, int width, int height) {
+    return new ArenaGridState(name, width, height);
   }
 
 }

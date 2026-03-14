@@ -1,13 +1,13 @@
 package com.ntros.model.world.state;
 
 import com.ntros.model.world.state.core.GridState;
-import com.ntros.model.world.state.d3.open.OpenWorldState;
-import com.ntros.model.world.state.d2.grid.GridWorldState;
+import com.ntros.model.world.state.grid.ArenaGridState;
+import com.ntros.model.world.state.open.OpenWorldState;
 
 public class WorldStateFactory {
 
-  public static GridWorldState createGridWorld(String worldName, int width, int height) {
-    return new GridWorldState(worldName, width, height);
+  public static ArenaGridState createGridWorld(String worldName, int width, int height) {
+    return new ArenaGridState(worldName, width, height);
   }
 
   public static OpenWorldState createOpenWorld(String worldName, int width, int height, int depth) {
@@ -16,7 +16,7 @@ public class WorldStateFactory {
 
   public static GridState createWorldState(String type, String worldName, int width, int height) {
     return switch (type) {
-      case "GRID" -> new GridWorldState(worldName, width, height);
+      case "GRID" -> new ArenaGridState(worldName, width, height);
       default -> throw new RuntimeException("Type world does not exist.");
     };
   }

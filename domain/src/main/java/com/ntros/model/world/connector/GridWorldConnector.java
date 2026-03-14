@@ -8,9 +8,12 @@ import com.ntros.model.world.connector.ops.OrchestrateOp;
 import com.ntros.model.world.connector.ops.RemoveOp;
 import com.ntros.model.world.connector.ops.WorldOp;
 import com.ntros.model.world.engine.core.GridEngine;
+import com.ntros.model.world.engine.core.PlayerGridEngine;
+import com.ntros.model.world.engine.core.SimulationGridEngine;
+import com.ntros.model.world.state.core.PlayerGridState;
+import com.ntros.model.world.state.core.SimulationGridState;
 import com.ntros.model.world.protocol.result.WorldResult;
 import com.ntros.model.world.state.core.GridState;
-import com.ntros.model.world.state.d2.grid.GridWorldState;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 
@@ -30,14 +33,35 @@ public class GridWorldConnector implements WorldConnector {
   @Override
   public WorldResult apply(WorldOp op) {
     return switch (op) {
-      case JoinOp j -> engine.joinEntity(j.req(), state);
-      case MoveOp m -> engine.storeMoveIntent(m.req(), state);
+      case JoinOp j -> {
+        if (engine instanceof PlayerGridEngine pge && state instanceof PlayerGridState pState) {
+          yield pge.joinEntity(j.req(), pState);
+        }
+        yield WorldResult.failed(j.req().playerName(), state.worldName(),
+            "World does not support player join.");
+      }
+      case MoveOp m -> {
+        if (engine instanceof PlayerGridEngine pge && state instanceof PlayerGridState pState) {
+          yield pge.storeMoveIntent(m.req(), pState);
+        }
+        yield WorldResult.failed(m.req().playerId(), state.worldName(),
+            "World does not support player movement.");
+      }
       case RemoveOp r -> {
-        engine.removeEntity(r.removeRequest().entityId(), state);
+        if (engine instanceof PlayerGridEngine pge && state instanceof PlayerGridState pState) {
+          pge.removeEntity(r.removeRequest().entityId(), pState);
+        }
         yield WorldResult.succeeded(r.removeRequest().entityId(), state.worldName(), "ok");
       }
-      case OrchestrateOp o -> engine.orchestrate(o.req(), state);
-      default -> throw new IllegalStateException("Unexpected value: " + op);
+      case OrchestrateOp o -> {
+        if (engine instanceof SimulationGridEngine sge
+            && state instanceof SimulationGridState sState) {
+          yield sge.orchestrate(o.req(), sState);
+        }
+        yield WorldResult.failed("orchestrator", state.worldName(),
+            "World does not support orchestration.");
+      }
+      default -> throw new IllegalStateException("Unexpected op type: " + op);
     };
   }
 
@@ -72,7 +96,10 @@ public class GridWorldConnector implements WorldConnector {
 
   @Override
   public List<Entity> getCurrentEntities() {
-    return state.entities().values().stream().toList();
+    if (state instanceof PlayerGridState pState) {
+      return pState.entities().values().stream().toList();
+    }
+    return List.of();
   }
 
   @Override
@@ -88,7 +115,7 @@ public class GridWorldConnector implements WorldConnector {
   // ── Persistence helpers ───────────────────────────────────────────────────
 
   /**
-   * Returns the underlying {@link GridWorldState} for read-only access by the persistence layer
+   * Returns the underlying {@link GridState} for read-only access by the persistence layer
    * (e.g. to save the current terrain snapshot on shutdown).
    */
   public GridState getState() {

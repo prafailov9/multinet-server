@@ -4,14 +4,14 @@ import com.ntros.model.entity.config.WorldCapabilities;
 import com.ntros.model.world.connector.GridWorldConnector;
 import com.ntros.model.world.connector.WorldConnector;
 import com.ntros.model.world.engine.d2.grid.GridWorldEngine;
-import com.ntros.model.world.state.d2.grid.GridWorldState;
+import com.ntros.model.world.state.grid.ArenaGridState;
 import java.util.HashMap;
 import java.util.Map;
 
 public final class Connectors {
 
   private static final WorldConnector DEFAULT_WORLD = new GridWorldConnector(
-      new GridWorldState("world-1", 10, 10), new GridWorldEngine(),
+      new ArenaGridState("world-1", 10, 10), new GridWorldEngine(),
       new WorldCapabilities(true, true, false, true));
   private static final Map<String, WorldConnector> WORLDS = new HashMap<>();
 

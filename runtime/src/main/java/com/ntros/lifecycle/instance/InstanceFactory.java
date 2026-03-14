@@ -11,7 +11,7 @@ import com.ntros.model.world.connector.GridWorldConnector;
 import com.ntros.model.world.connector.WorldConnector;
 import com.ntros.model.world.engine.d2.grid.gameoflife.GameOfLifeEngine;
 import com.ntros.model.world.engine.d2.grid.GridWorldEngine;
-import com.ntros.model.world.state.d2.grid.GridWorldState;
+import com.ntros.model.world.state.grid.ArenaGridState;
 import com.ntros.lifecycle.session.Session;
 import com.ntros.lifecycle.clock.FixedRateClock;
 import java.util.Collection;
@@ -38,7 +38,7 @@ public final class InstanceFactory {
   }
 
   public static Instance createArena(String name, SessionManager sessions) {
-    WorldConnector connector = new GridWorldConnector(new GridWorldState(name, 256, 256),
+    WorldConnector connector = new GridWorldConnector(new ArenaGridState(name, 256, 256),
         new GridWorldEngine(), new WorldCapabilities(true, true, false, true));
 
     InstanceSettings cfg = InstanceSettings.multiplayerJoinable();
@@ -50,7 +50,7 @@ public final class InstanceFactory {
 
   public static Instance createSolo(String name, String ownerUserId,
       SessionManager sessions) {
-    WorldConnector connector = new GridWorldConnector(new GridWorldState(name, 128, 128),
+    WorldConnector connector = new GridWorldConnector(new ArenaGridState(name, 128, 128),
         new GridWorldEngine(), new WorldCapabilities(true, true, false, true));
     InstanceSettings cfg = InstanceSettings.singlePlayerDefault();
     Instance inst = new ServerInstance(connector, sessions, new FixedRateClock(30),
@@ -63,7 +63,7 @@ public final class InstanceFactory {
   public static Instance createGameOfLifeWorld(String name, String ownerUserId,
       SessionManager sessions) {
     WorldConnector connector = new GridWorldConnector(
-        GridWorldState.blank(name, 256, 256),
+        ArenaGridState.blank(name, 256, 256),
         new GameOfLifeEngine(),
         new WorldCapabilities(true, true, true, true));
     InstanceSettings cfg = InstanceSettings.singlePlayerOrchestrator();

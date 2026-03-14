@@ -6,7 +6,7 @@ import com.ntros.model.entity.sequence.IdSequenceGenerator;
 import com.ntros.model.world.engine.d2.grid.GridWorldEngine;
 import com.ntros.model.world.protocol.result.WorldResult;
 import com.ntros.model.world.protocol.request.JoinRequest;
-import com.ntros.model.world.state.d2.grid.GridWorldState;
+import com.ntros.model.world.state.grid.ArenaGridState;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
@@ -32,7 +32,7 @@ class GridWorldOpEngineTest {
         expectedPlayerId);
 
     JoinRequest request = new JoinRequest(expectedPlayerName);
-    GridWorldState state = createWorldState(expectedWorldName, 10, 10);
+    ArenaGridState state = createWorldState(expectedWorldName, 10, 10);
 
     // act
     WorldResult result = engine.joinEntity(request, state);
@@ -55,7 +55,7 @@ class GridWorldOpEngineTest {
     String expectedErrorReason = String.format("Player with name %s already exists",
         existingPlayerName);
     JoinRequest request = new JoinRequest(existingPlayerName);
-    GridWorldState state = createWorldState(expectedWorldName, 10, 10);
+    ArenaGridState state = createWorldState(expectedWorldName, 10, 10);
 
     WorldResult unused = engine.joinEntity(request, state);
     // add new player with same name(same join request)
@@ -80,7 +80,7 @@ class GridWorldOpEngineTest {
     String expectedErrorReason = "Could not find free position in world.";
 
     // creating world with only one position
-    GridWorldState state = createWorldState(expectedWorldName, 1, 1);
+    ArenaGridState state = createWorldState(expectedWorldName, 1, 1);
 
     WorldResult unused = engine.joinEntity(new JoinRequest(existingPlayerName), state);
 
@@ -96,8 +96,8 @@ class GridWorldOpEngineTest {
   }
 
 
-  private GridWorldState createWorldState(String name, int width, int height) {
-    return new GridWorldState(name, width, height);
+  private ArenaGridState createWorldState(String name, int width, int height) {
+    return new ArenaGridState(name, width, height);
   }
 
 }

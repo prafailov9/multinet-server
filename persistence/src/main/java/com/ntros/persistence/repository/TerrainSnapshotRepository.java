@@ -1,8 +1,8 @@
 package com.ntros.persistence.repository;
 
 import com.ntros.model.entity.movement.vectors.Vector4;
-import com.ntros.model.world.state.d2.grid.GridWorldState;
-import com.ntros.model.world.state.d2.grid.CellType;
+import com.ntros.model.world.state.grid.ArenaGridState;
+import com.ntros.model.world.state.grid.CellType;
 import java.util.Map;
 import java.util.Optional;
 
@@ -10,7 +10,7 @@ import java.util.Optional;
  * Saves and loads the terrain of a grid world to/from durable storage so that the terrain is
  * stable across server restarts.
  *
- * <p>Without this, {@link GridWorldState} re-generates terrain
+ * <p>Without this, {@link ArenaGridState} re-generates terrain
  * randomly on every startup, making it impossible for players to memorise the map layout.
  */
 public interface TerrainSnapshotRepository {

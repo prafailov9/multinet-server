@@ -3,7 +3,7 @@ package com.ntros.persistence.repository.impl;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.ntros.model.entity.movement.vectors.Vector4;
-import com.ntros.model.world.state.d2.grid.CellType;
+import com.ntros.model.world.state.grid.CellType;
 import com.ntros.persistence.repository.TerrainSnapshotRepository;
 import java.io.IOException;
 import java.nio.file.Files;

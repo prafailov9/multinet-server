@@ -1,8 +1,8 @@
-package com.ntros.model.world.state.d2.grid;
+package com.ntros.model.world.state.grid;
 
 import com.ntros.model.entity.Entity;
 import com.ntros.model.entity.movement.vectors.Vector4;
-import com.ntros.model.world.state.core.GridState;
+import com.ntros.model.world.state.core.PlayerGridState;
 import com.ntros.model.world.state.dimension.Dimension;
 import com.ntros.model.world.state.dimension.Dimension2D;
 import java.util.HashMap;
@@ -15,7 +15,7 @@ import lombok.extern.slf4j.Slf4j;
 
 
 @Slf4j
-public class GridWorldState implements GridState {
+public class ArenaGridState implements PlayerGridState {
 
   private final Random rng; // NEW
 
@@ -30,11 +30,11 @@ public class GridWorldState implements GridState {
   private final Map<String, Vector4> moveIntentMap;
   private final Map<Vector4, CellType> terrainMap;
 
-  public GridWorldState(String worldName, int width, int height) {
+  public ArenaGridState(String worldName, int width, int height) {
     this(worldName, width, height, ThreadLocalRandom.current()); // default
   }
 
-  public GridWorldState(String worldName, int width, int height, Random rng) {
+  public ArenaGridState(String worldName, int width, int height, Random rng) {
     this.worldName = worldName;
     this.width = width;
     this.height = height;
@@ -58,13 +58,13 @@ public class GridWorldState implements GridState {
    * @param worldName unique world name
    * @param width     number of columns
    * @param height    number of rows
-   * @return a fully initialised {@link GridWorldState} with an all-EMPTY terrain map
+   * @return a fully initialised {@link ArenaGridState} with an all-EMPTY terrain map
    */
-  public static GridWorldState blank(String worldName, int width, int height) {
+  public static ArenaGridState blank(String worldName, int width, int height) {
     // Sparse representation: no entries means all cells are implicitly EMPTY.
     // Pre-filling 1M EMPTY entries for a 1024×1024 GoL world wastes memory and
     // turns every snapshot/iteration into an O(W×H) operation.
-    return new GridWorldState(worldName, width, height, new HashMap<>());
+    return new ArenaGridState(worldName, width, height, new HashMap<>());
   }
 
   /**
@@ -79,7 +79,7 @@ public class GridWorldState implements GridState {
    * @param height       number of rows (must match the saved terrain)
    * @param savedTerrain pre-built terrain map loaded from a snapshot; must not be null
    */
-  public GridWorldState(String worldName, int width, int height,
+  public ArenaGridState(String worldName, int width, int height,
       Map<Vector4, CellType> savedTerrain) {
     this.worldName = worldName;
     this.width = width;

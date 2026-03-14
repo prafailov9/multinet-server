@@ -1,4 +1,4 @@
-package com.ntros.model.world.state.d2.grid;
+package com.ntros.model.world.state.grid;
 
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.ntros.model.entity.movement.vectors.Vector4;
