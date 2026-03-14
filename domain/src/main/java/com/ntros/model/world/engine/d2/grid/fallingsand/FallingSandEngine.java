@@ -4,9 +4,11 @@ import static com.ntros.model.world.state.d2.grid.CellType.ACID;
 import static com.ntros.model.world.state.d2.grid.CellType.ASH;
 import static com.ntros.model.world.state.d2.grid.CellType.EMPTY;
 import static com.ntros.model.world.state.d2.grid.CellType.FIRE;
+import static com.ntros.model.world.state.d2.grid.CellType.OBSIDIAN;
 import static com.ntros.model.world.state.d2.grid.CellType.OIL;
 import static com.ntros.model.world.state.d2.grid.CellType.SAND;
 import static com.ntros.model.world.state.d2.grid.CellType.STONE;
+import static com.ntros.model.world.state.d2.grid.CellType.SMOKE;
 import static com.ntros.model.world.state.d2.grid.CellType.WATER;
 
 import com.ntros.model.entity.Entity;
@@ -80,21 +82,23 @@ public class FallingSandEngine extends AbstractGridEngine {
   private int[] metadata;
   private int[] nextMetadata;
 
-  private static final int FIRE_TTL = 5;
-  private static final float IGNITE_CHANCE = 0.02f;
+  private static final int FIRE_TTL = 120;
+  private static final float IGNITE_CHANCE = 0.06f;
   private static final float DISSOLVE_CHANCE = 0.7f;
+  private static final int SMOKE_TTL_BASE = 30;
+  private static final int SMOKE_TTL_VAR = 60;   // final TTL = base + rng(var) = 80..139
+  private static final int ACID_FUME_TTL = 30;
+  private static final float SMOKE_SPAWN_RATE = 0.5f; // max 50% chance per tick at full fire TTL
   private final Random rng = new Random();
 
   // helpers index arrays
   // all 8 neighbors
   private final int[] neighX = {-1, 0, 1, -1, 1, -1, 0, 1};
   private final int[] neighY = {-1, -1, -1, 0, 0, 1, 1, 1};
-  // fire movement: only up
-  private final int[] upX = new int[]{-1, 0, 1};
-  private final int[] upY = new int[]{-1, -1, -1};
 
-  private final Map<CellType, Integer> densityMap = Map.of(STONE, 5, SAND, 4, ASH, 3, WATER, 2,
-      ACID, 2, OIL, 1, FIRE, 0, EMPTY, -1);
+  // SMOKE has density -1 (same as EMPTY) so all gravity materials fall through it
+  private final Map<CellType, Integer> densityMap = Map.of(STONE, 5, OBSIDIAN, 5, SAND, 4, ASH, 3,
+      WATER, 2, ACID, 2, OIL, 1, FIRE, 0, EMPTY, -1, SMOKE, -1);
 
   private int W, H;
 
@@ -169,32 +173,58 @@ public class FallingSandEngine extends AbstractGridEngine {
     return switch (req.action()) {
       case PLACE -> applyPlace(req, state);
       case CLEAR -> applyClear(state);
+      case RANDOM_SEED -> applyRandomSeed(state);
       default -> WorldResult.failed("orchestrator", state.worldName(),
-          "Falling Sand only supports PLACE and CLEAR orchestration.");
+          "Falling Sand supports PLACE, CLEAR, and RANDOM_SEED orchestration.");
     };
+  }
+
+  /**
+   * Fills the grid with a randomised mix of materials.
+   * Distribution: SAND 40%, STONE 20%, WATER 20%, OIL 10%, EMPTY 10%.
+   */
+  private WorldResult applyRandomSeed(GridState state) {
+    CellType[] palette = {
+        SAND, SAND, SAND, SAND,
+        STONE, STONE,
+        WATER, WATER,
+        OIL,
+        EMPTY
+    };
+    for (int i = 0; i < current.length; i++) {
+      current[i] = palette[rng.nextInt(palette.length)];
+      metadata[i] = 0;
+    }
+    needsFullSnapshot = true;
+    log.info("[FallingSand] Random seed applied to '{}' ({}×{}).", state.worldName(), W, H);
+    return WorldResult.succeeded("orchestrator", state.worldName(), "Random seed applied.");
   }
 
   private WorldResult applyPlace(OrchestrateRequest req, GridState state) {
     if (req.cells().isEmpty() || req.material() == null) {
-      return WorldResult.failed("orchestrator", state.worldName(), "PLACE requires a material and position.");
+      return WorldResult.failed("orchestrator", state.worldName(),
+          "PLACE requires a material and position.");
     }
     CellType mat;
     try {
       mat = CellType.valueOf(req.material());
     } catch (IllegalArgumentException e) {
-      return WorldResult.failed("orchestrator", state.worldName(), "Unknown material: " + req.material());
+      return WorldResult.failed("orchestrator", state.worldName(),
+          "Unknown material: " + req.material());
     }
     var pos = req.cells().getFirst();
     int x = (int) pos.getX();
     int y = (int) pos.getY();
     if (x < 0 || x >= W || y < 0 || y >= H) {
-      return WorldResult.failed("orchestrator", state.worldName(), "Position out of bounds: " + x + "," + y);
+      return WorldResult.failed("orchestrator", state.worldName(),
+          "Position out of bounds: " + x + "," + y);
     }
     int i = y * W + x;
     current[i] = mat;
     metadata[i] = (mat == FIRE) ? FIRE_TTL : 0;
     needsFullSnapshot = true;
-    return WorldResult.succeeded("orchestrator", state.worldName(), "Placed " + mat + " at " + x + "," + y);
+    return WorldResult.succeeded("orchestrator", state.worldName(),
+        "Placed " + mat + " at " + x + "," + y);
   }
 
   private WorldResult applyClear(GridState state) {
@@ -338,7 +368,9 @@ public class FallingSandEngine extends AbstractGridEngine {
           case OIL -> oilRules(cell, idx, x, y);
           case FIRE -> fireSpread(x, y);
           case ACID -> acidRules(cell, idx, x, y);
-          case STONE -> next[idx] = CellType.STONE;
+          case STONE -> next[idx] = STONE;
+          case OBSIDIAN -> next[idx] = OBSIDIAN;
+          case SMOKE -> smokeRise(x, y);
           default -> {
           } // EMPTY — nothing to do
         }
@@ -358,7 +390,7 @@ public class FallingSandEngine extends AbstractGridEngine {
   }
 
   private void waterRules(CellType cell, int i, int x, int y) {
-    applyGravity(cell, i, x, y);
+    liquidFall(cell, i, x, y);
     if (next[i] == cell) {
       moveToSides(cell, i, x, y);
     }
@@ -366,16 +398,14 @@ public class FallingSandEngine extends AbstractGridEngine {
 
   private void oilRules(CellType cell, int i, int x, int y) {
     waterRules(cell, i, x, y);
-    if (next[i] == cell) {
-      oilIgnition(i, x, y);
-    }
+    oilIgnition(i, x, y);
+//    if (next[i] == cell) {
+//    }
   }
 
   private void acidRules(CellType cell, int i, int x, int y) {
     waterRules(cell, i, x, y);
-    if (next[i] == cell) {
-      acidDissolve(x, y);
-    }
+    acidDissolve(x, y); // always check neighbors — acid corrodes what it touches even while flowing
   }
 
 
@@ -384,7 +414,7 @@ public class FallingSandEngine extends AbstractGridEngine {
   }
 
   private boolean isDissolvable(CellType neighbour) {
-    return neighbour == STONE;
+    return neighbour == STONE || neighbour == ASH;
   }
 
   private int idx(int x, int y) {
@@ -404,67 +434,73 @@ public class FallingSandEngine extends AbstractGridEngine {
   }
 
   /**
-   * full Sand movement.First part of Water, Oil, Acid movement
+   * Returns true when cell at {@code i} may legally claim position {@code j} this tick.
+   *
+   * <p>Two conditions must hold:
+   * <ol>
+   *   <li>Density: the moving cell is denser than whatever currently sits at {@code j}.</li>
+   *   <li>No prior claim: {@code next[j]} is either empty or still holds the same type as
+   *       {@code current[j]} — i.e., no other cell has already moved there this tick.</li>
+   * </ol>
+   * Without (2) two cells can both "win" the same destination, causing one to silently vanish.
+   */
+  private boolean canMoveTo(CellType cell, int j) {
+    return densityMap.get(cell) > densityMap.get(current[j])
+        && (next[j] == EMPTY || next[j] == current[j]);
+  }
+
+  /**
+   * Gravity for granular solids (SAND, ASH): falls straight down then diagonally,
+   * creating natural pile slopes.
    */
   private void applyGravity(CellType cell, int i, int x, int y) {
-    // down
     if (inBounds(x, y + 1)) {
       int j = idx(x, y + 1);
-      if (densityMap.get(cell) > densityMap.get(current[j])) {
-        write(i, j);
-        return;
-      }
+      if (canMoveTo(cell, j)) { write(i, j); return; }
     }
-
-    // random diagonal order
     int dx1 = (tick & 1) == 0 ? -1 : 1;
     int dx2 = (tick & 1) == 0 ? 1 : -1;
-
-    // first diagonal
     if (inBounds(x + dx1, y + 1)) {
       int j = idx(x + dx1, y + 1);
-      if (densityMap.get(cell) > densityMap.get(current[j])) {
-        write(i, j);
-        return;
-      }
+      if (canMoveTo(cell, j)) { write(i, j); return; }
     }
-
-    // second diagonal
     if (inBounds(x + dx2, y + 1)) {
       int j = idx(x + dx2, y + 1);
-      if (densityMap.get(cell) > densityMap.get(current[j])) {
-        write(i, j);
-        return;
-      }
+      if (canMoveTo(cell, j)) { write(i, j); return; }
     }
     next[i] = cell;
     nextMetadata[i] = metadata[i];
   }
 
   /**
-   * Second part of Water, Oil, Acid movement (horizontal spreading)
+   * Gravity for liquids (WATER, OIL, ACID): falls straight down only — no diagonals.
+   * Liquids pool flat rather than forming slopes. Horizontal spreading is handled
+   * separately by {@link #moveToSides}.
+   */
+  private void liquidFall(CellType cell, int i, int x, int y) {
+    if (inBounds(x, y + 1)) {
+      int j = idx(x, y + 1);
+      if (canMoveTo(cell, j)) { write(i, j); return; }
+    }
+    next[i] = cell;
+    nextMetadata[i] = metadata[i];
+  }
+
+  /**
+   * Horizontal spreading for liquids. Alternates preferred direction each tick.
    */
   private void moveToSides(CellType cell, int i, int x, int y) {
-    // random horizontal order
     int dx1 = (tick & 1) == 0 ? -1 : 1;
     int dx2 = (tick & 1) == 0 ? 1 : -1;
-    // first horizontal direction
     int nx = x + dx1;
     if (inBounds(nx, y)) {
       int j = idx(nx, y);
-
-      if (densityMap.get(cell) > densityMap.get(current[j])) {
-        write(i, j);
-        return;
-      }
+      if (canMoveTo(cell, j)) { write(i, j); return; }
     }
-    // second horizontal direction
     nx = x + dx2;
     if (inBounds(nx, y)) {
       int j = idx(nx, y);
-      if (densityMap.get(cell) > densityMap.get(current[j])) {
-        write(i, j);
-      }
+      if (canMoveTo(cell, j)) { write(i, j); }
     }
   }
 
@@ -507,50 +543,36 @@ public class FallingSandEngine extends AbstractGridEngine {
 
   private void fireSpread(int x, int y) {
     int i = idx(x, y);
-    // check if fire extinguished this tick
     if (metadata[i] == 0) {
       next[i] = ASH;
       return;
     }
-    int newPos = i;
-    // try move up
-    for (int k = 0; k < upX.length; k++) {
-      int ux = x + upX[k];
-      int uy = y + upY[k];
+    // Fire stays in place — it is a stationary flame, not a moving particle.
+    // Growth happens by igniting combustible neighbours; smoke rises above it.
+    next[i] = FIRE;
+    nextMetadata[i] = metadata[i] - 1;
 
-      if (inBounds(ux, uy)) {
-        int j = idx(ux, uy);
-        if (current[j] == EMPTY) {
-          write(i, j);
-          newPos = j;
-          break;
-        }
-      }
-
-    }
-
-    // spread to neighbors and try to engulf them in flames
+    // Spread to combustible neighbours
     for (int k = 0; k < neighX.length; k++) {
       int nx = x + neighX[k];
       int ny = y + neighY[k];
-
       if (!inBounds(nx, ny)) {
         continue;
       }
       int j = idx(nx, ny);
-      if (isCombustible(current[j])) {
-        if (rng.nextFloat() < IGNITE_CHANCE) {
-          next[j] = FIRE;
-          nextMetadata[j] = FIRE_TTL;
-        }
+      if (isCombustible(current[j]) && rng.nextFloat() < IGNITE_CHANCE) {
+        next[j] = FIRE;
+        nextMetadata[j] = FIRE_TTL;
       }
     }
-    // stays in the same place for next tick
-    if (newPos == i) {
-      next[i] = FIRE;
+
+    // Emit smoke directly above — rate tapers as TTL falls
+    float smokeRate = (float) metadata[i] / FIRE_TTL * SMOKE_SPAWN_RATE;
+    if (inBounds(x, y - 1) && current[idx(x, y - 1)] == EMPTY && rng.nextFloat() < smokeRate) {
+      int smokeIdx = idx(x, y - 1);
+      next[smokeIdx] = SMOKE;
+      nextMetadata[smokeIdx] = SMOKE_TTL_BASE + rng.nextInt(SMOKE_TTL_VAR);
     }
-    // extinguish slowly at the end of turn
-    nextMetadata[newPos] = metadata[i] - 1;
   }
 
   /**
@@ -571,9 +593,47 @@ public class FallingSandEngine extends AbstractGridEngine {
       if (isDissolvable(current[j])) {
         if (rng.nextFloat() < DISSOLVE_CHANCE) {
           next[j] = EMPTY;
-          next[i] = EMPTY; // consume acid cell
+          // Acid fume: spawn short-lived smoke above the dissolution site
+          int fumeY = y - 1;
+          if (inBounds(x, fumeY) && current[idx(x, fumeY)] == EMPTY) {
+            int fumeIdx = idx(x, fumeY);
+            next[fumeIdx] = SMOKE;
+            nextMetadata[fumeIdx] = ACID_FUME_TTL;
+          }
         }
       }
     }
+  }
+
+  /**
+   * Smoke rises upward and dissipates as its TTL counts down.
+   * Spawn rate from fire tapers with fire TTL, so thick smoke appears when burning
+   * strongly and thins to nothing as the fire dies.
+   */
+  private void smokeRise(int x, int y) {
+    int i = idx(x, y);
+    int ttl = metadata[i];
+    if (ttl <= 0) {
+      return; // dissipates — next[i] stays EMPTY (filled by prepareNextBuffer)
+    }
+    // Alternate left/right diagonal bias each tick to avoid one-sided drift
+    int dx1 = (tick & 1) == 0 ? -1 : 1;
+    int dx2 = (tick & 1) == 0 ? 1 : -1;
+    int[] tryOffsets = {0, dx1, dx2}; // prefer straight up, then diagonals
+    for (int dxOff : tryOffsets) {
+      int ux = x + dxOff;
+      int uy = y - 1;
+      if (inBounds(ux, uy)) {
+        int j = idx(ux, uy);
+        if (current[j] == EMPTY && next[j] == EMPTY) {
+          next[j] = SMOKE;
+          nextMetadata[j] = ttl - 1;
+          return; // smoke moved up; i stays EMPTY
+        }
+      }
+    }
+    // Blocked — stay and keep fading
+    next[i] = SMOKE;
+    nextMetadata[i] = ttl - 1;
   }
 }

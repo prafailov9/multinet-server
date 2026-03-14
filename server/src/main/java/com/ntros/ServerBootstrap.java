@@ -17,6 +17,7 @@ import com.ntros.model.world.connector.GridWorldConnector;
 import com.ntros.model.world.connector.WaTorConnector;
 import com.ntros.model.world.connector.WorldConnector;
 import com.ntros.model.world.engine.d2.grid.fallingsand.FallingSandEngine;
+import com.ntros.model.world.protocol.request.OrchestrateRequest;
 import com.ntros.model.world.state.d2.grid.FallingSandState;
 import com.ntros.model.world.wator.WaTorEngineImpl;
 import com.ntros.model.world.wator.WaTorWorld;
@@ -44,13 +45,19 @@ public class ServerBootstrap {
   private static final int TICK_RATE = 120;
   // emits 70 messages per second
   private static final int BROADCAST_RATE = 70;
-  private static final int GOL_BROADCAST_RATE  = 10;
-  private static final int SAND_BROADCAST_RATE = 10;
+  private static final int GOL_BROADCAST_RATE = 10;
+  private static final int SAND_BROADCAST_RATE = 120;
   private static final int WATOR_BROADCAST_RATE = 10;
 
-  private static final int SAND_WIDTH  = 200;
-  private static final int SAND_HEIGHT = 150;
-  private static final String SAND_WORLD_NAME = "falling-sand";
+  private record SandWorldDef(String name, int w, int h, boolean randomSeed) {
+
+  }
+
+  private static final List<SandWorldDef> SAND_WORLDS = List.of(
+      new SandWorldDef("falling-sand", 128, 128, false),
+      new SandWorldDef("falling-sand-small", 32, 32, true),
+      new SandWorldDef("falling-sand-mid", 64, 64, true)
+  );
 
   // Wa-Tor initial population
   private static final int WATOR_INITIAL_PREDATORS = 40;
@@ -72,7 +79,7 @@ public class ServerBootstrap {
     initInstances(worlds);
 
     // Bootstrap autonomous simulations (not DB-backed — seeded programmatically)
-    bootstrapFallingSandWorld();
+    bootstrapFallingSandWorlds();
     bootstrapWaTorWorlds();
 
     // on server-stop - run cleanup and save world state
@@ -173,26 +180,34 @@ public class ServerBootstrap {
   }
 
   /**
-   * Bootstraps the Falling Sand world programmatically so it is always available regardless of
-   * DB state. If the world is already registered (e.g. loaded from DB), this is a no-op.
+   * Bootstraps all Falling Sand worlds. Skips any world already registered from DB.
+   * Randomly-seeded worlds are pre-filled and their simulation clock is started immediately.
    */
-  private static void bootstrapFallingSandWorld() {
-    if (Instances.getInstance(SAND_WORLD_NAME) != null) {
-      log.info("[ServerBootstrap] Falling Sand world '{}' already registered — skipping programmatic bootstrap.", SAND_WORLD_NAME);
-      return;
-    }
-    FallingSandState state  = new FallingSandState(SAND_WORLD_NAME, SAND_WIDTH, SAND_HEIGHT);
-    FallingSandEngine engine = new FallingSandEngine();
-    WorldCapabilities caps  = new WorldCapabilities(true, true, false, true);
-    GridWorldConnector connector = new GridWorldConnector(state, engine, caps);
+  private static void bootstrapFallingSandWorlds() {
+    for (SandWorldDef def : SAND_WORLDS) {
+      if (Instances.getInstance(def.name()) != null) {
+        log.info("[ServerBootstrap] Sand world '{}' already registered — skipping.", def.name());
+        continue;
+      }
+      FallingSandState state = new FallingSandState(def.name(), def.w(), def.h());
+      FallingSandEngine engine = new FallingSandEngine();
+      WorldCapabilities caps = new WorldCapabilities(true, true, false, true);
+      GridWorldConnector connector = new GridWorldConnector(state, engine, caps);
 
-    SessionManager sessionManager = new ClientSessionManager();
-    Clock clock = new FixedRateClock(TICK_RATE);
-    Settings settings = Settings.multiplayerOrchestrator(SAND_BROADCAST_RATE);
-    Instances.registerInstance(
-        new ServerInstance(connector, sessionManager, clock, new SharedBroadcaster(), settings));
-    log.info("[ServerBootstrap] Falling Sand world '{}' registered ({}×{}).",
-        SAND_WORLD_NAME, SAND_WIDTH, SAND_HEIGHT);
+      SessionManager sessionManager = new ClientSessionManager();
+      Clock clock = new FixedRateClock(TICK_RATE);
+      Settings settings = Settings.multiplayerOrchestrator(SAND_BROADCAST_RATE);
+      ServerInstance instance = new ServerInstance(connector, sessionManager, clock,
+          new SharedBroadcaster(), settings);
+      Instances.registerInstance(instance);
+
+      if (def.randomSeed()) {
+        // Seeding triggers ensureBuffers + starts the clock (instance goes live)
+        instance.orchestrateAsync(OrchestrateRequest.randomSeed(0f)).join();
+      }
+      log.info("[ServerBootstrap] Sand world '{}' registered ({}×{}, random={}).",
+          def.name(), def.w(), def.h(), def.randomSeed());
+    }
   }
 
   /**
@@ -231,7 +246,7 @@ public class ServerBootstrap {
           new SharedBroadcaster(), settings);
 
       Instances.registerInstance(instance);
-      instance.start();   // autonomous — runs immediately, independent of observer count
+//      instance.start();   // autonomous — runs immediately, independent of observer count
       log.info("[ServerBootstrap] Wa-Tor world '{}' started ({} predators, {} prey, {} plants).",
           name, WATOR_INITIAL_PREDATORS, WATOR_INITIAL_PREY, WATOR_INITIAL_PLANTS);
     }

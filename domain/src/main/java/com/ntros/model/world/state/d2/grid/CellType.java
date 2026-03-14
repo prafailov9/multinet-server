@@ -6,13 +6,18 @@ public enum CellType {
   WATER,
   FIRE,
   TRAP,
-  /** A live cell in a Game-of-Life simulation. */
+  /**
+   * A live cell in a Game-of-Life simulation.
+   */
   ALIVE,
-  /**Additional cells for Falling Sand simulation.*/
+  /**
+   * Additional cells for Falling Sand simulation.
+   */
   SAND,
   OIL,
   STONE,
   ACID,
-  ASH
-
+  ASH,
+  OBSIDIAN, // unkillable
+  SMOKE,
 }

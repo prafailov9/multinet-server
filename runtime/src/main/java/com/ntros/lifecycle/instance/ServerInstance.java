@@ -19,19 +19,6 @@ import lombok.extern.slf4j.Slf4j;
 
 /**
  * Binds a world to its clients. Unique per world connector + session manager.
- *
- * <h3>Tick flow</h3>
- * <ol>
- *   <li>Clock fires on its scheduler thread → submits task to clock worker.</li>
- *   <li>Clock worker calls {@link #tryWorldUpdate()} → submits step to actor thread via
- *       {@code actor.step(world)} and blocks ({@code .join()}) until the step completes.</li>
- *   <li>Actor thread: {@code applyMoves → world.update() → world.snapshot()} and resolves the
- *       future with the snapshot. Snapshot is taken on the actor thread for consistency.</li>
- *   <li>Clock worker resumes with the snapshot → encodes it as a binary {@link StatePacket} →
- *       {@code broadcaster.publish(frame, ...)} → each session's send queue.</li>
- *   <li>{@code inFlight} clears only after the full cycle (update + broadcast), so the clock
- *       correctly drops ticks when the combined budget is exceeded.</li>
- * </ol>
  */
 @Slf4j
 public class ServerInstance extends AbstractInstance {
@@ -185,7 +172,8 @@ public class ServerInstance extends AbstractInstance {
       if (takeSnapshot) {
         return actor.step(world).join(); // update + snapshot
       }
-      actor.step(world, () -> { }).join(); // update only — no snapshot
+      actor.step(world, () -> {
+      }).join(); // update only — no snapshot
       return null;
     } catch (Throwable t) {
       log.error("[{}] tick failed: {}", getWorldName(), t.getMessage(), t);

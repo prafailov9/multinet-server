@@ -27,8 +27,9 @@ public final class WorldSeedLoader {
       world("arena-y-multi", "GRID", 7, 7, true, true, false, true),
       world("gol-small", "GOL", 18, 18, false, true, true, true),
       world("gol-mid", "GOL", 256, 256, false, true, true, true),
-      world("gol-big", "GOL", 1024, 1024, false, true, true, true),
-      world("falling-sand", "FALLING_SAND", 200, 150, true, true, false, true)
+      world("gol-big", "GOL", 1024, 1024, false, true, true, true)
+      // Falling Sand worlds are bootstrapped programmatically in ServerBootstrap,
+      // not DB-backed — they are always seeded fresh on startup.
   );
 
   private WorldSeedLoader() {

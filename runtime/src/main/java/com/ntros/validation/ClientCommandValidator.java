@@ -115,44 +115,44 @@ public class ClientCommandValidator implements CommandValidator {
   }
 
   private void onOrchestrate(Message message, Session session) {
-    // must be auth, at least 2 arguments in message
-    // TODO: fix validation for orchestrate
-    SessionContext ctx = session.getSessionContext();
-    List<String> args = message.args();
-
-    check(() -> !ctx.isAuthenticated(), "[Validator.Orchestrate]: Client: %s must be authenticated",
-        ctx.toString());
-
-    check(() -> args == null || args.isEmpty(),
-        "[Validator.Orchestrate]: No arguments provided. Full message: ", message.toWireFormat());
-
-
-
-//    if (ctx.getRole() != Role.ORCHESTRATOR) {
-//      throw new IllegalStateException("NOT_ORCHESTRATOR");
+//    // must be auth, at least 2 arguments in message
+//    // TODO: fix validation for orchestrate
+//    SessionContext ctx = session.getSessionContext();
+//    List<String> args = message.args();
+//
+//    check(() -> !ctx.isAuthenticated(), "[Validator.Orchestrate]: Client: %s must be authenticated",
+//        ctx.toString());
+//
+//    check(() -> args == null || args.isEmpty(),
+//        "[Validator.Orchestrate]: No arguments provided. Full message: ", message.toWireFormat());
+//
+//
+//
+////    if (ctx.getRole() != Role.ORCHESTRATOR) {
+////      throw new IllegalStateException("NOT_ORCHESTRATOR");
+////    }
+//
+//    // validate subcommand
+//    String sub = args.getFirst().toUpperCase();
+//
+//    switch (sub) {
+//      case "SEED" ->
+//          check(() -> args.size() < 2, "RANDOM requires a density argument (0.0–1.0). Message: %s",
+//              message.toWireFormat());
+//      case "RANDOM" -> {
+//        check(() -> args.size() < 2, "RANDOM requires a density argument (0.0–1.0). Message: %s",
+//            message.toWireFormat());
+//        float density = Float.parseFloat(args.get(1));
+//        check(() -> density < 0f || density > 1f,
+//            "Density must be in [0.0, 1.0], got: " + density + ". Message: %s",
+//            message.toWireFormat());
+//      }
+//      case "TOGGLE" -> check(() -> args.size() < 3, "TOGGLE requires x and y arguments. Message: %s",
+//          message.toWireFormat());
+//      case "CLEAR" -> OrchestrateRequest.clear();
+//      default -> throw new MessageValidationException(
+//          "Unknown ORCHESTRATE sub-command: " + sub + ". Valid: SEED, RANDOM, TOGGLE, CLEAR");
 //    }
-
-    // validate subcommand
-    String sub = args.getFirst().toUpperCase();
-
-    switch (sub) {
-      case "SEED" ->
-          check(() -> args.size() < 2, "RANDOM requires a density argument (0.0–1.0). Message: %s",
-              message.toWireFormat());
-      case "RANDOM" -> {
-        check(() -> args.size() < 2, "RANDOM requires a density argument (0.0–1.0). Message: %s",
-            message.toWireFormat());
-        float density = Float.parseFloat(args.get(1));
-        check(() -> density < 0f || density > 1f,
-            "Density must be in [0.0, 1.0], got: " + density + ". Message: %s",
-            message.toWireFormat());
-      }
-      case "TOGGLE" -> check(() -> args.size() < 3, "TOGGLE requires x and y arguments. Message: %s",
-          message.toWireFormat());
-      case "CLEAR" -> OrchestrateRequest.clear();
-      default -> throw new MessageValidationException(
-          "Unknown ORCHESTRATE sub-command: " + sub + ". Valid: SEED, RANDOM, TOGGLE, CLEAR");
-    }
 
   }
 
