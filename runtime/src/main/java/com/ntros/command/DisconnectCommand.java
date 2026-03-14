@@ -57,7 +57,7 @@ public final class DisconnectCommand extends AbstractCommand {
   private void clearContext(SessionContext ctx) {
     ctx.setWorldId(null);
     ctx.setEntityId(null);
-    ctx.setRole(null);
+    ctx.setInstanceRole(null);
   }
 
   private void checkNotAuth(SessionContext sessionContext) {

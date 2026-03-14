@@ -7,7 +7,7 @@ import com.ntros.lifecycle.clock.Clock;
 import com.ntros.lifecycle.instance.actor.Actor;
 import com.ntros.lifecycle.instance.actor.Actors;
 import com.ntros.lifecycle.session.Session;
-import com.ntros.model.entity.config.access.Settings;
+import com.ntros.model.entity.config.access.InstanceSettings;
 import com.ntros.model.world.connector.WorldConnector;
 import com.ntros.model.world.protocol.result.WorldResult;
 import com.ntros.model.world.protocol.request.JoinRequest;
@@ -26,8 +26,8 @@ public class ServerInstance extends AbstractInstance {
   private final Actor actor;
 
   public ServerInstance(WorldConnector world, SessionManager sessionManager, Clock clock,
-      Broadcaster broadcaster, Settings settings) {
-    super(world, sessionManager, clock, broadcaster, settings);
+      Broadcaster broadcaster, InstanceSettings instanceSettings) {
+    super(world, sessionManager, clock, broadcaster, instanceSettings);
     this.actor = Actors.create(world.getWorldName());
   }
 
@@ -70,6 +70,9 @@ public class ServerInstance extends AbstractInstance {
     });
   }
 
+  /**
+   * TODO: Stop mixing access control with simple actor delegation. Accessing an instance should be an upstream concern. Possibly a InstanceAdmissionController is needed
+   */
   @Override
   public CompletableFuture<WorldResult> joinAsync(JoinRequest req) {
     // check if clock and actor running
@@ -80,7 +83,7 @@ public class ServerInstance extends AbstractInstance {
     if (isInstanceLive()) {
       return actor.join(world, req);
     }
-    if (settings.autoStartOnPlayerJoin() && sessionManager.activeSessionsCount() == 0) {
+    if (instanceSettings.autoStartOnPlayerJoin() && sessionManager.activeSessionsCount() == 0) {
       // Submit the join task FIRST so it is at the head of the actor queue,
       // then start the clock. This guarantees [joinTask → stepTask] ordering in
       // the actor's single-threaded executor: the entity is added before the first
@@ -92,18 +95,18 @@ public class ServerInstance extends AbstractInstance {
     return CompletableFuture.completedFuture(WorldResult.failed(req.playerName(), getWorldName(),
         String.format(
             " JOIN required instance start. Not allowed base on settings.autoJoin=false. Instance settings: %s",
-            settings)));
+            instanceSettings)));
   }
 
   @Override
   public CompletableFuture<WorldResult> orchestrateAsync(OrchestrateRequest req) {
     // valid req if instance is orchestrated
-    if (!settings.requiresOrchestrator()) {
+    if (!instanceSettings.requiresOrchestrator()) {
       return CompletableFuture.completedFuture(
           WorldResult.failed(req.action().name(), getWorldName(),
               String.format(
                   " ORCHESTRATE requires  an orchestrator instance. Current instance settings don't allow orchestration. Instance settings: %s",
-                  settings)));
+                  instanceSettings)));
     }
 
     if (!isInstanceLive()) {
@@ -184,6 +187,7 @@ public class ServerInstance extends AbstractInstance {
   /**
    * Encodes the snapshot as a binary {@link StatePacket} and hands the frame to the broadcaster.
    * Runs on the clock worker thread — off the actor, so the actor is free for the next tick.
+   * TODO: broadcasting details should be delegated to a broadcaster or a ReplicationService.
    */
   private void broadcastWorldUpdate(Object snapshot) {
     byte[] body = encoder.encodeBody(snapshot);

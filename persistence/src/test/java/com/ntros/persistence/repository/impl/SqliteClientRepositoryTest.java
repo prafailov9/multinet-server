@@ -1,11 +1,10 @@
 package com.ntros.persistence.repository.impl;
 
-import static com.ntros.persistence.model.Role.USER;
+import static com.ntros.model.entity.config.access.SystemRole.USER;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 
 import com.ntros.persistence.model.ClientRecord;
-import com.ntros.persistence.model.Role;
 import com.ntros.persistence.repository.ClientRepository;
 import java.time.Instant;
 import java.util.ArrayList;

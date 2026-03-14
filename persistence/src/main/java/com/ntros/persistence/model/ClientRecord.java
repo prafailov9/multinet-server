@@ -1,8 +1,8 @@
 package com.ntros.persistence.model;
 
 
-import static com.ntros.persistence.model.Role.USER;
 
+import com.ntros.model.entity.config.access.SystemRole;
 import java.time.Instant;
 
 public record ClientRecord(
@@ -19,7 +19,7 @@ public record ClientRecord(
    * Convenience factory for a brand-new player (before any DB id is assigned).
    */
   public static ClientRecord newClient(String username, String password, long sessionId) {
-    return new ClientRecord(0L, sessionId, username, password, USER.toString(), Instant.now(),
+    return new ClientRecord(0L, sessionId, username, password, SystemRole.USER.name(), Instant.now(),
         Instant.now());
   }
 

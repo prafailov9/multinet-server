@@ -18,7 +18,7 @@ import com.ntros.lifecycle.instance.ServerInstance;
 import com.ntros.lifecycle.sessionmanager.ClientSessionManager;
 import com.ntros.model.entity.Entity;
 import com.ntros.model.entity.config.WorldCapabilities;
-import com.ntros.model.entity.config.access.Settings;
+import com.ntros.model.entity.config.access.InstanceSettings;
 import com.ntros.model.entity.sequence.IdSequenceGenerator;
 import com.ntros.model.world.connector.GridWorldConnector;
 import com.ntros.model.world.connector.WorldConnector;
@@ -312,7 +312,7 @@ public class ServerBootstrapTest {
   private ServerInstance createMultiplayerInstance(WorldConnector worldConnector, int tickRate,
       int broadcastRate) {
     return new ServerInstance(worldConnector, new ClientSessionManager(),
-        new PacedRateClock(tickRate), new SharedBroadcaster(), Settings.multiplayer(broadcastRate));
+        new PacedRateClock(tickRate), new SharedBroadcaster(), InstanceSettings.multiplayer(broadcastRate));
   }
 
 

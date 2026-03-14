@@ -85,9 +85,9 @@ public class FallingSandEngine extends AbstractGridEngine {
   private static final int FIRE_TTL = 120;
   private static final float IGNITE_CHANCE = 0.06f;
   private static final float DISSOLVE_CHANCE = 0.7f;
-  private static final int SMOKE_TTL_BASE = 30;
-  private static final int SMOKE_TTL_VAR = 60;   // final TTL = base + rng(var) = 80..139
-  private static final int ACID_FUME_TTL = 30;
+  private static final int SMOKE_TTL_BASE = 10;
+  private static final int SMOKE_TTL_VAR = 18;   // final TTL = base + rng(var) = 10..27
+  private static final int ACID_FUME_TTL = 10;
   private static final float SMOKE_SPAWN_RATE = 0.5f; // max 50% chance per tick at full fire TTL
   private final Random rng = new Random();
 
@@ -308,15 +308,11 @@ public class FallingSandEngine extends AbstractGridEngine {
     return sb.toString();
   }
 
-  // ── Algorithm — implement below ───────────────────────────────────────────
-  //
-  // Guidance:
-  //
   //  Scan order: iterate y from (H-1) down to 0 (bottom-to-top) for gravity materials
   //  (SAND, WATER, OIL, ACID, ASH).  Bottom-to-top guarantees that a grain that just
   //  fell to row y+1 will NOT be re-processed in the same tick — you already passed it.
   //
-  //  Horizontal bias: for materials that spread sideways (WATER, OIL, ACID), alternate
+  //  For materials that spread sideways (WATER, OIL, ACID), alternate
   //  the x-scan direction on odd/even ticks using the `tick` field:
   //    int dir = (tick % 2 == 0) ? 1 : -1;
   //    int x   = (dir == 1) ? xi : W - 1 - xi;
@@ -324,16 +320,6 @@ public class FallingSandEngine extends AbstractGridEngine {
   //  FIRE: does NOT need a bottom-to-top scan (it rises). Iterate y top-to-bottom instead,
   //  or process fire in a separate pass.
   //
-  //  STONE: skip entirely — never touches next[].  Stones are written into next[] at the
-  //  end of the tick from the current[] scan without any rule evaluation.
-  //
-  //  Flat-array helpers:
-  //    int idx(int x, int y)         { return y * W + x; }
-  //    boolean inBounds(int x, int y){ return x>=0 && x<W && y>=0 && y<H; }
-  //    void swap(int a, int b)       { CellType t=current[a]; current[a]=current[b]; current[b]=t; }
-  //
-  //  Density ordering (high → low, i.e. sinks through lower):
-  //    STONE > SAND > ASH > WATER > OIL > FIRE > EMPTY
   //  A cell can displace another only if its own density is strictly greater.
 
   /**
@@ -368,7 +354,7 @@ public class FallingSandEngine extends AbstractGridEngine {
           case OIL -> oilRules(cell, idx, x, y);
           case FIRE -> fireSpread(x, y);
           case ACID -> acidRules(cell, idx, x, y);
-          case STONE -> next[idx] = STONE;
+          case STONE -> next[idx] = STONE; // stone destroyed by ACID
           case OBSIDIAN -> next[idx] = OBSIDIAN;
           case SMOKE -> smokeRise(x, y);
           default -> {
@@ -456,17 +442,26 @@ public class FallingSandEngine extends AbstractGridEngine {
   private void applyGravity(CellType cell, int i, int x, int y) {
     if (inBounds(x, y + 1)) {
       int j = idx(x, y + 1);
-      if (canMoveTo(cell, j)) { write(i, j); return; }
+      if (canMoveTo(cell, j)) {
+        write(i, j);
+        return;
+      }
     }
     int dx1 = (tick & 1) == 0 ? -1 : 1;
     int dx2 = (tick & 1) == 0 ? 1 : -1;
     if (inBounds(x + dx1, y + 1)) {
       int j = idx(x + dx1, y + 1);
-      if (canMoveTo(cell, j)) { write(i, j); return; }
+      if (canMoveTo(cell, j)) {
+        write(i, j);
+        return;
+      }
     }
     if (inBounds(x + dx2, y + 1)) {
       int j = idx(x + dx2, y + 1);
-      if (canMoveTo(cell, j)) { write(i, j); return; }
+      if (canMoveTo(cell, j)) {
+        write(i, j);
+        return;
+      }
     }
     next[i] = cell;
     nextMetadata[i] = metadata[i];
@@ -480,7 +475,17 @@ public class FallingSandEngine extends AbstractGridEngine {
   private void liquidFall(CellType cell, int i, int x, int y) {
     if (inBounds(x, y + 1)) {
       int j = idx(x, y + 1);
-      if (canMoveTo(cell, j)) { write(i, j); return; }
+      if (current[j] == FIRE && cell == WATER) {
+        // Water douses fire below — water takes the cell, fire vanishes
+        next[j] = WATER;
+        nextMetadata[j] = 0;
+        next[i] = EMPTY;
+        return;
+      }
+      if (canMoveTo(cell, j)) {
+        write(i, j);
+        return;
+      }
     }
     next[i] = cell;
     nextMetadata[i] = metadata[i];
@@ -492,15 +497,23 @@ public class FallingSandEngine extends AbstractGridEngine {
   private void moveToSides(CellType cell, int i, int x, int y) {
     int dx1 = (tick & 1) == 0 ? -1 : 1;
     int dx2 = (tick & 1) == 0 ? 1 : -1;
-    int nx = x + dx1;
-    if (inBounds(nx, y)) {
+    for (int dx : new int[]{dx1, dx2}) {
+      int nx = x + dx;
+      if (!inBounds(nx, y)) {
+        continue;
+      }
       int j = idx(nx, y);
-      if (canMoveTo(cell, j)) { write(i, j); return; }
-    }
-    nx = x + dx2;
-    if (inBounds(nx, y)) {
-      int j = idx(nx, y);
-      if (canMoveTo(cell, j)) { write(i, j); }
+      if (current[j] == FIRE && cell == WATER) {
+        // Water flowing sideways douses fire
+        next[j] = WATER;
+        nextMetadata[j] = 0;
+        next[i] = EMPTY;
+        return;
+      }
+      if (canMoveTo(cell, j)) {
+        write(i, j);
+        return;
+      }
     }
   }
 
@@ -547,6 +560,20 @@ public class FallingSandEngine extends AbstractGridEngine {
       next[i] = ASH;
       return;
     }
+
+    // Water extinguishes fire immediately
+    for (int k = 0; k < neighX.length; k++) {
+      int nx = x + neighX[k];
+      int ny = y + neighY[k];
+      if (!inBounds(nx, ny)) {
+        continue;
+      }
+      if (current[idx(nx, ny)] == WATER) {
+        next[i] = EMPTY; // doused — no ash, just gone
+        return;
+      }
+    }
+
     // Fire stays in place — it is a stationary flame, not a moving particle.
     // Growth happens by igniting combustible neighbours; smoke rises above it.
     next[i] = FIRE;
@@ -566,9 +593,23 @@ public class FallingSandEngine extends AbstractGridEngine {
       }
     }
 
+    // Young/strong fire rises: spawn a child fire cell directly above
+    // Probability and TTL taper as the flame weakens
+    float ttlFraction = (float) metadata[i] / FIRE_TTL;
+    if (ttlFraction > 0.35f && inBounds(x, y - 1)) {
+      int upIdx = idx(x, y - 1);
+      CellType above = current[upIdx];
+      if ((above == EMPTY || above == SMOKE) && next[upIdx] == EMPTY
+          && rng.nextFloat() < ttlFraction * 0.75f) {
+        next[upIdx] = FIRE;
+        nextMetadata[upIdx] = (int) (metadata[i] * 0.6f);
+      }
+    }
+
     // Emit smoke directly above — rate tapers as TTL falls
-    float smokeRate = (float) metadata[i] / FIRE_TTL * SMOKE_SPAWN_RATE;
-    if (inBounds(x, y - 1) && current[idx(x, y - 1)] == EMPTY && rng.nextFloat() < smokeRate) {
+    float smokeRate = ttlFraction * SMOKE_SPAWN_RATE;
+    if (inBounds(x, y - 1) && current[idx(x, y - 1)] == EMPTY
+        && next[idx(x, y - 1)] == EMPTY && rng.nextFloat() < smokeRate) {
       int smokeIdx = idx(x, y - 1);
       next[smokeIdx] = SMOKE;
       nextMetadata[smokeIdx] = SMOKE_TTL_BASE + rng.nextInt(SMOKE_TTL_VAR);

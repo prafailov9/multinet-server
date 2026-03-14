@@ -1,7 +1,7 @@
 package com.ntros.lifecycle.session;
 
 
-import com.ntros.model.entity.config.access.Role;
+import com.ntros.model.entity.config.access.InstanceRole;
 import java.time.OffsetDateTime;
 import java.util.concurrent.atomic.AtomicBoolean;
 import lombok.Data;
@@ -17,7 +17,7 @@ public class SessionContext {
   // World-level
   private volatile String worldId;                  // set during JOIN
   private volatile String entityId;                 // in-world entity (formerly playerId)
-  private volatile Role role;                       // PLAYER, ORCHESTRATOR, OBSERVER
+  private volatile InstanceRole instanceRole;                       // PLAYER, ORCHESTRATOR, OBSERVER
   private volatile OffsetDateTime joinedAt;
 
   public SessionContext(long sessionId) {

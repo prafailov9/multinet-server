@@ -186,7 +186,7 @@ Owns the per-cfgWorld lifecycle. Extends `AbstractInstance`.
 
 - `start()` — begins clock ticking; idempotent via `clockTicking` CAS.
 - `stop()` — 7-step graceful shutdown: stop clock → drain actor → shutdown sessions → drain again → reset cfgWorld → stop actor → shutdown clock.
-- `registerSession` / `removeSession` — delegates to `SessionManager`; auto-starts or auto-stops the clock based on `settings.autoStartOnPlayerJoin()`.
+- `registerSession` / `removeSession` — delegates to `SessionManager`; auto-starts or auto-stops the clock based on `instanceSettings.autoStartOnPlayerJoin()`.
 - `broadcastWorldSnapshot()` — calls `cfgWorld.snapshot()`, encodes to JSON, publishes to all sessions. Runs on actor thread (see §3.4 TODO).
 
 `PROTO_VER = 1` constant exists; version is included in each `StateFrame` but is not used for negotiation.

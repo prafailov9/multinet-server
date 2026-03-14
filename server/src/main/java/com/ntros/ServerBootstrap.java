@@ -12,7 +12,7 @@ import com.ntros.lifecycle.clock.PacedRateClock;
 import com.ntros.lifecycle.instance.Instances;
 import com.ntros.lifecycle.instance.ServerInstance;
 import com.ntros.model.entity.config.WorldCapabilities;
-import com.ntros.model.entity.config.access.Settings;
+import com.ntros.model.entity.config.access.InstanceSettings;
 import com.ntros.model.world.connector.GridWorldConnector;
 import com.ntros.model.world.connector.WaTorConnector;
 import com.ntros.model.world.connector.WorldConnector;
@@ -170,12 +170,13 @@ public class ServerBootstrap {
       }
 
       // orchestrated worlds (GoL etc.) require an ORCHESTRATE command to seed them before ticking
-      Settings settings = world.getCapabilities().supportsOrchestrator()
-          ? Settings.multiplayerOrchestrator(GOL_BROADCAST_RATE)
-          : Settings.multiplayer(BROADCAST_RATE);
+      InstanceSettings instanceSettings = world.getCapabilities().supportsOrchestrator()
+          ? InstanceSettings.multiplayerOrchestrator(GOL_BROADCAST_RATE)
+          : InstanceSettings.multiplayer(BROADCAST_RATE);
 
       Instances.registerInstance(
-          new ServerInstance(world, sessionManager, clock, new SharedBroadcaster(), settings));
+          new ServerInstance(world, sessionManager, clock, new SharedBroadcaster(),
+              instanceSettings));
     }
   }
 
@@ -196,9 +197,9 @@ public class ServerBootstrap {
 
       SessionManager sessionManager = new ClientSessionManager();
       Clock clock = new FixedRateClock(TICK_RATE);
-      Settings settings = Settings.multiplayerOrchestrator(SAND_BROADCAST_RATE);
+      InstanceSettings instanceSettings = InstanceSettings.multiplayerOrchestrator(SAND_BROADCAST_RATE);
       ServerInstance instance = new ServerInstance(connector, sessionManager, clock,
-          new SharedBroadcaster(), settings);
+          new SharedBroadcaster(), instanceSettings);
       Instances.registerInstance(instance);
 
       if (def.randomSeed()) {
@@ -241,9 +242,9 @@ public class ServerBootstrap {
 
       SessionManager sessionManager = new ClientSessionManager();
       Clock clock = new FixedRateClock(TICK_RATE);
-      Settings settings = Settings.autonomousSimulation(WATOR_BROADCAST_RATE);
+      InstanceSettings instanceSettings = InstanceSettings.autonomousSimulation(WATOR_BROADCAST_RATE);
       ServerInstance instance = new ServerInstance(connector, sessionManager, clock,
-          new SharedBroadcaster(), settings);
+          new SharedBroadcaster(), instanceSettings);
 
       Instances.registerInstance(instance);
 //      instance.start();   // autonomous — runs immediately, independent of observer count

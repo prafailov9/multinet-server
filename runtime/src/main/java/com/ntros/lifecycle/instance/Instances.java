@@ -1,6 +1,6 @@
 package com.ntros.lifecycle.instance;
 
-import com.ntros.model.entity.config.access.Settings;
+import com.ntros.model.entity.config.access.InstanceSettings;
 
 import java.util.Collection;
 import java.util.Map;
@@ -10,7 +10,7 @@ public class Instances {
 
   /// Keyed by WorldName
   private static final Map<String, Instance> INSTANCES = new ConcurrentHashMap<>();
-  private static final Map<String, Settings> CONFIG_MAP = new ConcurrentHashMap<>();
+  private static final Map<String, InstanceSettings> CONFIG_MAP = new ConcurrentHashMap<>();
 
   public static void registerInstance(Instance instance) {
     INSTANCES.put(instance.getWorldName(), instance);
@@ -21,7 +21,7 @@ public class Instances {
     return INSTANCES.get(worldName);
   }
 
-  public static Settings getInstanceConfigForWorld(String worldName) {
+  public static InstanceSettings getInstanceConfigForWorld(String worldName) {
     return CONFIG_MAP.get(worldName);
   }
 

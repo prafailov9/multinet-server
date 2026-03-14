@@ -22,7 +22,7 @@ data/snapshots/
 .classpath
 .factorypath
 .project
-.settings
+.instanceSettings
 .springBeans
 .sts4-cache
 

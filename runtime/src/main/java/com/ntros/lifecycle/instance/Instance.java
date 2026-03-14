@@ -2,7 +2,7 @@ package com.ntros.lifecycle.instance;
 
 import com.ntros.lifecycle.Lifecycle;
 import com.ntros.lifecycle.Pausable;
-import com.ntros.model.entity.config.access.Settings;
+import com.ntros.model.entity.config.access.InstanceSettings;
 import com.ntros.model.world.connector.WorldConnector;
 import com.ntros.model.world.protocol.result.WorldResult;
 import com.ntros.model.world.protocol.request.JoinRequest;
@@ -23,7 +23,7 @@ public interface Instance extends Lifecycle, Pausable {
   CompletableFuture<WorldResult> orchestrateAsync(OrchestrateRequest req);
   CompletableFuture<Void> leaveAsync(Session session);
   WorldConnector getWorldConnector();
-  Settings getSettings();
+  InstanceSettings getSettings();
   String getWorldName();
   // --- Session lifecycle (called from response pipeline) ---
   void registerSession(Session session);

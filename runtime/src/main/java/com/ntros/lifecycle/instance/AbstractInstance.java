@@ -5,7 +5,7 @@ import com.ntros.broadcast.Broadcaster;
 import com.ntros.lifecycle.sessionmanager.SessionManager;
 import com.ntros.lifecycle.clock.Clock;
 import com.ntros.lifecycle.session.Session;
-import com.ntros.model.entity.config.access.Settings;
+import com.ntros.model.entity.config.access.InstanceSettings;
 import com.ntros.model.world.connector.WorldConnector;
 import com.ntros.protocol.encoder.JsonProtocolEncoder;
 import com.ntros.protocol.encoder.ProtocolEncoder;
@@ -28,7 +28,7 @@ public abstract class AbstractInstance implements Instance {
   ///  State
   protected final WorldConnector world;
   protected final SessionManager sessionManager;
-  protected final Settings settings;
+  protected final InstanceSettings instanceSettings;
   protected final Clock clock;
   protected final Broadcaster broadcaster;
   protected final ProtocolEncoder encoder;
@@ -40,7 +40,7 @@ public abstract class AbstractInstance implements Instance {
   protected static final PacketCodec CODEC = new PacketCodec();
 
   AbstractInstance(WorldConnector world, SessionManager sessionManager, Clock clock,
-      Broadcaster broadcaster, Settings settings) {
+      Broadcaster broadcaster, InstanceSettings instanceSettings) {
     this.world = world;
     this.sessionManager = sessionManager;
 
@@ -49,7 +49,7 @@ public abstract class AbstractInstance implements Instance {
     configureClockListener();
 
     this.broadcaster = broadcaster;
-    this.settings = settings;
+    this.instanceSettings = instanceSettings;
 
     this.broadcastIntervalNanos = toNanos();
 
@@ -60,7 +60,7 @@ public abstract class AbstractInstance implements Instance {
   public void registerSession(Session session) {
     sessionManager.register(session);
     // Auto-start only when configured to do so
-    if (settings.autoStartOnPlayerJoin() && !isRunning() && getActiveSessionsCount() > 0) {
+    if (instanceSettings.autoStartOnPlayerJoin() && !isRunning() && getActiveSessionsCount() > 0) {
       start();
     }
   }
@@ -69,19 +69,19 @@ public abstract class AbstractInstance implements Instance {
   public void removeSession(Session session) {
     sessionManager.remove(session);
     // Auto-stop when last leaves (only for worlds that autostart on join)
-    if (settings.autoStartOnPlayerJoin() && isRunning() && getActiveSessionsCount() == 0) {
+    if (instanceSettings.autoStartOnPlayerJoin() && isRunning() && getActiveSessionsCount() == 0) {
       this.stop();
     }
   }
 
   @Override
-  public Settings getSettings() {
-    return settings;
+  public InstanceSettings getSettings() {
+    return instanceSettings;
   }
 
   @Override
   public void startIfNeededForJoin() {
-    if (settings.autoStartOnPlayerJoin() && !isRunning()) {
+    if (instanceSettings.autoStartOnPlayerJoin() && !isRunning()) {
       start();
     }
   }
@@ -134,7 +134,7 @@ public abstract class AbstractInstance implements Instance {
   protected abstract void configureClockListener();
 
   private long toNanos() {
-    return 1_000_000_000L / Math.max(1, settings.broadcastHz());// guard
+    return 1_000_000_000L / Math.max(1, instanceSettings.broadcastHz());// guard
   }
 
 }

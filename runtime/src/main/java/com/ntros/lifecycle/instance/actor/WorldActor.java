@@ -35,7 +35,14 @@ public final class WorldActor implements Actor {
   private final AtomicBoolean accepting = new AtomicBoolean(true);
 
   /**
-   * last-write-wins move coalescing
+   * last-write-wins move coalescing. Helpful to prevent players from spamming moves,
+   * which would create request storms for the engine if executed on every receive.
+   * if a player sends:move left
+   * move left
+   * move left
+   * move left
+   * within the same tick, only the latest input is applied.
+   * Moves are flushed to the engine when the clock ticks the actor.
    */
   private final ConcurrentHashMap<String, MoveInput> stagedMoves = new ConcurrentHashMap<>();
 
@@ -57,7 +64,7 @@ public final class WorldActor implements Actor {
   @Override
   public CompletableFuture<Object> step(WorldConnector world) {
     return ask(() -> {
-      enqueueStagedMoves(world);
+      flushStagedMoves(world);
       world.update();
       return world.snapshot();
     });
@@ -69,7 +76,7 @@ public final class WorldActor implements Actor {
   @Override
   public CompletableFuture<Void> step(WorldConnector world, Runnable onAfterUpdate) {
     return ask(() -> {
-      enqueueStagedMoves(world);
+      flushStagedMoves(world);
       world.update();
       onAfterUpdate.run();
       return null;
@@ -185,7 +192,7 @@ public final class WorldActor implements Actor {
     }
   }
 
-  private void enqueueStagedMoves(WorldConnector world) {
+  private void flushStagedMoves(WorldConnector world) {
     if (!stagedMoves.isEmpty()) {
       try {
         for (var e : stagedMoves.entrySet()) {

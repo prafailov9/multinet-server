@@ -6,7 +6,7 @@ import com.ntros.broadcast.Broadcaster;
 import com.ntros.lifecycle.sessionmanager.ClientSessionManager;
 import com.ntros.lifecycle.sessionmanager.SessionManager;
 import com.ntros.model.entity.config.WorldCapabilities;
-import com.ntros.model.entity.config.access.Settings;
+import com.ntros.model.entity.config.access.InstanceSettings;
 import com.ntros.model.world.connector.GridWorldConnector;
 import com.ntros.model.world.connector.WorldConnector;
 import com.ntros.model.world.engine.d2.grid.gameoflife.GameOfLifeEngine;
@@ -31,7 +31,7 @@ public final class InstanceFactory {
 
     Instance inst = new ServerInstance(worldConnector, new ClientSessionManager(),
         new FixedRateClock(120), broadcaster,
-        Settings.multiplayerDefault()
+        InstanceSettings.multiplayerDefault()
     );
     INST.put(worldConnector.getWorldName(), inst);
     return inst;
@@ -41,7 +41,7 @@ public final class InstanceFactory {
     WorldConnector connector = new GridWorldConnector(new GridWorldState(name, 256, 256),
         new GridWorldEngine(), new WorldCapabilities(true, true, false, true));
 
-    Settings cfg = Settings.multiplayerJoinable();
+    InstanceSettings cfg = InstanceSettings.multiplayerJoinable();
     Instance inst = new ServerInstance(connector, sessions, new FixedRateClock(30),
         new SharedBroadcaster(), cfg);
     INST.put(name, inst);
@@ -52,7 +52,7 @@ public final class InstanceFactory {
       SessionManager sessions) {
     WorldConnector connector = new GridWorldConnector(new GridWorldState(name, 128, 128),
         new GridWorldEngine(), new WorldCapabilities(true, true, false, true));
-    Settings cfg = Settings.singlePlayerDefault();
+    InstanceSettings cfg = InstanceSettings.singlePlayerDefault();
     Instance inst = new ServerInstance(connector, sessions, new FixedRateClock(30),
         new SingleBroadcaster(ownerUserId), cfg);
     INST.put(name, inst);
@@ -66,7 +66,7 @@ public final class InstanceFactory {
         GridWorldState.blank(name, 256, 256),
         new GameOfLifeEngine(),
         new WorldCapabilities(true, true, true, true));
-    Settings cfg = Settings.singlePlayerOrchestrator();
+    InstanceSettings cfg = InstanceSettings.singlePlayerOrchestrator();
     Instance inst = new ServerInstance(connector, sessions, new FixedRateClock(20),
         new SingleBroadcaster(ownerUserId), cfg);
     INST.put(name, inst);
