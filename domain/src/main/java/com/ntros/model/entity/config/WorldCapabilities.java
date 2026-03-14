@@ -113,4 +113,14 @@ public record WorldCapabilities(
         InstanceRole.GAME_MASTER   // unused — supportsOrchestrator=false
     );
   }
+
+  public static WorldCapabilities wildfire() {
+    return new WorldCapabilities(
+        false, true, false,
+        false, null,
+        LifecyclePolicy.ORCHESTRATION_DRIVEN,
+        InstanceRole.PLAYER
+    );
+  }
+
 }

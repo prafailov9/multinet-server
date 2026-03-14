@@ -13,5 +13,6 @@ public enum OrchestrateAction {
   /** Kill every live cell — blank-slate the grid. */
   CLEAR,
   /** Place a single material cell at a specific position (Falling Sand). */
-  PLACE
+  PLACE,
+  SET_WIND
 }

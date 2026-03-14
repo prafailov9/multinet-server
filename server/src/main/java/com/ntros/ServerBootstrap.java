@@ -18,9 +18,11 @@ import com.ntros.model.world.connector.SimulationWorldConnector;
 import com.ntros.model.world.connector.WaTorConnector;
 import com.ntros.model.world.connector.WorldConnector;
 import com.ntros.model.world.engine.d2.grid.fallingsand.FallingSandEngine;
+import com.ntros.model.world.engine.d2.grid.wildfire.WildfireEngine;
 import com.ntros.model.world.protocol.request.OrchestrateRequest;
 import com.ntros.model.world.state.grid.BoidsWorldState;
 import com.ntros.model.world.state.grid.FallingSandState;
+import com.ntros.model.world.state.grid.WildfireState;
 import com.ntros.model.world.wator.WaTorEngineImpl;
 import com.ntros.model.world.wator.WaTorWorld;
 import com.ntros.persistence.db.ConnectionProvider;
@@ -71,6 +73,22 @@ public class ServerBootstrap {
   private static final int BOIDS_WORLD_SIZE = 100;
   private static final int BOIDS_BROADCAST_RATE = 10;
 
+  // Wildfire
+  private static final int WILDFIRE_BROADCAST_RATE = 70;
+  private static final float WILDFIRE_SMALL_DENSITY = 0.75f;
+
+  private record WildfireWorldDef(String name, int w, int h, float preSeedDensity) {
+
+  }
+
+  private static final List<WildfireWorldDef> WILDFIRE_WORLDS = List.of(
+      new WildfireWorldDef("wildfire-small", 64, 64, WILDFIRE_SMALL_DENSITY),
+      new WildfireWorldDef("wildfire", 128, 128, 0f),   // blank — client seeds it
+      new WildfireWorldDef("wildfire-mid1", 256, 256, 0f),
+      new WildfireWorldDef("wildfire-mid2", 512, 512, 0f),
+      new WildfireWorldDef("wildfire-big", 1024, 1024, 0f)
+  );
+
   public static void startServer() {
     log.info("Starting server on port {}", PORT);
 
@@ -89,6 +107,7 @@ public class ServerBootstrap {
     bootstrapFallingSandWorlds();
     bootstrapWaTorWorlds();
     bootstrapBoidsWorlds();
+    bootstrapWildfireWorlds();
 
     // on server-stop - run cleanup and save world state
 //    registerShutdownHook(worlds);
@@ -296,6 +315,40 @@ public class ServerBootstrap {
 //      instance.start();   // autonomous — runs immediately, independent of observer count
       log.info("[ServerBootstrap] Boids world '{}' registered ({} boids, {}×{}).",
           name, BOIDS_COUNT, BOIDS_WORLD_SIZE, BOIDS_WORLD_SIZE);
+    }
+  }
+
+  /**
+   * Bootstraps all Wildfire worlds. Skips any world already registered.
+   *
+   * <p>Worlds with a non-zero {@code preSeedDensity} are pre-populated with trees via
+   * {@link SimulationWorldConnector#preSeed} without starting the clock.
+   * The clock starts when the first client sends an ORCHESTRATE command.
+   */
+  private static void bootstrapWildfireWorlds() {
+    for (WildfireWorldDef def : WILDFIRE_WORLDS) {
+      if (Instances.getInstance(def.name()) != null) {
+        log.info("[ServerBootstrap] Wildfire world '{}' already registered — skipping.",
+            def.name());
+        continue;
+      }
+      WildfireState state = new WildfireState(def.name(), def.w(), def.h());
+      WildfireEngine engine = new WildfireEngine();
+      SimulationWorldConnector connector = new SimulationWorldConnector(state, engine,
+          WorldCapabilities.wildfire());
+
+      SessionManager sessionManager = new ClientSessionManager();
+      Clock clock = new FixedRateClock(TICK_RATE);
+      InstanceSettings instanceSettings = InstanceSettings.simulation(WILDFIRE_BROADCAST_RATE);
+      ServerInstance instance = new ServerInstance(connector, sessionManager, clock,
+          new SharedBroadcaster(), instanceSettings);
+      Instances.registerInstance(instance);
+
+      if (def.preSeedDensity() > 0f) {
+        connector.preSeed(OrchestrateRequest.randomSeed(def.preSeedDensity()));
+      }
+      log.info("[ServerBootstrap] Wildfire world '{}' registered ({}×{}, density={}).",
+          def.name(), def.w(), def.h(), def.preSeedDensity());
     }
   }
 

@@ -73,6 +73,20 @@ public class TestClient implements Closeable {
     return readUntilTypes(timeoutSeconds, ServerCmd.STATE, ServerCmd.ERROR);
   }
 
+  /**
+   * Sends {@code ORCHESTRATE <subCmd>} and waits for ACK or ERROR.
+   * Example: {@code orchestrate("RANDOM 0.7", 2)}.
+   */
+  public ServerMessage orchestrate(String subCmd, int timeoutSeconds) {
+    sendText("ORCHESTRATE " + subCmd);
+    return readUntilTypes(timeoutSeconds, ServerCmd.ACK, ServerCmd.ERROR);
+  }
+
+  /** Waits up to {@code timeoutSeconds} for the next STATE frame from the server. */
+  public ServerMessage waitForState(int timeoutSeconds) {
+    return readUntilTypes(timeoutSeconds, ServerCmd.STATE, ServerCmd.ERROR);
+  }
+
   private void sendText(String text) {
     try {
       out.write((text + "\n").getBytes(StandardCharsets.UTF_8));

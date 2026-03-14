@@ -51,7 +51,6 @@ import lombok.extern.slf4j.Slf4j;
  *
  * <h3>Player model</h3>
  * Connecting clients are registered as <em>observers</em>. They appear in
- * {@link GridState#entities()} for lifecycle tracking but are never placed in
  * {@code takenPositions} and do not interact with the cell grid.
  */
 @Slf4j
@@ -105,8 +104,6 @@ public class FallingSandEngine implements SimulationGridEngine {
   private long tick = 0L;
 
   private boolean needsFullSnapshot = true;
-
-  // ── GridEngine API ────────────────────────────────────────────────────────
 
   @Override
   public void applyIntents(GridState state) {
@@ -345,14 +342,17 @@ public class FallingSandEngine implements SimulationGridEngine {
 
   private void oilRules(CellType cell, int i, int x, int y) {
     waterRules(cell, i, x, y);
-    oilIgnition(i, x, y);
-//    if (next[i] == cell) {
-//    }
+    if (next[i] == cell) {
+      oilIgnition(i, x, y);
+    }
   }
 
   private void acidRules(CellType cell, int i, int x, int y) {
     waterRules(cell, i, x, y);
-    acidDissolve(x, y); // always check neighbors — acid corrodes what it touches even while flowing
+    if (next[i] == cell) {
+      acidDissolve(x,
+          y); // always check neighbors — acid corrodes what it touches even while flowing
+    }
   }
 
 

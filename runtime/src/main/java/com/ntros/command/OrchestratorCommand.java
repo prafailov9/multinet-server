@@ -7,6 +7,7 @@ import com.ntros.command.access.InstanceAccessController;
 import com.ntros.command.orchestrate.FsOrchestrateParser;
 import com.ntros.command.orchestrate.GolOrchestrateParser;
 import com.ntros.command.orchestrate.OrchestrateParser;
+import com.ntros.command.orchestrate.WildfireOrchestrateParser;
 import com.ntros.lifecycle.instance.Instance;
 import com.ntros.lifecycle.instance.Instances;
 import com.ntros.lifecycle.session.Session;
@@ -73,6 +74,7 @@ public class OrchestratorCommand extends AbstractCommand {
     return switch (worldType.toUpperCase()) {
       case "GAME_OF_LIFE" -> new GolOrchestrateParser();
       case "FALLING_SAND" -> new FsOrchestrateParser();
+      case "WILDFIRE"     -> new WildfireOrchestrateParser();
       default -> throw new IllegalArgumentException(
           "No ORCHESTRATE parser registered for world type: " + worldType);
     };
