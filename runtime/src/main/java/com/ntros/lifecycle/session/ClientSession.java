@@ -4,6 +4,7 @@ package com.ntros.lifecycle.session;
 import static com.ntros.lifecycle.session.SessionState.RUNNING;
 import static com.ntros.lifecycle.session.SessionState.STOPPING;
 import static com.ntros.lifecycle.session.SessionState.TERMINATED;
+import static com.ntros.model.entity.config.access.SystemRole.USER;
 
 import com.ntros.connection.Connection;
 import com.ntros.lifecycle.instance.Instances;
@@ -11,6 +12,7 @@ import com.ntros.messageprocessing.client.ClientMessageProcessor;
 import com.ntros.messageprocessing.client.RequestClientMessageProcessor;
 import com.ntros.messageprocessing.server.ResponseServerMessageProcessor;
 import com.ntros.messageprocessing.server.ServerMessageProcessor;
+import com.ntros.model.entity.config.access.SystemRole;
 import com.ntros.model.entity.sequence.IdSequenceGenerator;
 import com.ntros.protocol.Message;
 import java.util.concurrent.atomic.AtomicReference;
@@ -34,7 +36,8 @@ public class ClientSession implements Session {
 
   public ClientSession(Connection connection) {
     this.connection = connection;
-    this.sessionContext = new SessionContext(IdSequenceGenerator.getInstance().nextSessionId());
+    this.sessionContext = new SessionContext(IdSequenceGenerator.getInstance().nextSessionId(),
+        USER); // on creation each session gets the lowest level Authority grant within the system.
     this.clientMessageProcessor = new RequestClientMessageProcessor();
     this.serverMessageProcessor = new ResponseServerMessageProcessor();
   }
