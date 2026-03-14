@@ -10,14 +10,8 @@ import java.util.Map;
 
 public final class Connectors {
 
-  private static final WorldConnector DEFAULT_WORLD = new GridWorldConnector(
-      new ArenaGridState("world-1", 10, 10), new GridWorldEngine(),
-      new WorldCapabilities(true, true, false, true));
   private static final Map<String, WorldConnector> WORLDS = new HashMap<>();
 
-  static {
-    WORLDS.put("world-1", DEFAULT_WORLD);
-  }
 
   private Connectors() {
   }

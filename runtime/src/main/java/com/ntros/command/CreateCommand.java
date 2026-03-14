@@ -10,7 +10,7 @@ import com.ntros.lifecycle.session.Session;
 import com.ntros.lifecycle.session.SessionContext;
 import com.ntros.model.entity.config.WorldCapabilities;
 import com.ntros.model.world.Connectors;
-import com.ntros.model.world.connector.GridWorldConnector;
+import com.ntros.model.world.connector.PlayerWorldConnector;
 import com.ntros.model.world.connector.WorldConnector;
 import com.ntros.model.world.engine.d2.grid.GridWorldEngine;
 import com.ntros.protocol.Message;
@@ -70,9 +70,9 @@ public class CreateCommand extends AbstractCommand {
     String worldName = message.args().get(WORLD_NAME);
     int width = Integer.parseInt(message.args().get(WORLD_WIDTH));
     int height = Integer.parseInt(message.args().getLast());
-
-    return new GridWorldConnector(WorldStateFactory.createGridWorld(worldName, width, height),
-        new GridWorldEngine(), new WorldCapabilities(true, true, false, true));
+    // TODO: extend to support SimulationWorldConnector for GOL / FallingSand world types
+    return new PlayerWorldConnector(WorldStateFactory.createGridWorld(worldName, width, height),
+        new GridWorldEngine(), WorldCapabilities.arena());
   }
 
   private boolean parseSharedFlag(Message message) {

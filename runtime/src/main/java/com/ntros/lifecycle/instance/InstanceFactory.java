@@ -7,11 +7,15 @@ import com.ntros.lifecycle.sessionmanager.ClientSessionManager;
 import com.ntros.lifecycle.sessionmanager.SessionManager;
 import com.ntros.model.entity.config.WorldCapabilities;
 import com.ntros.model.entity.config.access.InstanceSettings;
-import com.ntros.model.world.connector.GridWorldConnector;
+import com.ntros.model.world.connector.PlayerWorldConnector;
+import com.ntros.model.world.connector.SimulationWorldConnector;
 import com.ntros.model.world.connector.WorldConnector;
 import com.ntros.model.world.engine.d2.grid.gameoflife.GameOfLifeEngine;
+import com.ntros.model.world.engine.d2.grid.fallingsand.FallingSandEngine;
 import com.ntros.model.world.engine.d2.grid.GridWorldEngine;
 import com.ntros.model.world.state.grid.ArenaGridState;
+import com.ntros.model.world.state.grid.GameOfLifeState;
+import com.ntros.model.world.state.grid.FallingSandState;
 import com.ntros.lifecycle.session.Session;
 import com.ntros.lifecycle.clock.FixedRateClock;
 import java.util.Collection;
@@ -38,8 +42,10 @@ public final class InstanceFactory {
   }
 
   public static Instance createArena(String name, SessionManager sessions) {
-    WorldConnector connector = new GridWorldConnector(new ArenaGridState(name, 256, 256),
-        new GridWorldEngine(), new WorldCapabilities(true, true, false, true));
+    WorldConnector connector = new PlayerWorldConnector(
+        new ArenaGridState(name, 256, 256),
+        new GridWorldEngine(),
+        WorldCapabilities.arena());
 
     InstanceSettings cfg = InstanceSettings.multiplayerJoinable();
     Instance inst = new ServerInstance(connector, sessions, new FixedRateClock(30),
@@ -50,8 +56,10 @@ public final class InstanceFactory {
 
   public static Instance createSolo(String name, String ownerUserId,
       SessionManager sessions) {
-    WorldConnector connector = new GridWorldConnector(new ArenaGridState(name, 128, 128),
-        new GridWorldEngine(), new WorldCapabilities(true, true, false, true));
+    WorldConnector connector = new PlayerWorldConnector(
+        new ArenaGridState(name, 128, 128),
+        new GridWorldEngine(),
+        WorldCapabilities.arena());
     InstanceSettings cfg = InstanceSettings.singlePlayerDefault();
     Instance inst = new ServerInstance(connector, sessions, new FixedRateClock(30),
         new SingleBroadcaster(ownerUserId), cfg);
@@ -60,17 +68,35 @@ public final class InstanceFactory {
     return inst;
   }
 
+  /**
+   * Creates a shared Game-of-Life instance. The world starts blank and is seeded at runtime
+   * via an ORCHESTRATE command (ORCHESTRATION_DRIVEN lifecycle).
+   */
   public static Instance createGameOfLifeWorld(String name, String ownerUserId,
       SessionManager sessions) {
-    WorldConnector connector = new GridWorldConnector(
-        ArenaGridState.blank(name, 256, 256),
+    WorldConnector connector = new SimulationWorldConnector(
+        new GameOfLifeState(name, 256, 256),
         new GameOfLifeEngine(),
-        new WorldCapabilities(true, true, true, true));
-    InstanceSettings cfg = InstanceSettings.singlePlayerOrchestrator();
+        WorldCapabilities.gameOfLife());
     Instance inst = new ServerInstance(connector, sessions, new FixedRateClock(20),
-        new SingleBroadcaster(ownerUserId), cfg);
+        new SharedBroadcaster(), InstanceSettings.simulation(10));
     INST.put(name, inst);
     OWNER.put(name, ownerUserId);
+    return inst;
+  }
+
+  /**
+   * Creates a shared Falling Sand instance. The world starts blank and is seeded at runtime
+   * via an ORCHESTRATE command (ORCHESTRATION_DRIVEN lifecycle).
+   */
+  public static Instance createFallingSandWorld(String name, SessionManager sessions) {
+    WorldConnector connector = new SimulationWorldConnector(
+        new FallingSandState(name, 128, 128),
+        new FallingSandEngine(),
+        WorldCapabilities.fallingSand());
+    Instance inst = new ServerInstance(connector, sessions, new FixedRateClock(20),
+        new SharedBroadcaster(), InstanceSettings.simulation(10));
+    INST.put(name, inst);
     return inst;
   }
 

@@ -20,7 +20,7 @@ import com.ntros.model.entity.Entity;
 import com.ntros.model.entity.config.WorldCapabilities;
 import com.ntros.model.entity.config.access.InstanceSettings;
 import com.ntros.model.entity.sequence.IdSequenceGenerator;
-import com.ntros.model.world.connector.GridWorldConnector;
+import com.ntros.model.world.connector.PlayerWorldConnector;
 import com.ntros.model.world.connector.WorldConnector;
 import com.ntros.model.world.engine.d2.grid.GridWorldEngine;
 import com.ntros.model.world.state.grid.ArenaGridState;
@@ -304,9 +304,9 @@ public class ServerBootstrapTest {
     stopServerWhen(List.of(instanceMultiplayer, secondInstance), server, serverExecutor);
   }
 
-  private GridWorldConnector createWorldConnector(String worldName, int width, int height) {
-    return new GridWorldConnector(new ArenaGridState(worldName, width, height, SEEDED),
-        new GridWorldEngine(), new WorldCapabilities(true, true, false, true));
+  private WorldConnector createWorldConnector(String worldName, int width, int height) {
+    return new PlayerWorldConnector(new ArenaGridState(worldName, width, height, SEEDED),
+        new GridWorldEngine(), WorldCapabilities.arena());
   }
 
   private ServerInstance createMultiplayerInstance(WorldConnector worldConnector, int tickRate,

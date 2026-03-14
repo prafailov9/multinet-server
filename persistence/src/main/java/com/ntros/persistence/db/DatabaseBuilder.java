@@ -1,9 +1,11 @@
 package com.ntros.persistence.db;
 
-import com.ntros.persistence.exception.SqlCrudException;
 import com.ntros.persistence.repository.impl.JsonTerrainSnapshotRepository;
 import com.ntros.persistence.repository.impl.SqliteClientRepository;
+import com.ntros.persistence.repository.impl.SqliteClientsInstanceRolesRepository;
+import com.ntros.persistence.repository.impl.SqliteInstanceRoleRepository;
 import com.ntros.persistence.repository.impl.SqlitePlayerRepository;
+import com.ntros.persistence.repository.impl.SqliteSystemRoleRepository;
 import com.ntros.persistence.repository.impl.SqliteWorldRepository;
 import java.nio.file.Path;
 import java.sql.Connection;
@@ -14,34 +16,39 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public final class DatabaseBuilder {
 
-  private static final String DROP_ALL_QUERY = "drop table clients; drop table players; drop table worlds; drop table sessions";
-
+  // Drop in dependency order (FK children before parents)
+  private static final String[] DROP_STATEMENTS = {
+      "DROP TABLE IF EXISTS clients_instance_roles",
+      "DROP TABLE IF EXISTS clients",
+      "DROP TABLE IF EXISTS instance_roles",
+      "DROP TABLE IF EXISTS system_roles",
+      "DROP TABLE IF EXISTS players",
+      "DROP TABLE IF EXISTS worlds",
+      "DROP TABLE IF EXISTS sessions"
+  };
 
   private DatabaseBuilder() {
   }
 
-  /**
-   * Create with defaults
-   */
+  /** Create with defaults. */
   public static void createDatabase() {
     init(ConnectionProvider.DEFAULT_DB_PATH, Path.of("data/snapshots"));
   }
 
-  /**
-   * create with optional paths
-   */
+  /** Create with optional paths. */
   public static void createDatabase(String dbPath, Path terrainPath) {
     init(dbPath, terrainPath);
   }
 
   public static void dropDatabase() {
-    // Use the shared connection directly — do NOT use try-with-resources here,
-    // because closing the shared connection is ConnectionProvider.close()'s job.
+    // Use the shared connection directly — do NOT close it here; that is ConnectionProvider's job.
     Connection conn = ConnectionProvider.connection();
     try (Statement stm = conn.createStatement()) {
-      stm.executeUpdate(DROP_ALL_QUERY);
+      for (String sql : DROP_STATEMENTS) {
+        stm.executeUpdate(sql);
+      }
     } catch (SQLException ex) {
-      log.error("Error during drop database: {}", ex.getMessage(), ex);
+      log.error("[DatabaseBuilder] Error during dropDatabase: {}", ex.getMessage(), ex);
     }
     ConnectionProvider.close();
     PersistenceContext.reset();
@@ -51,15 +58,24 @@ public final class DatabaseBuilder {
     try (Statement st = ConnectionProvider.connection().createStatement()) {
       st.executeUpdate(sql);
     } catch (SQLException e) {
-      throw new RuntimeException("TestDbHelper.runScript failed for: " + sql, e);
+      throw new RuntimeException("DatabaseBuilder.runScript failed: " + sql, e);
     }
   }
 
-  private static void init(String dbPath, Path terrainPath) {
-    log.info("[DatabaseBuilder]: started ConnectionProvider and PersistenceContext init.");
-    ConnectionProvider.initialize(dbPath);
-    PersistenceContext.init(new SqliteClientRepository(), new SqlitePlayerRepository(),
-        new SqliteWorldRepository(), new JsonTerrainSnapshotRepository(terrainPath));
-  }
+  // ── Internal ─────────────────────────────────────────────────────────────────
 
+  private static void init(String dbPath, Path terrainPath) {
+    log.info("[DatabaseBuilder] Starting ConnectionProvider and PersistenceContext init.");
+    ConnectionProvider.initialize(dbPath);
+    PersistenceContext.init(
+        new SqliteClientRepository(),
+        new SqlitePlayerRepository(),
+        new SqliteWorldRepository(),
+        new JsonTerrainSnapshotRepository(terrainPath),
+        new SqliteSystemRoleRepository(),
+        new SqliteInstanceRoleRepository(),
+        new SqliteClientsInstanceRolesRepository()
+    );
+    log.info("[DatabaseBuilder] PersistenceContext ready.");
+  }
 }

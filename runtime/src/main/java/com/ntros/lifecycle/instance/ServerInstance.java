@@ -70,43 +70,28 @@ public class ServerInstance extends AbstractInstance {
     });
   }
 
-  /**
-   * TODO: Stop mixing access control with simple actor delegation. Accessing an instance should be an upstream concern. Possibly a InstanceAdmissionController is needed
-   */
   @Override
   public CompletableFuture<WorldResult> joinAsync(JoinRequest req) {
-    // check if clock and actor running
-    // - yes: do join
-    // - no: check settings.autoStart == true and currentSession.size == 0
-    //       - yes: do join
-    //       - no: reject join command
     if (isInstanceLive()) {
       return actor.join(world, req);
     }
-    if (instanceSettings.autoStartOnPlayerJoin() && sessionManager.activeSessionsCount() == 0) {
-      // Submit the join task FIRST so it is at the head of the actor queue,
-      // then start the clock. This guarantees [joinTask → stepTask] ordering in
-      // the actor's single-threaded executor: the entity is added before the first
-      // step snapshot is taken, even when initialDelay=0 fires immediately.
+    // PLAYER_DRIVEN: enqueue join before starting the clock so the entity is registered
+    // before the first step snapshot — guaranteed by the actor's single-threaded queue.
+    if (isPlayerDriven()) {
       CompletableFuture<WorldResult> joinFuture = actor.join(world, req);
       start();
       return joinFuture;
     }
-    return CompletableFuture.completedFuture(WorldResult.failed(req.playerName(), getWorldName(),
-        String.format(
-            " JOIN required instance start. Not allowed base on settings.autoJoin=false. Instance settings: %s",
-            instanceSettings)));
+    // ORCHESTRATION_DRIVEN: observer join — clock starts on ORCHESTRATE, not on join.
+    return actor.join(world, req);
   }
 
   @Override
   public CompletableFuture<WorldResult> orchestrateAsync(OrchestrateRequest req) {
-    // valid req if instance is orchestrated
-    if (!instanceSettings.requiresOrchestrator()) {
+    if (!world.getCapabilities().supportsOrchestrator()) {
       return CompletableFuture.completedFuture(
           WorldResult.failed(req.action().name(), getWorldName(),
-              String.format(
-                  " ORCHESTRATE requires  an orchestrator instance. Current instance settings don't allow orchestration. Instance settings: %s",
-                  instanceSettings)));
+              "World does not support orchestration."));
     }
 
     if (!isInstanceLive()) {

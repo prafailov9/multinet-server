@@ -13,11 +13,13 @@ import com.ntros.lifecycle.instance.Instances;
 import com.ntros.lifecycle.instance.ServerInstance;
 import com.ntros.model.entity.config.WorldCapabilities;
 import com.ntros.model.entity.config.access.InstanceSettings;
-import com.ntros.model.world.connector.GridWorldConnector;
+import com.ntros.ecs.sim.boids.BoidsEngine;
+import com.ntros.model.world.connector.SimulationWorldConnector;
 import com.ntros.model.world.connector.WaTorConnector;
 import com.ntros.model.world.connector.WorldConnector;
 import com.ntros.model.world.engine.d2.grid.fallingsand.FallingSandEngine;
 import com.ntros.model.world.protocol.request.OrchestrateRequest;
+import com.ntros.model.world.state.grid.BoidsWorldState;
 import com.ntros.model.world.state.grid.FallingSandState;
 import com.ntros.model.world.wator.WaTorEngineImpl;
 import com.ntros.model.world.wator.WaTorWorld;
@@ -64,6 +66,11 @@ public class ServerBootstrap {
   private static final int WATOR_INITIAL_PREY = 120;
   private static final int WATOR_INITIAL_PLANTS = 180;
 
+  // Boids
+  private static final int BOIDS_COUNT = 200;
+  private static final int BOIDS_WORLD_SIZE = 100;
+  private static final int BOIDS_BROADCAST_RATE = 10;
+
   public static void startServer() {
     log.info("Starting server on port {}", PORT);
 
@@ -81,6 +88,7 @@ public class ServerBootstrap {
     // Bootstrap autonomous simulations (not DB-backed — seeded programmatically)
     bootstrapFallingSandWorlds();
     bootstrapWaTorWorlds();
+    bootstrapBoidsWorlds();
 
     // on server-stop - run cleanup and save world state
 //    registerShutdownHook(worlds);
@@ -171,7 +179,7 @@ public class ServerBootstrap {
 
       // orchestrated worlds (GoL etc.) require an ORCHESTRATE command to seed them before ticking
       InstanceSettings instanceSettings = world.getCapabilities().supportsOrchestrator()
-          ? InstanceSettings.multiplayerOrchestrator(GOL_BROADCAST_RATE)
+          ? InstanceSettings.simulation(GOL_BROADCAST_RATE)
           : InstanceSettings.multiplayer(BROADCAST_RATE);
 
       Instances.registerInstance(
@@ -182,7 +190,11 @@ public class ServerBootstrap {
 
   /**
    * Bootstraps all Falling Sand worlds. Skips any world already registered from DB.
-   * Randomly-seeded worlds are pre-filled and their simulation clock is started immediately.
+   *
+   * <p>Randomly-seeded worlds are pre-populated via {@link SimulationWorldConnector#preSeed}
+   * which calls the engine directly without starting the simulation clock.  The clock will
+   * only start when the first client sends an ORCHESTRATE command, preserving the
+   * {@code ORCHESTRATION_DRIVEN} lifecycle contract.
    */
   private static void bootstrapFallingSandWorlds() {
     for (SandWorldDef def : SAND_WORLDS) {
@@ -192,19 +204,19 @@ public class ServerBootstrap {
       }
       FallingSandState state = new FallingSandState(def.name(), def.w(), def.h());
       FallingSandEngine engine = new FallingSandEngine();
-      WorldCapabilities caps = new WorldCapabilities(true, true, false, true);
-      GridWorldConnector connector = new GridWorldConnector(state, engine, caps);
+      SimulationWorldConnector connector = new SimulationWorldConnector(state, engine,
+          WorldCapabilities.fallingSand());
 
       SessionManager sessionManager = new ClientSessionManager();
       Clock clock = new FixedRateClock(TICK_RATE);
-      InstanceSettings instanceSettings = InstanceSettings.multiplayerOrchestrator(SAND_BROADCAST_RATE);
+      InstanceSettings instanceSettings = InstanceSettings.simulation(SAND_BROADCAST_RATE);
       ServerInstance instance = new ServerInstance(connector, sessionManager, clock,
           new SharedBroadcaster(), instanceSettings);
       Instances.registerInstance(instance);
 
       if (def.randomSeed()) {
-        // Seeding triggers ensureBuffers + starts the clock (instance goes live)
-        instance.orchestrateAsync(OrchestrateRequest.randomSeed(0f)).join();
+        // Pre-populate state without starting the clock — clock starts on first client ORCHESTRATE.
+        connector.preSeed(OrchestrateRequest.randomSeed(0f));
       }
       log.info("[ServerBootstrap] Sand world '{}' registered ({}×{}, random={}).",
           def.name(), def.w(), def.h(), def.randomSeed());
@@ -237,12 +249,11 @@ public class ServerBootstrap {
         world.spawnPlant(x, y);
       }
 
-      WorldCapabilities caps = new WorldCapabilities(true, false, true, false);
-      WaTorConnector connector = new WaTorConnector(world, engine, caps);
+      WaTorConnector connector = new WaTorConnector(world, engine, WorldCapabilities.waTor());
 
       SessionManager sessionManager = new ClientSessionManager();
       Clock clock = new FixedRateClock(TICK_RATE);
-      InstanceSettings instanceSettings = InstanceSettings.autonomousSimulation(WATOR_BROADCAST_RATE);
+      InstanceSettings instanceSettings = InstanceSettings.simulation(WATOR_BROADCAST_RATE);
       ServerInstance instance = new ServerInstance(connector, sessionManager, clock,
           new SharedBroadcaster(), instanceSettings);
 
@@ -250,6 +261,41 @@ public class ServerBootstrap {
 //      instance.start();   // autonomous — runs immediately, independent of observer count
       log.info("[ServerBootstrap] Wa-Tor world '{}' started ({} predators, {} prey, {} plants).",
           name, WATOR_INITIAL_PREDATORS, WATOR_INITIAL_PREY, WATOR_INITIAL_PLANTS);
+    }
+  }
+
+  /**
+   * Creates and registers Boids worlds with a pre-spawned population.
+   *
+   * <p>Boids worlds are not persisted in the DB — they are always bootstrapped fresh on
+   * server start. The simulation runs autonomously from boot; observer sessions may join
+   * and leave without affecting the clock.
+   *
+   * <p>Note: {@code instance.start()} is intentionally left commented out — uncomment once
+   * the {@code AUTONOMOUS} lifecycle is wired in the instance layer.
+   */
+  private static void bootstrapBoidsWorlds() {
+    String[] boidsNames = {"boids-small"};
+    for (String name : boidsNames) {
+      if (Instances.getInstance(name) != null) {
+        log.info("[ServerBootstrap] Boids world '{}' already registered — skipping.", name);
+        continue;
+      }
+      BoidsWorldState state = new BoidsWorldState(name, BOIDS_WORLD_SIZE, BOIDS_WORLD_SIZE);
+      BoidsEngine engine = new BoidsEngine(BOIDS_COUNT, BOIDS_WORLD_SIZE, BOIDS_WORLD_SIZE);
+      SimulationWorldConnector connector = new SimulationWorldConnector(state, engine,
+          WorldCapabilities.boids());
+
+      SessionManager sessionManager = new ClientSessionManager();
+      Clock clock = new FixedRateClock(TICK_RATE);
+      InstanceSettings instanceSettings = InstanceSettings.simulation(BOIDS_BROADCAST_RATE);
+      ServerInstance instance = new ServerInstance(connector, sessionManager, clock,
+          new SharedBroadcaster(), instanceSettings);
+
+      Instances.registerInstance(instance);
+//      instance.start();   // autonomous — runs immediately, independent of observer count
+      log.info("[ServerBootstrap] Boids world '{}' registered ({} boids, {}×{}).",
+          name, BOIDS_COUNT, BOIDS_WORLD_SIZE, BOIDS_WORLD_SIZE);
     }
   }
 

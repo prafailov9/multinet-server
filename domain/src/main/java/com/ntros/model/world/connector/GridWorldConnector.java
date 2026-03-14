@@ -2,78 +2,59 @@ package com.ntros.model.world.connector;
 
 import com.ntros.model.entity.Entity;
 import com.ntros.model.entity.config.WorldCapabilities;
-import com.ntros.model.world.connector.ops.JoinOp;
-import com.ntros.model.world.connector.ops.MoveOp;
-import com.ntros.model.world.connector.ops.OrchestrateOp;
-import com.ntros.model.world.connector.ops.RemoveOp;
 import com.ntros.model.world.connector.ops.WorldOp;
 import com.ntros.model.world.engine.core.GridEngine;
-import com.ntros.model.world.engine.core.PlayerGridEngine;
-import com.ntros.model.world.engine.core.SimulationGridEngine;
-import com.ntros.model.world.state.core.PlayerGridState;
-import com.ntros.model.world.state.core.SimulationGridState;
 import com.ntros.model.world.protocol.result.WorldResult;
 import com.ntros.model.world.state.core.GridState;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 
+/**
+ * Abstract base connector that binds a typed {@link GridState} to a typed {@link GridEngine}.
+ *
+ * <p>All shared, state-agnostic operations ({@link #update()}, {@link #snapshot()},
+ * {@link #getWorldName()}, etc.) are implemented here.  Subclasses receive concrete type
+ * parameters and implement {@link #apply(WorldOp)} without any {@code instanceof} checks —
+ * the correct types are guaranteed by the constructor signature.
+ *
+ * <p>Two concrete subclasses cover the current world types:
+ * <ul>
+ *   <li>{@link PlayerWorldConnector} — arena / solo worlds ({@code PlayerGridState} +
+ *       {@code PlayerGridEngine})</li>
+ *   <li>{@link SimulationWorldConnector} — GOL / Falling-Sand worlds
+ *       ({@code SimulationGridState} + {@code SimulationGridEngine})</li>
+ * </ul>
+ *
+ * @param <S> the concrete grid-state type
+ * @param <E> the concrete grid-engine type
+ */
 @Slf4j
-public class GridWorldConnector implements WorldConnector {
+public abstract class GridWorldConnector<S extends GridState, E extends GridEngine>
+    implements WorldConnector {
 
-  private final GridState state;
-  private final GridEngine engine;
-  private final WorldCapabilities caps;
+  protected final S state;
+  protected final E engine;
+  protected final WorldCapabilities caps;
 
-  public GridWorldConnector(GridState state, GridEngine engine, WorldCapabilities caps) {
+  protected GridWorldConnector(S state, E engine, WorldCapabilities caps) {
     this.state = state;
     this.engine = engine;
     this.caps = caps;
   }
 
-  @Override
-  public WorldResult apply(WorldOp op) {
-    return switch (op) {
-      case JoinOp j -> {
-        if (engine instanceof PlayerGridEngine pge && state instanceof PlayerGridState pState) {
-          yield pge.joinEntity(j.req(), pState);
-        }
-        yield WorldResult.failed(j.req().playerName(), state.worldName(),
-            "World does not support player join.");
-      }
-      case MoveOp m -> {
-        if (engine instanceof PlayerGridEngine pge && state instanceof PlayerGridState pState) {
-          yield pge.storeMoveIntent(m.req(), pState);
-        }
-        yield WorldResult.failed(m.req().playerId(), state.worldName(),
-            "World does not support player movement.");
-      }
-      case RemoveOp r -> {
-        if (engine instanceof PlayerGridEngine pge && state instanceof PlayerGridState pState) {
-          pge.removeEntity(r.removeRequest().entityId(), pState);
-        }
-        yield WorldResult.succeeded(r.removeRequest().entityId(), state.worldName(), "ok");
-      }
-      case OrchestrateOp o -> {
-        if (engine instanceof SimulationGridEngine sge
-            && state instanceof SimulationGridState sState) {
-          yield sge.orchestrate(o.req(), sState);
-        }
-        yield WorldResult.failed("orchestrator", state.worldName(),
-            "World does not support orchestration.");
-      }
-      default -> throw new IllegalStateException("Unexpected op type: " + op);
-    };
-  }
+  // ── Abstract ──────────────────────────────────────────────────────────────
 
+  @Override
+  public abstract WorldResult apply(WorldOp op);
+
+  // ── Shared implementations ────────────────────────────────────────────────
 
   @Override
   public void update() {
     engine.applyIntents(state);
   }
 
-  /**
-   * Preferred: build a typed POJO view
-   */
+  /** Returns a typed POJO snapshot suitable for JSON serialisation. */
   @Override
   public Object snapshot() {
     return engine.snapshot(state);
@@ -94,11 +75,9 @@ public class GridWorldConnector implements WorldConnector {
     return state.worldType();
   }
 
+  /** Returns the active player entities.  Overridden in {@link PlayerWorldConnector}. */
   @Override
   public List<Entity> getCurrentEntities() {
-    if (state instanceof PlayerGridState pState) {
-      return pState.entities().values().stream().toList();
-    }
     return List.of();
   }
 
@@ -112,30 +91,14 @@ public class GridWorldConnector implements WorldConnector {
     engine.reset(state);
   }
 
-  // ── Persistence helpers ───────────────────────────────────────────────────
-
   /**
-   * Returns the underlying {@link GridState} for read-only access by the persistence layer
-   * (e.g. to save the current terrain snapshot on shutdown).
+   * Returns the underlying state for read-only access by the persistence layer
+   * (e.g. to save terrain snapshots on shutdown).
+   *
+   * <p>The covariant return type in each subclass narrows this to the concrete state type,
+   * so callers can access typed state members without casting.
    */
-  public GridState getState() {
+  public S getState() {
     return state;
   }
-
-  /**
-   * Replaces the world's terrain with a previously persisted snapshot.
-   *
-   * <p>Intended to be called once, during server startup, before any player joins.
-   * Clears the randomly-generated terrain that was produced by the constructor and loads the
-   * stable, saved version so players always see the same map layout.
-   *
-   * @param savedTerrain terrain map loaded from the snapshot repository; must not be null
-   */
-//  public void restoreTerrain(Map<Vector4, TileType> savedTerrain) {
-//    state.terrain().clear();
-//    state.terrain().putAll(savedTerrain);
-//    log.info("[GridWorldConnector] Restored terrain for '{}' ({} tiles).",
-//        state.worldName(), savedTerrain.size());
-//  }
 }
-

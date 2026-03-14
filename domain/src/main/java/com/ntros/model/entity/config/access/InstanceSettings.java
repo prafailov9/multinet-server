@@ -1,93 +1,60 @@
 package com.ntros.model.entity.config.access;
 
 /**
- * Settings for configuring an ServerInstance
+ * Runtime configuration for a {@code ServerInstance}.
+ *
+ * <p>This record holds only <em>tunable</em> per-instance values — things an operator can
+ * adjust at deploy time without changing the world type. Properties that are intrinsic to a
+ * world type (whether it supports players, its lifecycle policy, determinism, seed) live in
+ * {@code WorldCapabilities}.
  */
 public record InstanceSettings(
+    /** Maximum number of simultaneously active player sessions. */
     int maxPlayers,
-    boolean requiresOrchestrator,
+
+    /** Who may join this instance. */
     InstanceVisibility instanceVisibility,
-    boolean autoStartOnPlayerJoin,
+
+    /** State broadcast rate sent to clients (frames per second). */
     int broadcastHz,
+
+    /** Simulation tick rate while the world is active (ticks per second). */
     int activeTps,
+
+    /** Reduced tick rate after {@link #idleAfterSeconds} of no player activity. */
     int idleTps,
-    int idleAfterSeconds,
-    // TODO: these are not part of instance cfg. Move to WorldSettings
-    boolean deterministic,
-    Long seed
+
+    /** Seconds of inactivity before the instance drops to {@link #idleTps}. */
+    int idleAfterSeconds
 ) {
 
-  public static InstanceSettings multiplayer(int broadcastHz) {
-    return new InstanceSettings(
-        100, false, InstanceVisibility.PUBLIC, true,
-        broadcastHz,
-        120, 10, 30,
-        false, null
-    );
-  }
+  // ── Convenience factories ───────────────────────────────────────────────────
 
   public static InstanceSettings multiplayerDefault() {
-    return new InstanceSettings(
-        100, false, InstanceVisibility.PUBLIC, true,
-        20,
-        120, 10, 30,
-        false, null
-    );
+    return new InstanceSettings(100, InstanceVisibility.PUBLIC, 32, 120, 10, 30);
+  }
+
+  public static InstanceSettings multiplayer(int broadcastHz) {
+    return new InstanceSettings(100, InstanceVisibility.PUBLIC, broadcastHz, 120, 10, 30);
   }
 
   public static InstanceSettings multiplayerJoinable() {
-    return new InstanceSettings(
-        100, false, InstanceVisibility.JOINABLE, true,
-        20,          // broadcastHz
-        120, 10, 30, // activeTps, idleTps, idleAfterSeconds
-        false, null  // deterministic, seed
-    );
+    return new InstanceSettings(100, InstanceVisibility.JOINABLE, 20, 120, 10, 30);
   }
 
   public static InstanceSettings singlePlayerDefault() {
-    return new InstanceSettings(
-        1, false, InstanceVisibility.PRIVATE, false,
-        20,          // broadcastHz
-        120, 10, 30, // activeTps, idleTps, idleAfterSeconds
-        false, null  // deterministic, seed
-    );
-  }
-
-  public static InstanceSettings singlePlayerOrchestrator() {
-    return new InstanceSettings(
-        1, true, InstanceVisibility.PRIVATE, false,
-        20,          // broadcastHz
-        120, 10, 30, // activeTps, idleTps, idleAfterSeconds
-        false, null  // deterministic, seed
-    );
+    return new InstanceSettings(1, InstanceVisibility.PRIVATE, 20, 120, 10, 30);
   }
 
   /**
-   * Multiplayer world that requires an orchestrator to seed / control it (e.g. Game-of-Life).
-   * Players may join to observe, but the clock only starts when an ORCHESTRATE command arrives.
+   * Configuration for simulation worlds (Game of Life, Falling Sand, etc.).
+   * Visibility PUBLIC; observers may join to watch.
    */
-  public static InstanceSettings multiplayerOrchestrator(int broadcastHz) {
-    return new InstanceSettings(
-        100, true, InstanceVisibility.PUBLIC, true,
-        broadcastHz,
-        120, 10, 30,
-        false, null
-    );
+  public static InstanceSettings simulation(int broadcastHz) {
+    return new InstanceSettings(100, InstanceVisibility.PUBLIC, broadcastHz, 120, 10, 30);
   }
 
-  /**
-   * Autonomous simulation world (e.g. Wa-Tor predator-prey).
-   * Observers may join to watch, but the simulation runs continuously from server boot —
-   * it does not start/stop based on player presence.
-   * {@code autoStartOnPlayerJoin = false}: lifecycle is managed externally by the bootstrap.
-   */
-  public static InstanceSettings autonomousSimulation(int broadcastHz) {
-    return new InstanceSettings(
-        100, false, InstanceVisibility.PUBLIC, false,
-        broadcastHz,
-        120, 10, 30,
-        false, null
-    );
+  public static InstanceSettings simulationDefault() {
+    return new InstanceSettings(100, InstanceVisibility.PUBLIC, 20, 120, 10, 30);
   }
-
 }
