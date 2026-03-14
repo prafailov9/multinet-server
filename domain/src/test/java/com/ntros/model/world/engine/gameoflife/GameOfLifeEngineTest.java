@@ -183,7 +183,9 @@ class GameOfLifeEngineTest {
       assertThat(tileAt(5, 6)).isEqualTo(CellType.EMPTY);
     }
 
-    /** Block (2×2 square) is a still life — it must not change. */
+    /**
+     * Block (2×2 square) is a still life — it must not change.
+     */
     @Test
     void block_isStillLife() {
       setAlive(4, 4);
@@ -209,9 +211,14 @@ class GameOfLifeEngineTest {
     void wallTile_isNeverAffectedByConwaysRules() {
       state.terrain().put(Vector4.of(5, 5, 0, 0), CellType.WALL);
       // Surround with live cells — would normally trigger overcrowding
-      setAlive(4, 4); setAlive(5, 4); setAlive(6, 4);
-      setAlive(4, 5);                  setAlive(6, 5);
-      setAlive(4, 6); setAlive(5, 6); setAlive(6, 6);
+      setAlive(4, 4);
+      setAlive(5, 4);
+      setAlive(6, 4);
+      setAlive(4, 5);
+      setAlive(6, 5);
+      setAlive(4, 6);
+      setAlive(5, 6);
+      setAlive(6, 6);
 
       engine.applyIntents(state);
 
@@ -234,7 +241,9 @@ class GameOfLifeEngineTest {
     @Test
     void waterTile_passesThrough() {
       state.terrain().put(Vector4.of(3, 3, 0, 0), CellType.WATER);
-      setAlive(2, 2); setAlive(3, 2); setAlive(4, 2);
+      setAlive(2, 2);
+      setAlive(3, 2);
+      setAlive(4, 2);
 
       engine.applyIntents(state);
 
@@ -250,7 +259,7 @@ class GameOfLifeEngineTest {
     @Test
     void seed_makesListedCellsAlive() {
       OrchestrateRequest req = new OrchestrateRequest(OrchestrateAction.SEED,
-          List.of(Position.of(1, 1), Position.of(2, 2), Position.of(3, 3)), 0f);
+          List.of(Position.of(1, 1), Position.of(2, 2), Position.of(3, 3)), 0f, "");
 
       WorldResult result = engine.orchestrate(req, state);
 
@@ -264,7 +273,7 @@ class GameOfLifeEngineTest {
     void seed_isAdditive_doesNotKillExistingCells() {
       setAlive(0, 0);
       OrchestrateRequest req = new OrchestrateRequest(OrchestrateAction.SEED,
-          List.of(Position.of(9, 9)), 0f);
+          List.of(Position.of(9, 9)), 0f, "");
 
       engine.orchestrate(req, state);
 
@@ -275,7 +284,7 @@ class GameOfLifeEngineTest {
     @Test
     void seed_outOfBoundsPosition_isSkipped() {
       OrchestrateRequest req = new OrchestrateRequest(OrchestrateAction.SEED,
-          List.of(Position.of(999, 999)), 0f);
+          List.of(Position.of(999, 999)), 0f, "");
 
       WorldResult result = engine.orchestrate(req, state);
 
@@ -286,7 +295,7 @@ class GameOfLifeEngineTest {
 
     @Test
     void seed_emptyCellList_returnsFailed() {
-      OrchestrateRequest req = new OrchestrateRequest(OrchestrateAction.SEED, List.of(), 0f);
+      OrchestrateRequest req = new OrchestrateRequest(OrchestrateAction.SEED, List.of(), 0f, "");
 
       WorldResult result = engine.orchestrate(req, state);
 
@@ -341,7 +350,7 @@ class GameOfLifeEngineTest {
     @Test
     void toggle_deadCell_becomesAlive() {
       OrchestrateRequest req = new OrchestrateRequest(OrchestrateAction.TOGGLE,
-          List.of(Position.of(3, 3)), 0f);
+          List.of(Position.of(3, 3)), 0f, "");
 
       engine.orchestrate(req, state);
 
@@ -352,7 +361,7 @@ class GameOfLifeEngineTest {
     void toggle_aliveCell_becomesDead() {
       setAlive(3, 3);
       OrchestrateRequest req = new OrchestrateRequest(OrchestrateAction.TOGGLE,
-          List.of(Position.of(3, 3)), 0f);
+          List.of(Position.of(3, 3)), 0f, "");
 
       engine.orchestrate(req, state);
 
@@ -363,7 +372,7 @@ class GameOfLifeEngineTest {
     void toggle_staticTile_isNotFlipped() {
       state.terrain().put(Vector4.of(3, 3, 0, 0), CellType.WALL);
       OrchestrateRequest req = new OrchestrateRequest(OrchestrateAction.TOGGLE,
-          List.of(Position.of(3, 3)), 0f);
+          List.of(Position.of(3, 3)), 0f, "");
 
       engine.orchestrate(req, state);
 
@@ -378,7 +387,9 @@ class GameOfLifeEngineTest {
 
     @Test
     void clear_killsAllLiveCells() {
-      setAlive(1, 1); setAlive(2, 2); setAlive(9, 9);
+      setAlive(1, 1);
+      setAlive(2, 2);
+      setAlive(9, 9);
 
       WorldResult result = engine.orchestrate(OrchestrateRequest.clear(), state);
 
@@ -460,7 +471,8 @@ class GameOfLifeEngineTest {
 
   @Test
   void reset_clearsAllLiveCellsAndSpectators() {
-    setAlive(1, 1); setAlive(9, 9);
+    setAlive(1, 1);
+    setAlive(9, 9);
     engine.joinEntity(new JoinRequest("alice"), state);
 
     engine.reset(state);

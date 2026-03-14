@@ -11,5 +11,7 @@ public enum OrchestrateAction {
   /** Toggle the live/dead state of specific cells. */
   TOGGLE,
   /** Kill every live cell — blank-slate the grid. */
-  CLEAR
+  CLEAR,
+  /** Place a single material cell at a specific position (Falling Sand). */
+  PLACE
 }

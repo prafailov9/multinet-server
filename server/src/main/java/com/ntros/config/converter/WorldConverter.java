@@ -3,9 +3,11 @@ package com.ntros.config.converter;
 import com.ntros.model.entity.config.WorldCapabilities;
 import com.ntros.model.world.connector.GridWorldConnector;
 import com.ntros.model.world.connector.WorldConnector;
+import com.ntros.model.world.engine.d2.grid.fallingsand.FallingSandEngine;
 import com.ntros.model.world.engine.d2.grid.gameoflife.GameOfLifeEngine;
 import com.ntros.model.world.engine.d2.grid.GridWorldEngine;
 import com.ntros.model.world.engine.core.GridEngine;
+import com.ntros.model.world.state.d2.grid.FallingSandState;
 import com.ntros.model.world.state.d2.grid.GridWorldState;
 import com.ntros.persistence.model.WorldRecord;
 
@@ -29,14 +31,6 @@ public class WorldConverter implements Converter<WorldRecord, WorldConnector> {
 
   @Override
   public WorldConnector toModelObject(WorldRecord record) {
-    boolean isGoL = "GOL".equalsIgnoreCase(record.engineType());
-
-    GridEngine engine = isGoL ? new GameOfLifeEngine() : new GridWorldEngine();
-
-    GridWorldState state = isGoL
-        ? GridWorldState.blank(record.name(), record.width(), record.height())
-        : new GridWorldState(record.name(), record.width(), record.height());
-
     WorldCapabilities capabilities = new WorldCapabilities(
         record.multiplayer(),
         record.orchestrated(),
@@ -44,6 +38,16 @@ public class WorldConverter implements Converter<WorldRecord, WorldConnector> {
         record.deterministic()
     );
 
-    return new GridWorldConnector(state, engine, capabilities);
+    return switch (record.engineType().toUpperCase()) {
+      case "FALLING_SAND" -> new GridWorldConnector(
+          new FallingSandState(record.name(), record.width(), record.height()),
+          new FallingSandEngine(), capabilities);
+      case "GOL" -> new GridWorldConnector(
+          GridWorldState.blank(record.name(), record.width(), record.height()),
+          new GameOfLifeEngine(), capabilities);
+      default -> new GridWorldConnector(
+          new GridWorldState(record.name(), record.width(), record.height()),
+          new GridWorldEngine(), capabilities);
+    };
   }
 }

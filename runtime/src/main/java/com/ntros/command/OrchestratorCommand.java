@@ -63,7 +63,7 @@ public class OrchestratorCommand extends AbstractCommand {
     return switch (sub) {
       case "SEED" -> {
         List<Position> cells = parseCellPairs(args, 1);
-        yield new OrchestrateRequest(OrchestrateAction.SEED, cells, 0f);
+        yield new OrchestrateRequest(OrchestrateAction.SEED, cells, 0f, null);
       }
       case "RANDOM" -> {
         float density = Float.parseFloat(args.get(1));
@@ -72,11 +72,17 @@ public class OrchestratorCommand extends AbstractCommand {
       case "TOGGLE" -> {
         int x = Integer.parseInt(args.get(1));
         int y = Integer.parseInt(args.get(2));
-        yield new OrchestrateRequest(OrchestrateAction.TOGGLE, List.of(Position.of(x, y)), 0f);
+        yield new OrchestrateRequest(OrchestrateAction.TOGGLE, List.of(Position.of(x, y)), 0f, null);
       }
       case "CLEAR" -> OrchestrateRequest.clear();
+      case "PLACE" -> {
+        String material = args.get(1).toUpperCase();
+        int x = Integer.parseInt(args.get(2));
+        int y = Integer.parseInt(args.get(3));
+        yield OrchestrateRequest.place(material, x, y);
+      }
       default -> throw new IllegalArgumentException(
-          "Unknown ORCHESTRATE sub-command: " + sub + ". Valid: SEED, RANDOM, TOGGLE, CLEAR");
+          "Unknown ORCHESTRATE sub-command: " + sub + ". Valid: SEED, RANDOM, TOGGLE, CLEAR, PLACE");
     };
   }
 

@@ -4,7 +4,7 @@ import com.ntros.model.entity.movement.grid.Position;
 import java.util.List;
 
 /**
- * Carries an orchestrator command for a Game-of-Life (or similar) world.
+ * Carries an orchestrator command for a grid world.
  *
  * <p>Field usage by action:
  * <ul>
@@ -12,21 +12,28 @@ import java.util.List;
  *   <li>{@link OrchestrateAction#RANDOM_SEED} — {@code density} (0.0–1.0) controls live-cell probability.</li>
  *   <li>{@link OrchestrateAction#TOGGLE}      — {@code cells} lists positions to flip.</li>
  *   <li>{@link OrchestrateAction#CLEAR}       — no additional fields needed.</li>
+ *   <li>{@link OrchestrateAction#PLACE}       — {@code cells} has one position; {@code material} names the CellType.</li>
  * </ul>
  */
 public record OrchestrateRequest(
     OrchestrateAction action,
     List<Position> cells,
-    float density
+    float density,
+    String material
 ) implements ClientRequest {
 
   /** Convenience factory for CLEAR (no positional data). */
   public static OrchestrateRequest clear() {
-    return new OrchestrateRequest(OrchestrateAction.CLEAR, List.of(), 0f);
+    return new OrchestrateRequest(OrchestrateAction.CLEAR, List.of(), 0f, null);
   }
 
   /** Convenience factory for RANDOM_SEED. */
   public static OrchestrateRequest randomSeed(float density) {
-    return new OrchestrateRequest(OrchestrateAction.RANDOM_SEED, List.of(), density);
+    return new OrchestrateRequest(OrchestrateAction.RANDOM_SEED, List.of(), density, null);
+  }
+
+  /** Convenience factory for PLACE (Falling Sand). */
+  public static OrchestrateRequest place(String material, int x, int y) {
+    return new OrchestrateRequest(OrchestrateAction.PLACE, List.of(Position.of(x, y)), 0f, material);
   }
 }

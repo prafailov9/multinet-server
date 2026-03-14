@@ -83,11 +83,19 @@ public class WaTorWorld {
    * @param dt elapsed time in seconds (typically 1/120 for 120 Hz)
    */
   public void tick(float dt) {
-    // Rebuild spatial index from current positions before any system reads it
+    // First rebuild: pre-movement positions — consumed by VisionSystem (sense → decide → act).
     state.spatialHash.rebuild(state);
 
     for (WaTorSystem system : systems) {
       system.tick(state, dt);
+
+      // Second rebuild: after MovementSystem has updated all positions, rebuild so that
+      // EnergySystem's interaction queries (INTERACTION_RADIUS = 6 wu) use current positions.
+      // Without this, entities that moved INTO interaction range this tick are missed because
+      // the hash still maps them to their pre-movement buckets.
+      if (system instanceof MovementSystem) {
+        state.spatialHash.rebuild(state);
+      }
     }
 
     flushSpawns();

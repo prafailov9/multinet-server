@@ -16,6 +16,8 @@ import com.ntros.model.entity.config.access.Settings;
 import com.ntros.model.world.connector.GridWorldConnector;
 import com.ntros.model.world.connector.WaTorConnector;
 import com.ntros.model.world.connector.WorldConnector;
+import com.ntros.model.world.engine.d2.grid.fallingsand.FallingSandEngine;
+import com.ntros.model.world.state.d2.grid.FallingSandState;
 import com.ntros.model.world.wator.WaTorEngineImpl;
 import com.ntros.model.world.wator.WaTorWorld;
 import com.ntros.persistence.db.ConnectionProvider;
@@ -42,8 +44,13 @@ public class ServerBootstrap {
   private static final int TICK_RATE = 120;
   // emits 70 messages per second
   private static final int BROADCAST_RATE = 70;
-  private static final int GOL_BROADCAST_RATE = 10;
+  private static final int GOL_BROADCAST_RATE  = 10;
+  private static final int SAND_BROADCAST_RATE = 10;
   private static final int WATOR_BROADCAST_RATE = 10;
+
+  private static final int SAND_WIDTH  = 200;
+  private static final int SAND_HEIGHT = 150;
+  private static final String SAND_WORLD_NAME = "falling-sand";
 
   // Wa-Tor initial population
   private static final int WATOR_INITIAL_PREDATORS = 40;
@@ -65,6 +72,7 @@ public class ServerBootstrap {
     initInstances(worlds);
 
     // Bootstrap autonomous simulations (not DB-backed — seeded programmatically)
+    bootstrapFallingSandWorld();
     bootstrapWaTorWorlds();
 
     // on server-stop - run cleanup and save world state
@@ -162,6 +170,29 @@ public class ServerBootstrap {
       Instances.registerInstance(
           new ServerInstance(world, sessionManager, clock, new SharedBroadcaster(), settings));
     }
+  }
+
+  /**
+   * Bootstraps the Falling Sand world programmatically so it is always available regardless of
+   * DB state. If the world is already registered (e.g. loaded from DB), this is a no-op.
+   */
+  private static void bootstrapFallingSandWorld() {
+    if (Instances.getInstance(SAND_WORLD_NAME) != null) {
+      log.info("[ServerBootstrap] Falling Sand world '{}' already registered — skipping programmatic bootstrap.", SAND_WORLD_NAME);
+      return;
+    }
+    FallingSandState state  = new FallingSandState(SAND_WORLD_NAME, SAND_WIDTH, SAND_HEIGHT);
+    FallingSandEngine engine = new FallingSandEngine();
+    WorldCapabilities caps  = new WorldCapabilities(true, true, false, true);
+    GridWorldConnector connector = new GridWorldConnector(state, engine, caps);
+
+    SessionManager sessionManager = new ClientSessionManager();
+    Clock clock = new FixedRateClock(TICK_RATE);
+    Settings settings = Settings.multiplayerOrchestrator(SAND_BROADCAST_RATE);
+    Instances.registerInstance(
+        new ServerInstance(connector, sessionManager, clock, new SharedBroadcaster(), settings));
+    log.info("[ServerBootstrap] Falling Sand world '{}' registered ({}×{}).",
+        SAND_WORLD_NAME, SAND_WIDTH, SAND_HEIGHT);
   }
 
   /**

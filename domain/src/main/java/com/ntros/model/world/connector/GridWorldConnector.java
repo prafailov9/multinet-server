@@ -9,6 +9,7 @@ import com.ntros.model.world.connector.ops.RemoveOp;
 import com.ntros.model.world.connector.ops.WorldOp;
 import com.ntros.model.world.engine.core.GridEngine;
 import com.ntros.model.world.protocol.result.WorldResult;
+import com.ntros.model.world.state.core.GridState;
 import com.ntros.model.world.state.d2.grid.GridWorldState;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
@@ -16,11 +17,11 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class GridWorldConnector implements WorldConnector {
 
-  private final GridWorldState state;
+  private final GridState state;
   private final GridEngine engine;
   private final WorldCapabilities caps;
 
-  public GridWorldConnector(GridWorldState state, GridEngine engine, WorldCapabilities caps) {
+  public GridWorldConnector(GridState state, GridEngine engine, WorldCapabilities caps) {
     this.state = state;
     this.engine = engine;
     this.caps = caps;
@@ -90,7 +91,7 @@ public class GridWorldConnector implements WorldConnector {
    * Returns the underlying {@link GridWorldState} for read-only access by the persistence layer
    * (e.g. to save the current terrain snapshot on shutdown).
    */
-  public GridWorldState getState() {
+  public GridState getState() {
     return state;
   }
 

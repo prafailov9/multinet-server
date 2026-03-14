@@ -100,6 +100,8 @@ public class GameOfLifeEngine extends AbstractGridEngine {
       case RANDOM_SEED -> applyRandomSeed(req.density(), state);
       case TOGGLE -> applyToggle(req, state);
       case CLEAR -> applyClear(state);
+      default -> WorldResult.failed("orchestrator", state.worldName(),
+          "Gol World only supports SEED, RANDOM_SEED, TOGGLE, CLEAR orchestration.");
     };
   }
 
